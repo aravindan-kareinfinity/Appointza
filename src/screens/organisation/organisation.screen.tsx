@@ -15,33 +15,31 @@ import {$} from '../../styles';
 import {AppTextInput} from '../../components/apptextinput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {FlatList, TouchableOpacity} from 'react-native';
-import {
-  Organisation,
-  OrganisationSelectReq,
-} from '../../models/organisation.model';
+
 import {
   OrganisationLocation,
   OrganisationLocationSelectReq,
 } from '../../models/organisationlocation.model';
 import {useAppSelector} from '../../redux/hooks.redux';
 import {selectusercontext} from '../../redux/usercontext.redux';
-import {OrganisationService} from '../../services/organisation.service';
 import {AppAlert} from '../../components/appalert.component';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
 import {useEffect} from 'react';
 import React from 'react';
+import { Organization, OrganizationSelectReq } from '../../models/organization.model';
+import { OrganizationService } from '../../services/organization.service';
 type OrganisationScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Organisation'>,
   BottomTabScreenProps<HomeTabParamList>
 >;
 export function OrganisationScreen() {
   const navigation = useNavigation<OrganisationScreenProp['navigation']>();
-  const [organisation, setOrganisation] = useState(new Organisation());
+  const [organisation, setOrganisation] = useState(new Organization());
   const [organisationlocation, setOrganisationlocation] = useState<
-    OrganisationLocation[]
+  OrganisationLocation[]
   >([]);
   const [isloading, setIsloading] = useState(false);
-  const organisationservice = useMemo(() => new OrganisationService(), []);
+  const organisationservice = useMemo(() => new OrganizationService(), []);
   const organisationlocationservice = useMemo(
     () => new OrganisationLocationService(),
     [],
@@ -56,15 +54,23 @@ export function OrganisationScreen() {
     setIsloading(true);
     try {
       if (usercontext.value.userid > 0) {
-        var orgreq: OrganisationSelectReq = new OrganisationSelectReq();
+        var orgreq: OrganizationSelectReq = new OrganizationSelectReq();
         orgreq.id = usercontext.value.organisationid;
         let orgresp = await organisationservice.select(orgreq);
-        setOrganisation(orgresp[0]);
+        if(orgresp){
+
+          setOrganisation(orgresp[0]);
+        }
 
         var locreq: OrganisationLocationSelectReq =
           new OrganisationLocationSelectReq();
         let locresp = await organisationlocationservice.select(locreq);
-        setOrganisationlocation(locresp);
+        if (locresp) {
+          setOrganisationlocation(locresp);
+        } else {
+          setOrganisationlocation([]); // Provide an empty array as a fallback
+        }
+        
       }
     } catch (error: any) {
       var message = error?.response?.data?.message;

@@ -1,62 +1,62 @@
 import { ActionReq } from '../models/actionreq.model';
 import { ActionRes } from '../models/actionres.model';
 import {
-  Notification,
-  NotificationDeleteReq,
-  NotificationSelectReq,
-} from '../models/notification.model';
+  GroupMember,
+  GroupMemberDeleteReq,
+  GroupMemberSelectReq,
+} from '../models/groupmember.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
 import {environment} from '../utils/environment';
 
-export class NotificationService {
+export class GroupMemberService {
     baseurl: string;
     http: AxiosHelperUtils;
     constructor() {
-        this.baseurl = environment.baseurl + '/api/Notification';
+        this.baseurl = environment.baseurl + '/api/GroupMember';
         this.http = new AxiosHelperUtils();
     }
-    async select(req: NotificationSelectReq) {
-        let postdata: ActionReq<NotificationSelectReq> =
-            new ActionReq<NotificationSelectReq>();
+    async select(req: GroupMemberSelectReq) {
+        let postdata: ActionReq<GroupMemberSelectReq> =
+            new ActionReq<GroupMemberSelectReq>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Array<Notification>>>(
+        let resp = await this.http.post<ActionRes<Array<GroupMember>>>(
             this.baseurl + '/select', 
             postdata
         );
         return resp.item;
     }
-    async save(req: Notification) {
-        let postdata: ActionReq<Notification> = new ActionReq<Notification>();
+    async save(req: GroupMember) {
+        let postdata: ActionReq<GroupMember> = new ActionReq<GroupMember>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Notification>>(
+        let resp = await this.http.post<ActionRes<GroupMember>>(
             this.baseurl + '/save',
             postdata
         );
                 
         return resp.item;
     }
-    async insert(req: Notification) {
-        let postdata: ActionReq<Notification> = new ActionReq<Notification>();
+    async insert(req: GroupMember) {
+        let postdata: ActionReq<GroupMember> = new ActionReq<GroupMember>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Notification>>(
+        let resp = await this.http.post<ActionRes<GroupMember>>(
             this.baseurl + '/insert',
             postdata
         );
                 
         return resp.item;
     }
-    async update(req: Notification) {
-        let postdata: ActionReq<Notification> = new ActionReq<Notification>();
+    async update(req: GroupMember) {
+        let postdata: ActionReq<GroupMember> = new ActionReq<GroupMember>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Notification>>(
+        let resp = await this.http.post<ActionRes<GroupMember>>(
             this.baseurl + '/update',
             postdata
         );
                 
         return resp.item;
     }
-    async delete(req: NotificationDeleteReq) {
-        let postdata: ActionReq<NotificationDeleteReq> = new ActionReq<NotificationDeleteReq>();
+    async delete(req: GroupMemberDeleteReq) {
+        let postdata: ActionReq<GroupMemberDeleteReq> = new ActionReq<GroupMemberDeleteReq>();
         postdata.item = req;
         let resp = await this.http.post<ActionRes<boolean>>(
             this.baseurl + '/delete',

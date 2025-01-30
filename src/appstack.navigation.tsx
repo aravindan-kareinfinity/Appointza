@@ -21,12 +21,13 @@ import {AppoinmentScreen} from './screens/appoinment/appoinment.screen';
 import { useAppSelector } from './redux/hooks.redux';
 import { selectTheme } from './redux/theme.redux';
 import { DefaultColor } from './styles/default-color.style';
+import { ServiceAvailableScreen } from './screens/servicesavailable/servicesavailable.screen';
 
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
 export type AppStackParamList = {
   Launch: undefined;
-  SignUp: undefined;
+  SignUp: {isorganization:boolean};
   HomeTab: undefined;
   Login: undefined;
   Organisation: undefined;
@@ -58,6 +59,7 @@ export type AppStackParamList = {
   DesignDetail: {
     designid: number;
   };
+  ServiceAvailable:undefined
 };
 const colors = DefaultColor.instance.colors;
 const AppTheme = {
@@ -90,6 +92,13 @@ function AppStackNavigation() {
         <AppStack.Screen
           name="Launch"
           component={LaunchScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+            <AppStack.Screen
+          name="HomeTab"
+          component={HomeTabNavigation}
           options={{
             headerShown: false,
           }}
@@ -150,14 +159,15 @@ function AppStackNavigation() {
             headerShown: false,
           }}
         />
-
-        <AppStack.Screen
-          name="HomeTab"
-          component={HomeTabNavigation}
+         <AppStack.Screen
+          name="ServiceAvailable"
+          component={ServiceAvailableScreen}
           options={{
             headerShown: false,
           }}
         />
+
+    
   
        
     

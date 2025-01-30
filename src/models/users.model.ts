@@ -1,5 +1,4 @@
 
-import {Organisation, OrganisationTypes} from './organisation.model';
 
 export class Users {
   id: number = 0;
@@ -26,7 +25,9 @@ export class Users {
 }
 
 export namespace Users {
-  export class AttributesData {}
+  export class AttributesData {
+    permission: UsersPermissionData = new UsersPermissionData();
+   }
 }
 
 export class UsersSelectReq {
@@ -44,7 +45,12 @@ export class UsersRegisterReq {
   organisationimageid: number = 0;
   organisationname: string = '';
   organisationgstnumber: string = '';
-  organisationtype: OrganisationTypes = OrganisationTypes.Supplier;
+
+  secondarytypecode: string = ""
+  secondarytype: number = 0
+  primarytype: number = 0
+  primarytypecode: string = ""
+
   locationname: string = '';
   locationaddressline1: string = '';
   locationaddressline2: string = '';
@@ -66,7 +72,7 @@ export class UsersRegisterRes {
 export class UsersLoginReq {
   mobile: string = '';
   otp: string = '';
-  organisationtype: OrganisationTypes = OrganisationTypes.Supplier;
+  // organisationtype: OrganisationTypes = OrganisationTypes.Supplier;
 }
 
 export class UsersContext {
@@ -77,7 +83,7 @@ export class UsersContext {
   userpermission: UsersPermissionData = new UsersPermissionData();
   organisationid: number = 0;
   organisationname: string = '';
-  organisationtype: OrganisationTypes = OrganisationTypes.Supplier;
+  // organisationtype: OrganisationTypes = OrganisationTypes.Supplier;
   organisationlocationid: number = 0;
   organisationlocationname: string = '';
   refreshtoken: string = '';
@@ -85,10 +91,11 @@ export class UsersContext {
 }
 
 export class UsersPermissionData {
-  chat: UsersPermissionGroupData = new UsersPermissionGroupData();
-  account: UsersPermissionGroupData = new UsersPermissionGroupData();
-  design: UsersPermissionGroupData = new UsersPermissionGroupData();
-  post: UsersPermissionGroupData = new UsersPermissionGroupData();
+  createstaff: UsersPermissionGroupData = new UsersPermissionGroupData();
+  creategroup: UsersPermissionGroupData = new UsersPermissionGroupData();
+  approveusersingroup: UsersPermissionGroupData = new UsersPermissionGroupData();
+  createmessage: UsersPermissionGroupData = new UsersPermissionGroupData();
+  createtask:UsersPermissionGroupData = new UsersPermissionGroupData();
 }
 export class UsersPermissionGroupData {
   view: boolean = false;
@@ -97,7 +104,7 @@ export class UsersPermissionGroupData {
 
 export class UsersGetOtpReq {
   mobile: string = '';
-  organisationtype: OrganisationTypes = OrganisationTypes.Supplier;
+  // organisationtype: OrganisationTypes = OrganisationTypes.Supplier;
 }
 
 export class UsersGetOtpRes {
@@ -144,8 +151,8 @@ export class UsersSupplierInviteScreenReq {
 export class UsersSupplierInviteScreenRes {
   organisationid: number = 0;
   organisationname: string = '';
-  organisationattributes: Organisation.AttributesData =
-    new Organisation.AttributesData();
+  // organisationattributes: Organisation.AttributesData =
+  // new Organisation.AttributesData();
   isconnected: boolean = false;
 }
 
@@ -163,5 +170,5 @@ export class UsersAddColourSetToCartReq {
 }
 export class UserUpdateOrderStatusReq {
   orderid: number = 0;
- 
+
 }

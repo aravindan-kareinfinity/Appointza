@@ -221,4 +221,9 @@ export class DefaultColor {
   border_tint_9: StyleProp<ViewStyle> = { borderColor: this.tint__9 };
   border_tint_10: StyleProp<ViewStyle> = { borderColor: this.tint__10 };
   border_tint_11: StyleProp<ViewStyle> = { borderColor: this.tint__11 };
+
+  
+  border_danger: StyleProp<ViewStyle> = {borderColor: this.danger};
+  border_success: StyleProp<ViewStyle> = {borderColor: this.success};
+  border_warn: StyleProp<ViewStyle> = {borderColor: this.warn};
 }

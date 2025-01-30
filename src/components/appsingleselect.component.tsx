@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {ReactNode, useEffect, useMemo, useState} from 'react';
 import {
   FlatList,
   Modal,
@@ -13,41 +13,101 @@ import {$} from '../styles';
 import {AppText} from './apptext.component';
 import {AppView} from './appview.component';
 import {AppTextInput} from './apptextinput.component';
+import {createDelayedMethod} from '../utils/delaymethod.util';
+import {CustomIcon, CustomIcons} from './customicons.component';
 
-type AppSingleSelectProps<T, V extends keyof T, L extends keyof T> = {
+type AppSingleSelectProps<T> = {
   data: T[];
-  value: V;
-  label: L;
-  selected: T[V];
-  onPress: (itemvalue: T[V], item: T) => void;
+  selecteditem?: T;
+  selecteditemid?: string;
+  onSelect: (itemlist: T) => void;
+  renderItemLabel: (item: T) => ReactNode;
+  keyExtractor: (item: T) => string;
+  searchKeyExtractor: (item: T) => string;
   title: string;
   style?: StyleProp<ViewStyle>;
+  onClear?: () => void;
+  required?: boolean;
+  showerror?: boolean;
+  isloading?: boolean;
 };
-export const AppSingleSelect = <T, V extends keyof T, L extends keyof T>(
-  props: AppSingleSelectProps<T, V, L>,
-) => {
+export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
   const [openModal, setOpenModal] = useState(false);
   const toggleModel = () => {
     setOpenModal(!openModal);
   };
-  const [selectedindex, setSelectedindex] = useState(-1);
+  const [filtereddata, setFiltereddata] = useState<T[]>();
+  const [searchtext, setSearchtext] = useState('');
+  const delayedsearchmethod = useMemo(() => createDelayedMethod(), []);
+  const [selecteditem, setSelecteditem] = useState<T>();
   useEffect(() => {
-    let index = props.data.findIndex(e => {
-      return e[props.value] == props.selected;
-    });
-    setSelectedindex(index);
+    setFiltereddata(props.data);
+    setSearchtext('');
+    if (props.selecteditemid) {
+      let selecteditem = props.data.find(
+        e => props.keyExtractor(e) == props.selecteditemid,
+      );
+      setSelecteditem(selecteditem);
+    } else {
+      setSelecteditem(props.selecteditem);
+    }
   }, [props]);
+
+  const onDone = (item: T) => {
+    props.onSelect(item);
+    toggleModel();
+  };
+
+  const onSearch = (text: string) => {
+    let filtereddata = props.data.filter(e =>
+      props.searchKeyExtractor(e).toLowerCase().includes(text.toLowerCase()),
+    );
+    setFiltereddata(filtereddata);
+  };
+  const isvalid = () => {
+    return (
+      props.required &&
+      selecteditem &&
+      props.keyExtractor(selecteditem).length > 0
+    );
+  };
   return (
     <TouchableOpacity
-      style={[$.bg_tint_10, $.p_compact, props.style]}
+      style={[
+        $.bg_tint_10,
+        $.p_compact,
+        props.style,
+        props.showerror && !isvalid() && [$.border, $.border_danger],
+      ]}
       onPress={toggleModel}>
-      <AppText style={[$.fs_compact]}>{props.title}</AppText>
+      <AppView style={[$.flex_row]}>
+        <AppView style={[$.flex_1]}>
+          {props.title.length > 0 && (
+            <AppText style={[$.fs_compact]}>{props.title}</AppText>
+          )}
 
-      {selectedindex > -1 && (
-        <AppText style={[$.fs_compact, $.fw_semibold]}>
-          {props.data[selectedindex][props.label]!.toString()}
-        </AppText>
-      )}
+          {selecteditem &&
+            props.keyExtractor(selecteditem).length > 0 &&
+            props.renderItemLabel(selecteditem)}
+        </AppView>
+        {props.required && (
+          <AppText style={[$.text_danger, $.fs_regular]}>*</AppText>
+        )}
+        {props.onClear && (
+          <TouchableOpacity
+            onPress={props.onClear}
+            style={[$.align_items_center, $.justify_content_center]}
+            hitSlop={20}>
+            <AppView style={[{transform: [{rotate: '45deg'}]}]}>
+              <CustomIcon
+                name={CustomIcons.Plus}
+                color={$.tint_8}
+                size={20}></CustomIcon>
+            </AppView>
+          </TouchableOpacity>
+        )}
+      </AppView>
+
       <Modal
         transparent={true}
         animationType="fade"
@@ -65,24 +125,33 @@ export const AppSingleSelect = <T, V extends keyof T, L extends keyof T>(
               $.border,
               $.border_tint_8,
               {borderTopLeftRadius: 20, borderTopRightRadius: 20},
+              $.pt_regular,
             ]}>
-            <AppText
-              style={[$.fs_compact, $.fs_medium, $.text_tint_4, $.p_compact]}>
-              {props.title}
-            </AppText>
-            <AppTextInput style={[$.bg_tint_11]} placeholder="Search" />
+            {props.title.length > 0 && (
+              <AppText
+                style={[$.fs_compact, $.fs_medium, $.text_tint_4, $.px_compact, $.pb_compact]}>
+                {props.title}
+              </AppText>
+            )}
+            <AppTextInput
+              onChangeText={text => {
+                setSearchtext(text);
+                delayedsearchmethod(() => onSearch(text));
+              }}
+              style={[$.bg_tint_11]}
+              placeholder="Search"
+            />
             <FlatList
-              data={props.data}
+              data={filtereddata}
               style={[$.pt_compact]}
-              renderItem={e => {
+              renderItem={({item}) => {
                 return (
                   <TouchableOpacity
                     style={[$.p_compact]}
                     onPress={() => {
-                      toggleModel();
-                      props.onPress(e.item[props.value], e.item);
+                      onDone(item);
                     }}>
-                    <AppText>{e.item[props.label]!.toString()}</AppText>
+                    {props.renderItemLabel(item)}
                   </TouchableOpacity>
                 );
               }}

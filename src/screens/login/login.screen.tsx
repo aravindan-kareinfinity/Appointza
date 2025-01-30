@@ -22,7 +22,6 @@ import {
   usercontextactions,
 } from '../../redux/usercontext.redux';
 import {TouchableOpacity} from 'react-native';
-import {Organisation, OrganisationTypes} from '../../models/organisation.model';
 
 type LoginScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList>,
@@ -56,12 +55,12 @@ export function LoginScreen() {
     }
   };
   const getOtp = async () => {
-    navigation.navigate('HomeTab');
+  
     setIsloading(true);
     try {
       let getotpreq = new UsersGetOtpReq();
       getotpreq.mobile = mobile;
-      getotpreq.organisationtype = OrganisationTypes.Supplier;
+      // getotpreq.organisationtype = OrganisationTypes.Supplier;
       let getotpresp = await usersservice.GetOtp(getotpreq);
       setName(getotpresp!.name);
       setIsotpsent(true);
@@ -72,8 +71,10 @@ export function LoginScreen() {
       setIsloading(false);
     }
   };
-  const gotoSignUp = () => {
-    navigation.navigate('SignUp');
+
+  
+  const gotoSignUp = (value:boolean) => {
+    navigation.navigate('SignUp',{isorganization:value});
   };
   return (
     <AppView style={[$.flex_1]}>
@@ -127,10 +128,12 @@ export function LoginScreen() {
         <AppText style={[$.fs_small, $.fw_regular, $.text_tint_6]}>
           Don't Have an account ? {}
         </AppText>
-        <TouchableOpacity onPress={gotoSignUp}>
+        <TouchableOpacity onPress={()=>{gotoSignUp(false)}}>
           <AppText style={[$.text_tint_2]}>Sign Up</AppText>
         </TouchableOpacity>
       </AppView>
+
+      
     </AppView>
   );
 }

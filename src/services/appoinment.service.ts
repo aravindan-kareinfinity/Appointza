@@ -1,62 +1,62 @@
 import { ActionReq } from '../models/actionreq.model';
 import { ActionRes } from '../models/actionres.model';
 import {
-  Notification,
-  NotificationDeleteReq,
-  NotificationSelectReq,
-} from '../models/notification.model';
+  Appoinment,
+  AppoinmentDeleteReq,
+  AppoinmentSelectReq,
+} from '../models/appoinment.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
 import {environment} from '../utils/environment';
 
-export class NotificationService {
+export class AppoinmentService {
     baseurl: string;
     http: AxiosHelperUtils;
     constructor() {
-        this.baseurl = environment.baseurl + '/api/Notification';
+        this.baseurl = environment.baseurl + '/api/Appoinment';
         this.http = new AxiosHelperUtils();
     }
-    async select(req: NotificationSelectReq) {
-        let postdata: ActionReq<NotificationSelectReq> =
-            new ActionReq<NotificationSelectReq>();
+    async select(req: AppoinmentSelectReq) {
+        let postdata: ActionReq<AppoinmentSelectReq> =
+            new ActionReq<AppoinmentSelectReq>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Array<Notification>>>(
+        let resp = await this.http.post<ActionRes<Array<Appoinment>>>(
             this.baseurl + '/select', 
             postdata
         );
         return resp.item;
     }
-    async save(req: Notification) {
-        let postdata: ActionReq<Notification> = new ActionReq<Notification>();
+    async save(req: Appoinment) {
+        let postdata: ActionReq<Appoinment> = new ActionReq<Appoinment>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Notification>>(
+        let resp = await this.http.post<ActionRes<Appoinment>>(
             this.baseurl + '/save',
             postdata
         );
                 
         return resp.item;
     }
-    async insert(req: Notification) {
-        let postdata: ActionReq<Notification> = new ActionReq<Notification>();
+    async insert(req: Appoinment) {
+        let postdata: ActionReq<Appoinment> = new ActionReq<Appoinment>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Notification>>(
+        let resp = await this.http.post<ActionRes<Appoinment>>(
             this.baseurl + '/insert',
             postdata
         );
                 
         return resp.item;
     }
-    async update(req: Notification) {
-        let postdata: ActionReq<Notification> = new ActionReq<Notification>();
+    async update(req: Appoinment) {
+        let postdata: ActionReq<Appoinment> = new ActionReq<Appoinment>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Notification>>(
+        let resp = await this.http.post<ActionRes<Appoinment>>(
             this.baseurl + '/update',
             postdata
         );
                 
         return resp.item;
     }
-    async delete(req: NotificationDeleteReq) {
-        let postdata: ActionReq<NotificationDeleteReq> = new ActionReq<NotificationDeleteReq>();
+    async delete(req: AppoinmentDeleteReq) {
+        let postdata: ActionReq<AppoinmentDeleteReq> = new ActionReq<AppoinmentDeleteReq>();
         postdata.item = req;
         let resp = await this.http.post<ActionRes<boolean>>(
             this.baseurl + '/delete',

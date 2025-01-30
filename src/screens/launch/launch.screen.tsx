@@ -26,29 +26,16 @@ export function LaunchScreen() {
 
   useEffect(() => {
     setTimeout(() => {
-      if (usercontext.value.userid > 0) {
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [
-              {
-                name: 'HomeTab',
-              },
-            ],
-          }),
-        );
-      } else {
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [
-              {
-                name: 'Login',
-              },
-            ],
-          }),
-        );
-      }
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'HomeTab',
+            },
+          ],
+        }),
+      );
     }, 100);
   }, []);
   return (

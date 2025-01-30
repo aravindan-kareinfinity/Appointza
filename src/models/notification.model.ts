@@ -1,25 +1,28 @@
 export class Notification {
-  id: number = 0;
-  userid: number = 0;
-  type: number = 0;
-  typecode: string = '';
-  version: number = 0;
-  createdby: number = 0;
-  createdon: Date = new Date();
-  modifiedby: number = 0;
-  modifiedon: Date = new Date();
-  attributes: Notification.AttributesData = new Notification.AttributesData();
-  isactive: boolean = false;
-  issuspended: boolean = false;
-  parentid: number = 0;
-  isfactory: boolean = false;
-  notes: string = '';
+  id: number = 0
+userid: number = 0
+type: number = 0
+typecode: string = ""
+version: number = 0
+createdby: number = 0
+createdon: Date = new Date()
+modifiedby: number = 0
+modifiedon: Date = new Date()
+attributes: Notification.AttributesData = new Notification.AttributesData()
+isactive: boolean = false
+issuspended: boolean = false
+parentid: number = 0
+isfactory: boolean = false
+notes: string = ""
 }
 
 export namespace Notification {
-  export class AttributesData {
-    connectionrequestdata = new NotificationConnectionRequestData();
-  }
+  
+                export class AttributesData
+                {
+                  connectionrequestdata = new NotificationConnectionRequestData();
+                }  
+                
 }
 
 export class NotificationSelectReq {

@@ -27,8 +27,7 @@ import {FilesService} from '../../services/files.service';
 import {createDelayedMethod} from '../../utils/delaymethod.util';
 import {
   Notification,
-  NotificationNotificationScreenReq,
-  NotificationTypes,
+
 } from '../../models/notification.model';
 import {NotificationService} from '../../services/notification.service';
 import {AppButton} from '../../components/appbutton.component';

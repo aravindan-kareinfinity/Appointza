@@ -84,7 +84,7 @@ export class UsersService {
     let postdata: ActionReq<UsersRegisterReq> =
       new ActionReq<UsersRegisterReq>();
     postdata.item = req;
-    let resp = await this.http.post<ActionRes<UsersRegisterRes>>(
+    let resp = await this.http.post<ActionRes<UsersContext>>(
       this.baseurl + '/register',
       postdata,
       true,

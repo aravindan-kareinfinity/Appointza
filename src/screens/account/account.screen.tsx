@@ -22,13 +22,18 @@ export function AccountScreen() {
   const navigation = useNavigation<AccountScreenProp['navigation']>();
 
   const colors = DefaultColor.instance.colors;
+  const usercontext = useAppSelector(selectusercontext);
+
+  const gotoSignUp = (value: boolean) => {
+    navigation.navigate('SignUp', { isorganization: value });
+  };
 
   return (
     <AppView style={[$.pt_medium, $.flex_1]}>
 
 
 
-      <AppView style={[$.px_normal, $.mb_normal, $.flex_row]}>
+      {usercontext && usercontext.value.userid > 0 && <AppView style={[$.px_normal, $.mb_normal, $.flex_row]}>
 
         <Image
           style={{ borderRadius: 40, width: 80, height: 80 }}
@@ -60,13 +65,36 @@ export function AccountScreen() {
             Manager name
           </AppText>
         </AppView>
-      </AppView>
+      </AppView>}
       <AppView style={[$.px_normal, $.mb_normal, $.flex_row]}>
         <AppText style={[$.fs_enormous, $.fw_bold, $.text_tint_9, $.flex_1]}>
           Settings
         </AppText>
       </AppView>
-      <TouchableOpacity
+      {usercontext && usercontext.value.organisationid > 0 && <TouchableOpacity
+        onPress={() =>   navigation.navigate('ServiceAvailable')}
+        style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_normal]}>
+        <AppView style={[$.p_compact, $.bg_tint_10, { borderRadius: 30 }]}>
+          <CustomIcon
+            color={$.tint_6}
+            name={CustomIcons.Shop}
+            size={$.s_normal}
+          />
+        </AppView>
+        <AppView style={[$.px_normal, $.justify_content_center, $.flex_1]}>
+          <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_2]}>
+            services
+          </AppText>
+        </AppView>
+        <AppView style={[$.justify_content_center]}>
+          <CustomIcon
+            color={$.tint_6}
+            name={CustomIcons.RightChevron}
+            size={$.s_small}
+          />
+        </AppView>
+      </TouchableOpacity>}
+      {usercontext && usercontext.value.organisationid > 0 && <TouchableOpacity
         onPress={() => navigation.navigate('Organisation')}
         style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_normal]}>
         <AppView style={[$.p_compact, $.bg_tint_10, { borderRadius: 30 }]}>
@@ -88,8 +116,8 @@ export function AccountScreen() {
             size={$.s_small}
           />
         </AppView>
-      </TouchableOpacity>
-      <TouchableOpacity
+      </TouchableOpacity>}
+      {usercontext && usercontext.value.userid > 0 && <TouchableOpacity
         onPress={() => navigation.navigate('Profile')}
         style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_normal]}>
         <AppView style={[$.p_compact, $.bg_tint_10, { borderRadius: 30 }]}>
@@ -111,8 +139,8 @@ export function AccountScreen() {
             size={$.s_small}
           />
         </AppView>
-      </TouchableOpacity>
-      <TouchableOpacity
+      </TouchableOpacity>}
+      {usercontext && usercontext.value.organisationid > 0 && <TouchableOpacity
         onPress={() => navigation.navigate('AddedAccounts')}
         style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_large]}>
         <AppView style={[$.p_compact, $.bg_tint_10, { borderRadius: 30 }]}>
@@ -124,7 +152,79 @@ export function AccountScreen() {
         </AppView>
         <AppView style={[$.px_normal, $.justify_content_center, $.flex_1]}>
           <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_2]}>
-            Added accounts
+            Add staff
+          </AppText>
+        </AppView>
+        <AppView style={[$.justify_content_center]}>
+          <CustomIcon
+            color={$.tint_6}
+            name={CustomIcons.RightChevron}
+            size={$.s_small}
+          />
+        </AppView>
+      </TouchableOpacity>}
+
+      {usercontext && usercontext.value.organisationid == 0 && <TouchableOpacity
+        onPress={() => gotoSignUp(true)}
+        style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_large]}>
+        <AppView style={[$.p_compact, $.bg_tint_10, { borderRadius: 30 }]}>
+          <CustomIcon
+            color={$.tint_6}
+            name={CustomIcons.AddAccount}
+            size={$.s_normal}
+          />
+        </AppView>
+        <AppView style={[$.px_normal, $.justify_content_center, $.flex_1]}>
+          <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_2]}>
+            Signup as user
+          </AppText>
+        </AppView>
+        <AppView style={[$.justify_content_center]}>
+          <CustomIcon
+            color={$.tint_6}
+            name={CustomIcons.RightChevron}
+            size={$.s_small}
+          />
+        </AppView>
+      </TouchableOpacity>}
+
+      {usercontext && usercontext.value.organisationid == 0 && <TouchableOpacity
+        onPress={() => gotoSignUp(true)}
+        style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_large]}>
+        <AppView style={[$.p_compact, $.bg_tint_10, { borderRadius: 30 }]}>
+          <CustomIcon
+            color={$.tint_6}
+            name={CustomIcons.Shop}
+            size={$.s_normal}
+          />
+        </AppView>
+        <AppView style={[$.px_normal, $.justify_content_center, $.flex_1]}>
+          <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_2]}>
+            Signup as Business
+          </AppText>
+        </AppView>
+        <AppView style={[$.justify_content_center]}>
+          <CustomIcon
+            color={$.tint_6}
+            name={CustomIcons.RightChevron}
+            size={$.s_small}
+          />
+        </AppView>
+      </TouchableOpacity>}
+
+      {usercontext && usercontext.value.organisationid == 0 && <TouchableOpacity
+        onPress={() => navigation.navigate('Login')}
+        style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_large]}>
+        <AppView style={[$.p_compact, $.bg_tint_10, { borderRadius: 30 }]}>
+          <CustomIcon
+            color={$.tint_6}
+            name={CustomIcons.Shop}
+            size={$.s_normal}
+          />
+        </AppView>
+        <AppView style={[$.px_normal, $.justify_content_center, $.flex_1]}>
+          <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_2]}>
+            Login
           </AppText>
         </AppView>
         <AppView style={[$.justify_content_center]}>
@@ -135,7 +235,9 @@ export function AccountScreen() {
           />
         </AppView>
       </TouchableOpacity>
-      <TouchableOpacity
+      }
+
+      {usercontext && usercontext.value.userid > 0 && <TouchableOpacity
         onPress={() => {
 
         }}
@@ -152,7 +254,7 @@ export function AccountScreen() {
             Logout
           </AppText>
         </AppView>
-      </TouchableOpacity>
+      </TouchableOpacity>}
     </AppView>
   );
 }

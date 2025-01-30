@@ -23,7 +23,7 @@ export class OrganisationLocationService {
             this.baseurl + '/select', 
             postdata
         );
-        return resp.item!;
+        return resp.item;
     }
     async save(req: OrganisationLocation) {
         let postdata: ActionReq<OrganisationLocation> = new ActionReq<OrganisationLocation>();
@@ -33,7 +33,7 @@ export class OrganisationLocationService {
             postdata
         );
                 
-        return resp.item!;
+        return resp.item;
     }
     async insert(req: OrganisationLocation) {
         let postdata: ActionReq<OrganisationLocation> = new ActionReq<OrganisationLocation>();
@@ -43,7 +43,7 @@ export class OrganisationLocationService {
             postdata
         );
                 
-        return resp.item!;
+        return resp.item;
     }
     async update(req: OrganisationLocation) {
         let postdata: ActionReq<OrganisationLocation> = new ActionReq<OrganisationLocation>();
@@ -53,7 +53,7 @@ export class OrganisationLocationService {
             postdata
         );
                 
-        return resp.item!;
+        return resp.item;
     }
     async delete(req: OrganisationLocationDeleteReq) {
         let postdata: ActionReq<OrganisationLocationDeleteReq> = new ActionReq<OrganisationLocationDeleteReq>();
@@ -63,6 +63,6 @@ export class OrganisationLocationService {
             postdata
         );
                 
-        return resp.item!;
+        return resp.item;
     }
 }
