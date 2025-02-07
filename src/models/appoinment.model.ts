@@ -1,5 +1,6 @@
 export class Appoinment {
   id: number = 0
+userid: number = 0
 organizationid: number = 0
 fromtime: Date = new Date()
 totime: Date = new Date()

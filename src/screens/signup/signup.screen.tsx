@@ -36,7 +36,6 @@ import { ReferenceType, ReferenceTypeSelectReq } from '../../models/referencetyp
 import { AppSingleSelect } from '../../components/appsingleselect.component';
 import { ReferenceValueService } from '../../services/referencevalue.service';
 import { ReferenceValue, ReferenceValueSelectReq } from '../../models/referencevalue.model';
-import { Organization } from '../../models/organization.model';
 
 // type SignUpScreenProp = CompositeScreenProps<
 //   BottomTabScreenProps<HomeTabParamList>,

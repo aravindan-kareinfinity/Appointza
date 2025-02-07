@@ -1,4 +1,4 @@
-import {ReactNode, useEffect, useState} from 'react';
+import {ReactNode, useEffect, useMemo, useState} from 'react';
 import {
   FlatList,
   Modal,
@@ -14,45 +14,88 @@ import {AppText} from './apptext.component';
 import {AppView} from './appview.component';
 import {AppTextInput} from './apptextinput.component';
 import {AppButton} from './appbutton.component';
-type AppMultiSelectData = {
-  id: number;
-};
-type AppMultiSelectProps<T, V, L extends keyof V, M extends keyof T> = {
+import {createDelayedMethod} from '../utils/delaymethod.util';
+type AppMultiSelectProps<T> = {
   data: T[];
-  dataidproperty: M;
-  selected: T[];
-  onPress: (itemlist: T[]) => void;
+  selecteditemlist: T[];
+  onSelect: (itemlist: T[]) => void;
+  renderItemLabel: (item: T) => ReactNode;
+  keyExtractor: (item: T) => string;
+  searchKeyExtractor: (item: T) => string;
   title: string;
   style?: StyleProp<ViewStyle>;
-  getLabel: (item: T) => ReactNode;
+  showerror?: boolean;
+  required?: boolean;
 };
-export const AppMultiSelect = <T, V, L extends keyof V, M extends keyof T>(
-  props: AppMultiSelectProps<T, V, L, M>,
-) => {
+export const AppMultiSelect = <T,>(props: AppMultiSelectProps<T>) => {
   const [openModal, setOpenModal] = useState(false);
   const toggleModel = () => {
     setOpenModal(!openModal);
   };
-  const [selectediddict, setSelectediddict] = useState<{[key: string]: number}>(
-    {},
-  );
+  const [selecteditemiddict, setSelecteditemiddict] = useState<{
+    [key: string]: number;
+  }>({});
+  const [filtereddata, setFiltereddata] = useState<T[]>();
+  const [searchtext, setSearchtext] = useState('');
+  const delayedsearchmethod = useMemo(() => createDelayedMethod(), []);
+
   useEffect(() => {
     let selectediddict: {[key: string]: number} = {};
-    props.selected.forEach((e, i) => {
-      let key = e[props.dataidproperty]!.toString();
-      selectediddict[key] = -1;
+    props.selecteditemlist.forEach((e, i) => {
+      let key = props.keyExtractor(e);
+      selectediddict[key] = 1;
     });
-    setSelectediddict(selectediddict);
+    setSelecteditemiddict(selectediddict);
+    setFiltereddata(props.data);
+    setSearchtext('');
   }, [props]);
 
+  const onSearch = (text: string) => {
+    let filtereddata = props.data.filter(e =>
+      props.searchKeyExtractor(e).toLowerCase().includes(text.toLowerCase()),
+    );
+    setFiltereddata(filtereddata);
+  };
+
+  const isSelected = (id: string) => {
+    return selecteditemiddict.hasOwnProperty(id);
+  };
+  const toggleSelection = (id: string) => {
+    if (selecteditemiddict[id]) {
+      delete selecteditemiddict[id];
+    } else {
+      selecteditemiddict[id] = 1;
+    }
+    setSelecteditemiddict({...selecteditemiddict});
+  };
+  const onDone = () => {
+    let selecteditemlist = props.data.filter(e => {
+      return selecteditemiddict[props.keyExtractor(e)];
+    });
+    props.onSelect(selecteditemlist);
+    toggleModel();
+  };
+  const isvalid = () => {
+    return props.required && Object.keys(selecteditemiddict).length > 0;
+  };
   return (
     <TouchableOpacity
-      style={[$.bg_tint_10, $.p_compact, props.style]}
+      style={[
+        $.bg_tint_10,
+        $.p_compact,
+        props.style,
+        props.showerror && !isvalid() && [$.border, $.border_danger],
+      ]}
       onPress={toggleModel}>
-      <AppText style={[$.fs_compact]}>{props.title}</AppText>
-      <AppView style={[$.flex_row]}>
-        {props.selected.map(selecteditem => {
-          return props.getLabel(selecteditem);
+      <AppView style={$.flex_row}>
+        <AppText style={[$.fs_compact, $.flex_1]}>{props.title}</AppText>
+        {props.required && (
+          <AppText style={[$.text_danger, $.fs_regular]}>*</AppText>
+        )}
+      </AppView>
+      <AppView style={[$.flex_row, $.flex_wrap_wrap]}>
+        {props.selecteditemlist.map(selecteditem => {
+          return props.renderItemLabel(selecteditem);
         })}
       </AppView>
 
@@ -78,52 +121,32 @@ export const AppMultiSelect = <T, V, L extends keyof V, M extends keyof T>(
               style={[$.fs_compact, $.fs_medium, $.text_tint_4, $.p_compact]}>
               {props.title}
             </AppText>
-            <AppTextInput style={[$.bg_tint_11]} placeholder="Search" />
+            <AppTextInput
+              style={[$.bg_tint_11]}
+              placeholder="Search"
+              onChangeText={text => {
+                setSearchtext(text);
+                delayedsearchmethod(() => onSearch(text));
+              }}
+            />
             <FlatList
-              data={props.data}
+              data={filtereddata}
               style={[$.pt_compact, $.flex_1]}
-              renderItem={e => {
-                let key = e.item[props.dataidproperty]!.toString();
+              renderItem={({item}) => {
+                let id = props.keyExtractor(item);
 
                 return (
                   <TouchableOpacity
-                    style={[
-                      $.p_compact,
-                      selectediddict.hasOwnProperty(key) && $.bg_tint_11,
-                    ]}
+                    style={[$.p_compact, isSelected(id) && [$.bg_tint_11]]}
                     onPress={() => {
-                      if (selectediddict.hasOwnProperty(key)) {
-                        delete selectediddict[key];
-                      } else {
-                        selectediddict[key] = e.index;
-                      }
-                      setSelectediddict({
-                        ...selectediddict,
-                      });
+                      toggleSelection(id);
                     }}>
-                    {props.getLabel(e.item)}
+                    {props.renderItemLabel(item)}
                   </TouchableOpacity>
                 );
               }}
             />
-            <AppButton
-              onPress={() => {
-                let selectedlist: T[] = [];
-                for (const key in selectediddict) {
-                  if (selectediddict[key] > -1) {
-                    selectedlist.push(props.data[selectediddict[key]]);
-                  }
-                }
-                props.selected.forEach(e => {
-                  let key = e[props.dataidproperty]!.toString();
-                  if (selectediddict.hasOwnProperty(key)) {
-                    selectedlist.push(e);
-                  }
-                });
-                props.onPress(selectedlist);
-                toggleModel();
-              }}
-              name="Done"></AppButton>
+            <AppButton onPress={onDone} name="Done"></AppButton>
           </AppView>
         </TouchableOpacity>
       </Modal>

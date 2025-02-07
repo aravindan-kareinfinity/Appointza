@@ -26,20 +26,20 @@ import {AppAlert} from '../../components/appalert.component';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
 import {useEffect} from 'react';
 import React from 'react';
-import { Organization, OrganizationSelectReq } from '../../models/organization.model';
-import { OrganizationService } from '../../services/organization.service';
+import { Organisation, OrganisationSelectReq } from '../../models/organisation.model';
+import { OrganisationService } from '../../services/organisation.service';
 type OrganisationScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Organisation'>,
   BottomTabScreenProps<HomeTabParamList>
 >;
 export function OrganisationScreen() {
   const navigation = useNavigation<OrganisationScreenProp['navigation']>();
-  const [organisation, setOrganisation] = useState(new Organization());
+  const [organisation, setOrganisation] = useState(new Organisation());
   const [organisationlocation, setOrganisationlocation] = useState<
   OrganisationLocation[]
   >([]);
   const [isloading, setIsloading] = useState(false);
-  const organisationservice = useMemo(() => new OrganizationService(), []);
+  const organisationservice = useMemo(() => new OrganisationService(), []);
   const organisationlocationservice = useMemo(
     () => new OrganisationLocationService(),
     [],
@@ -54,7 +54,7 @@ export function OrganisationScreen() {
     setIsloading(true);
     try {
       if (usercontext.value.userid > 0) {
-        var orgreq: OrganizationSelectReq = new OrganizationSelectReq();
+        var orgreq: OrganisationSelectReq = new OrganisationSelectReq();
         orgreq.id = usercontext.value.organisationid;
         let orgresp = await organisationservice.select(orgreq);
         if(orgresp){

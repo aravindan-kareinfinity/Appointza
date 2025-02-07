@@ -1,18 +1,18 @@
-export class Services {
+export class OrganisationTask {
   id: number = 0
-prize: number = 0
-timetaken: number = 0
-servicesids: Services.ServicesidsData = new Services.ServicesidsData()
-Iscombo: boolean = false
-offerprize: number = 0
-Servicename: string = ""
+name: string = ""
+organizationid: number = 0
+appoinmentid: number = 0
+description: string = ""
+userid: number = 0
+descriptionimage: OrganisationTask.DescriptionimageData = new OrganisationTask.DescriptionimageData()
 code: string = ""
 version: number = 0
 createdby: number = 0
 createdon: Date = new Date()
 modifiedby: number = 0
 modifiedon: Date = new Date()
-attributes: Services.AttributesData = new Services.AttributesData()
+attributes: OrganisationTask.AttributesData = new OrganisationTask.AttributesData()
 isactive: boolean = false
 issuspended: boolean = false
 parentid: number = 0
@@ -20,9 +20,9 @@ isfactory: boolean = false
 notes: string = ""
 }
 
-export namespace Services {
+export namespace OrganisationTask {
   
-                export class ServicesidsData
+                export class DescriptionimageData
                 {
                     
                 }  
@@ -35,11 +35,11 @@ export namespace Services {
                 
 }
 
-export class ServicesSelectReq {
+export class OrganisationTaskSelectReq {
   id: number = 0;
 }
 
-export class ServicesDeleteReq {
+export class OrganisationTaskDeleteReq {
   id: number = 0;
   version: number = 0;
 }

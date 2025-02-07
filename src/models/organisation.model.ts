@@ -1,4 +1,4 @@
-export class Organization {
+export class Organisation {
   id: number = 0
 name: string = ""
 gstnumber: string = ""
@@ -12,7 +12,7 @@ createdby: number = 0
 createdon: Date = new Date()
 modifiedby: number = 0
 modifiedon: Date = new Date()
-attributes: Organization.AttributesData = new Organization.AttributesData()
+attributes: Organisation.AttributesData = new Organisation.AttributesData()
 isactive: boolean = false
 issuspended: boolean = false
 parentid: number = 0
@@ -20,7 +20,7 @@ isfactory: boolean = false
 notes: string = ""
 }
 
-export namespace Organization {
+export namespace Organisation {
   
                 export class AttributesData
                 {
@@ -29,11 +29,11 @@ export namespace Organization {
                 
 }
 
-export class OrganizationSelectReq {
+export class OrganisationSelectReq {
   id: number = 0;
 }
 
-export class OrganizationDeleteReq {
+export class OrganisationDeleteReq {
   id: number = 0;
   version: number = 0;
 }

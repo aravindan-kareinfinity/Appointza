@@ -12,21 +12,28 @@ type AppSwitchProps = {
 };
 export const AppSwitch = (props: AppSwitchProps) => {
   const [isOn, setIsOn] = useState(props.value ?? false);
-  const animation = useRef(new Animated.Value(0)).current;
+  const animation = useRef(new Animated.Value(props.value ? 1 : 0)).current;
   const movePosition = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 27],
   });
   useEffect(() => {
-    updateSwitch();
-  }, [props.value]);
-  const updateSwitch = () => {
     Animated.timing(animation, {
       toValue: props.value ? 1 : 0,
       duration: 200,
       useNativeDriver: true,
     }).start();
-  };
+    setIsOn(props.value ?? false);
+  }, [props.value]);
+
+  // const handlePress = () => {
+  //   setIsOn(!isOn);
+  //   Animated.timing(animation, {
+  //     toValue: props.value ? 1 : 0,
+  //     duration: 200,
+  //     useNativeDriver: true,
+  //   }).start();
+  // };
   const handlePress = () => {
     props.onValueChange?.(!props.value);
   };
@@ -40,6 +47,7 @@ export const AppSwitch = (props: AppSwitchProps) => {
     //   value={props.value}
     // />
     <TouchableOpacity
+      hitSlop={20}
       activeOpacity={1}
       onPress={handlePress}
       style={[

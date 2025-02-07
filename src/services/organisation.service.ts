@@ -1,62 +1,62 @@
 import { ActionReq } from '../models/actionreq.model';
 import { ActionRes } from '../models/actionres.model';
 import {
-  Organization,
-  OrganizationDeleteReq,
-  OrganizationSelectReq,
-} from '../models/organization.model';
+  Organisation,
+  OrganisationDeleteReq,
+  OrganisationSelectReq,
+} from '../models/organisation.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
 import {environment} from '../utils/environment';
 
-export class OrganizationService {
+export class OrganisationService {
     baseurl: string;
     http: AxiosHelperUtils;
     constructor() {
-        this.baseurl = environment.baseurl + '/api/Organization';
+        this.baseurl = environment.baseurl + '/api/Organisation';
         this.http = new AxiosHelperUtils();
     }
-    async select(req: OrganizationSelectReq) {
-        let postdata: ActionReq<OrganizationSelectReq> =
-            new ActionReq<OrganizationSelectReq>();
+    async select(req: OrganisationSelectReq) {
+        let postdata: ActionReq<OrganisationSelectReq> =
+            new ActionReq<OrganisationSelectReq>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Array<Organization>>>(
+        let resp = await this.http.post<ActionRes<Array<Organisation>>>(
             this.baseurl + '/select', 
             postdata
         );
         return resp.item;
     }
-    async save(req: Organization) {
-        let postdata: ActionReq<Organization> = new ActionReq<Organization>();
+    async save(req: Organisation) {
+        let postdata: ActionReq<Organisation> = new ActionReq<Organisation>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Organization>>(
+        let resp = await this.http.post<ActionRes<Organisation>>(
             this.baseurl + '/save',
             postdata
         );
                 
         return resp.item;
     }
-    async insert(req: Organization) {
-        let postdata: ActionReq<Organization> = new ActionReq<Organization>();
+    async insert(req: Organisation) {
+        let postdata: ActionReq<Organisation> = new ActionReq<Organisation>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Organization>>(
+        let resp = await this.http.post<ActionRes<Organisation>>(
             this.baseurl + '/insert',
             postdata
         );
                 
         return resp.item;
     }
-    async update(req: Organization) {
-        let postdata: ActionReq<Organization> = new ActionReq<Organization>();
+    async update(req: Organisation) {
+        let postdata: ActionReq<Organisation> = new ActionReq<Organisation>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Organization>>(
+        let resp = await this.http.post<ActionRes<Organisation>>(
             this.baseurl + '/update',
             postdata
         );
                 
         return resp.item;
     }
-    async delete(req: OrganizationDeleteReq) {
-        let postdata: ActionReq<OrganizationDeleteReq> = new ActionReq<OrganizationDeleteReq>();
+    async delete(req: OrganisationDeleteReq) {
+        let postdata: ActionReq<OrganisationDeleteReq> = new ActionReq<OrganisationDeleteReq>();
         postdata.item = req;
         let resp = await this.http.post<ActionRes<boolean>>(
             this.baseurl + '/delete',

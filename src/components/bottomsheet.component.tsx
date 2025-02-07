@@ -1,5 +1,5 @@
 import React, { forwardRef, useRef } from 'react';
-import { Dimensions, TouchableOpacity } from 'react-native';
+import { Dimensions, ScrollView, TouchableOpacity } from 'react-native';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import { AppView } from './appview.component';
 import { AppText } from './apptext.component';
@@ -30,7 +30,7 @@ export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, re
             {/* Bottom Sheet */}
             <RBSheet
                 ref={bottomSheetRef}
-                height={screenHeight / 1.5} // Customize height
+                height={screenHeight / 1.2} // Customize height
                 openDuration={250} // Animation duration
                 // closeOnDragDown={true}
                 closeOnPressMask={true}
@@ -49,10 +49,10 @@ export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, re
 
                 <AppText style={[$.text_tint_4, $.fs_medium]}>{props.screenname}</AppText>
 
-                <AppView style={[$.flex_1]}>
+                <ScrollView style={[$.flex_1]}>
 
                     {props.children}
-                </AppView>
+                </ScrollView>
                 <AppView
                     style={[
                         $.flex_row,

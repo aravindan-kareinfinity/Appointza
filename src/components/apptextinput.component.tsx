@@ -1,19 +1,43 @@
-import {TextInput, ViewStyle, StyleProp} from 'react-native';
+import {
+  TextInput,
+  ViewStyle,
+  StyleProp,
+  KeyboardTypeOptions,
+} from 'react-native';
 import {AppView} from './appview.component';
 import {$} from '../styles';
 import {useEffect, useState} from 'react';
 import {CustomIcon, CustomIcons} from './customicons.component';
 import {AppText} from './apptext.component';
 type AppTextInputProps = {
+  keyboardtype?: KeyboardTypeOptions;
   style?: StyleProp<ViewStyle>;
   icon?: CustomIcons;
   placeholder: string;
   value?: string;
   onChangeText?: (text: string) => void;
+  required?: boolean;
+  showerror?: boolean;
+  autoCapitalize?: boolean;
+  readonly?: boolean;
 };
 export const AppTextInput = (props: AppTextInputProps) => {
+  const isvalid = () => {
+    return (
+      props.required &&
+      props.value &&
+      props.value.length > 0 &&
+      props.value != "0"
+    );
+  };
   return (
-    <AppView style={[$.bg_tint_10, $.p_compact, props.style]}>
+    <AppView
+      style={[
+        $.bg_tint_10,
+        $.p_compact,
+        props.style,
+        props.showerror && !isvalid() && [$.border, $.border_danger],
+      ]}>
       {props.placeholder &&
         props.value != undefined &&
         props.value.length > 0 && (
@@ -26,11 +50,24 @@ export const AppTextInput = (props: AppTextInputProps) => {
           </AppView>
         )}
         <TextInput
+          autoCapitalize={props.autoCapitalize ? 'characters' : 'none'}
+          keyboardType={props.keyboardtype}
           value={props.value}
+        
           onChangeText={props.onChangeText}
-          style={[$.flex_1, $.fs_compact, $.fw_semibold, {padding: 0}]}
+          style={[
+            $.flex_1,
+            $.fs_compact,
+            $.fw_semibold,
+            $.text_tint_1,
+            {padding: 0},
+          ]}
           placeholder={props.placeholder}
-          placeholderTextColor={$.tint_5}></TextInput>
+          placeholderTextColor={$.tint_5}
+          readOnly={props.readonly}></TextInput>
+        {props.required && (
+          <AppText style={[$.text_danger, $.fs_regular]}>*</AppText>
+        )}
       </AppView>
     </AppView>
   );
