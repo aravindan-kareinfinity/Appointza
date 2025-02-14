@@ -64,8 +64,12 @@ export function ServiceAvailableScreen(props: ServiceAvailableScreenProp) {
       );
 
       // If the service is new, add it
-      if (!updatedList.some(item => item.Servicename === Service.Servicename)) {
+      if (!updatedList.some(item => item.Servicename === Service.Servicename) || Service.id > 0) {
         var req = { ...Service, parentid: usercontext.value.organisationid };
+        console.log("req",req);
+        if(!req.Iscombo){
+          req.servicesids.combolist =[ new comboids() ]    
+        }
         await servicesAvailableservice.save(req);
         console.log("Service saved!");
         getdata();

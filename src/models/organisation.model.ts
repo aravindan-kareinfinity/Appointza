@@ -31,6 +31,7 @@ export namespace Organisation {
 
 export class OrganisationSelectReq {
   id: number = 0;
+  gstnumber: string=''
 }
 
 export class OrganisationDeleteReq {

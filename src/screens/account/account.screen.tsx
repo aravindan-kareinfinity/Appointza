@@ -140,6 +140,31 @@ export function AccountScreen() {
           />
         </AppView>
       </TouchableOpacity>}
+
+      { <TouchableOpacity
+        onPress={() =>   navigation.navigate('Timing')}
+        style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_normal]}>
+        <AppView style={[$.p_compact, $.bg_tint_10, { borderRadius: 30 }]}>
+          <CustomIcon
+            color={$.tint_6}
+            name={CustomIcons.Shop}
+            size={$.s_normal}
+          />
+        </AppView>
+        <AppView style={[$.px_normal, $.justify_content_center, $.flex_1]}>
+          <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_2]}>
+            services timing
+          </AppText>
+        </AppView>
+        <AppView style={[$.justify_content_center]}>
+          <CustomIcon
+            color={$.tint_6}
+            name={CustomIcons.RightChevron}
+            size={$.s_small}
+          />
+        </AppView>
+      </TouchableOpacity>}
+
       {usercontext && usercontext.value.organisationid > 0 && <TouchableOpacity
         onPress={() => navigation.navigate('AddedAccounts')}
         style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_large]}>

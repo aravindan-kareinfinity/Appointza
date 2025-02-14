@@ -21,6 +21,7 @@ import { useAppSelector } from './redux/hooks.redux';
 import { selectTheme } from './redux/theme.redux';
 import { DefaultColor } from './styles/default-color.style';
 import { ServiceAvailableScreen } from './screens/servicesavailable/servicesavailable.screen';
+import { TimingScreen } from './screens/timing/timing.screen';
 
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
@@ -31,34 +32,17 @@ export type AppStackParamList = {
   Login: undefined;
   Organisation: undefined;
   Location: {id:number};
-  CreateDesign: undefined;
   AddedAccounts: undefined;
   ProfileConfiguration: undefined;
-  NewPost: undefined;
-  CreateCatalogue: undefined;
-  AddToCatalogue: undefined;
+
   AddedAccountsDetails: undefined;
-  DesignList: {
-    productid: number;
-  };
   Sort: undefined;
-  Broadcast: undefined;
-  OrdersDetail: {
-    orderid: number;
-  };
+ 
   Settings: undefined;
-  IndividualChat: undefined;
   Profile: undefined;
-  InvitePeople: undefined;
-  PostSelection: undefined;
- MergeDesign: {
-    designid?: number;
-  };
-  Notification: undefined;
-  DesignDetail: {
-    designid: number;
-  };
+
   ServiceAvailable:undefined
+  Timing:undefined
 };
 const colors = DefaultColor.instance.colors;
 const AppTheme = {
@@ -161,6 +145,13 @@ function AppStackNavigation() {
          <AppStack.Screen
           name="ServiceAvailable"
           component={ServiceAvailableScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+         <AppStack.Screen
+          name="Timing"
+          component={TimingScreen}
           options={{
             headerShown: false,
           }}

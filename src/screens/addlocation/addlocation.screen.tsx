@@ -46,8 +46,13 @@ export function LocationScreen(props: LocationScreenProp) {
         var locreq: OrganisationLocationSelectReq =
           new OrganisationLocationSelectReq();
         locreq.id = props.route.params.id;
+        console.log("locreq",locreq);
+        
         let locresp = await organisationlocationservice.select(locreq);
-        setOrganisationlocation(locresp[0]);
+        if(locresp){
+
+          setOrganisationlocation(locresp[0]);
+        }
       }
     } catch (error: any) {
       var message = error?.response?.data?.message;

@@ -28,18 +28,22 @@ type AppSingleSelectProps<T> = {
   style?: StyleProp<ViewStyle>;
   onClear?: () => void;
   required?: boolean;
-  showerror?: boolean;
+  issubmitted?: boolean;
   isloading?: boolean;
 };
 export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
   const [openModal, setOpenModal] = useState(false);
-  const toggleModel = () => {
-    setOpenModal(!openModal);
-  };
+  
   const [filtereddata, setFiltereddata] = useState<T[]>();
   const [searchtext, setSearchtext] = useState('');
   const delayedsearchmethod = useMemo(() => createDelayedMethod(), []);
   const [selecteditem, setSelecteditem] = useState<T>();
+  const [istouched, setIstouched] = useState(false);
+  useEffect(() => {
+    if (istouched == true && props.issubmitted == false) {
+      setIstouched(false);
+    }
+  }, [props.issubmitted]);
   useEffect(() => {
     setFiltereddata(props.data);
     setSearchtext('');
@@ -52,7 +56,10 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
       setSelecteditem(props.selecteditem);
     }
   }, [props]);
-
+  const toggleModel = () => {
+    setIstouched(true);           
+    setOpenModal(!openModal);
+  };
   const onDone = (item: T) => {
     props.onSelect(item);
     toggleModel();
@@ -65,6 +72,9 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
     setFiltereddata(filtereddata);
   };
   const isvalid = () => {
+    if (!props.required) {
+      return true;
+    }
     return (
       props.required &&
       selecteditem &&
@@ -77,7 +87,7 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
         $.bg_tint_10,
         $.p_compact,
         props.style,
-        props.showerror && !isvalid() && [$.border, $.border_danger],
+        (istouched || props.issubmitted) && !isvalid() && [$.border, $.border_danger],
       ]}
       onPress={toggleModel}>
       <AppView style={[$.flex_row]}>
@@ -90,9 +100,7 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
             props.keyExtractor(selecteditem).length > 0 &&
             props.renderItemLabel(selecteditem)}
         </AppView>
-        {props.required && (
-          <AppText style={[$.text_danger, $.fs_regular]}>*</AppText>
-        )}
+
         {props.onClear && (
           <TouchableOpacity
             onPress={props.onClear}
@@ -107,7 +115,9 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
           </TouchableOpacity>
         )}
       </AppView>
-
+      {(istouched || props.issubmitted) && !isvalid() && (
+        <AppText style={[$.text_danger, $.fs_small]}>Required</AppText>
+      )}
       <Modal
         transparent={true}
         animationType="fade"
@@ -129,7 +139,13 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
             ]}>
             {props.title.length > 0 && (
               <AppText
-                style={[$.fs_compact, $.fs_medium, $.text_tint_4, $.px_compact, $.pb_compact]}>
+                style={[
+                  $.fs_compact,
+                  $.fs_medium,
+                  $.text_tint_4,
+                  $.px_compact,
+                  $.pb_compact,
+                ]}>
                 {props.title}
               </AppText>
             )}

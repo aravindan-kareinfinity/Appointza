@@ -56,6 +56,8 @@ export function OrganisationScreen() {
       if (usercontext.value.userid > 0) {
         var orgreq: OrganisationSelectReq = new OrganisationSelectReq();
         orgreq.id = usercontext.value.organisationid;
+        console.log("orgreq",orgreq);
+        
         let orgresp = await organisationservice.select(orgreq);
         if(orgresp){
 
