@@ -3,6 +3,7 @@ import { ActionRes } from '../models/actionres.model';
 import {
   OrganisationServiceTiming,
   OrganisationServiceTimingDeleteReq,
+  OrganisationServiceTimingFinal,
   OrganisationServiceTimingSelectReq,
 } from '../models/organisationservicetiming.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
@@ -19,16 +20,16 @@ export class OrganisationServiceTimingService {
         let postdata: ActionReq<OrganisationServiceTimingSelectReq> =
             new ActionReq<OrganisationServiceTimingSelectReq>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Array<OrganisationServiceTiming>>>(
+        let resp = await this.http.post<ActionRes<Array<OrganisationServiceTimingFinal>>>(
             this.baseurl + '/select', 
             postdata
         );
         return resp.item;
     }
-    async save(req: OrganisationServiceTiming) {
-        let postdata: ActionReq<OrganisationServiceTiming> = new ActionReq<OrganisationServiceTiming>();
+    async save(req: OrganisationServiceTimingFinal) {
+        let postdata: ActionReq<OrganisationServiceTimingFinal> = new ActionReq<OrganisationServiceTimingFinal>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<OrganisationServiceTiming>>(
+        let resp = await this.http.post<ActionRes<OrganisationServiceTimingFinal>>(
             this.baseurl + '/save',
             postdata
         );

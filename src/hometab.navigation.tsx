@@ -75,7 +75,7 @@ function HomeTabNavigation() {
         component={GroupScreen}
         options={{
           tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Group} />
+            <TabBarIcon focused={focused} icon={CustomIcons.Account} />
           ),
         }}
       />
@@ -84,7 +84,7 @@ function HomeTabNavigation() {
         component={EventsScreen}
         options={{
           tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Events} />
+            <TabBarIcon focused={focused} icon={CustomIcons.Account} />
           ),
         }}
       />

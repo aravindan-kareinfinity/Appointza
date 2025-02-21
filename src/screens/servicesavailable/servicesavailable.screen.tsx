@@ -70,6 +70,8 @@ export function ServiceAvailableScreen(props: ServiceAvailableScreenProp) {
         if(!req.Iscombo){
           req.servicesids.combolist =[ new comboids() ]    
         }
+        console.log("rew",req);
+        
         await servicesAvailableservice.save(req);
         console.log("Service saved!");
         getdata();

@@ -10,7 +10,7 @@ import { AppStackParamList } from "../../appstack.navigation";
 import { useMemo, useState } from "react";
 import { AppView } from "../../components/appview.component";
 import { AppText } from "../../components/apptext.component";
-import { FlatList, Modal, ScrollView, TouchableOpacity } from "react-native";
+import { Alert, FlatList, Modal, ScrollView, TouchableOpacity } from "react-native";
 import {
     OrganisationLocation,
     OrganisationLocationSelectReq,
@@ -23,9 +23,11 @@ import { useEffect } from "react";
 import React from "react";
 import { OrganisationSelectReq } from "../../models/organisation.model";
 import { OrganisationService } from "../../services/organisation.service";
-import { OrganisationServiceTiming, Weeks } from "../../models/organisationservicetiming.model";
+import { OrganisationServiceTiming, OrganisationServiceTimingDeleteReq, OrganisationServiceTimingFinal, OrganisationServiceTimingSelectReq, Weeks } from "../../models/organisationservicetiming.model";
 import { DatePickerComponent } from "../../components/Datetimepicker.component";
 import { $ } from "../../styles";
+import { OrganisationServiceTimingService } from "../../services/organisationservicetiming.service";
+import { environment } from "../../utils/environment";
 
 type TimingScreenProp = CompositeScreenProps<
     NativeStackScreenProps<AppStackParamList, "Timing">,
@@ -37,6 +39,9 @@ export function TimingScreen() {
     const [organisationlocation, setOrganisationlocation] = useState<
         OrganisationLocation[]
     >([]);
+    const [Selectedorganisationlocation, setSelectedOrganisationlocation] = useState<
+        OrganisationLocation
+    >(new OrganisationLocation());
     const [modalVisible, setModalVisible] = useState(false);
     const [isloading, setIsloading] = useState(false);
     const organisationservice = useMemo(() => new OrganisationService(), []);
@@ -45,6 +50,11 @@ export function TimingScreen() {
         () => new OrganisationLocationService(),
         []
     );
+    const organisationservicetimingservice = useMemo(
+        () => new OrganisationServiceTimingService(),
+        []
+    );
+
 
 
     const [timingList, setTimingList] = useState<OrganisationServiceTiming[]>([]);
@@ -70,6 +80,115 @@ export function TimingScreen() {
                 : [...prev, dayId] // Select if not selected
         );
     };
+
+    const save = async () => {
+        try {
+            var deletereq = new OrganisationServiceTimingDeleteReq()
+            deletereq.organisationid = usercontext.value.organisationid;
+            deletereq.organizationlocationid = Selectedorganisationlocation.id
+            var deleteres = await organisationservicetimingservice.delete(deletereq)
+
+
+            const promises: Promise<any>[] = []; // Declare promises array
+
+            selectedDays.forEach((w) => {
+                timingList.forEach((v) => {
+                    const req = new OrganisationServiceTimingFinal();
+
+                    const startTime = new Date(v.start_time);
+                    const endTime = new Date(v.end_time);
+
+                    req.start_time = startTime.toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: false,
+                    });
+
+                    req.end_time = endTime.toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: false,
+                    });
+
+                    req.modifiedby = usercontext.value.userid;
+                    req.organisationid = usercontext.value.organisationid;
+                    req.parentid = Selectedorganisationlocation.id;
+                    req.day_of_week = w;
+
+                    console.log("Saving timing:", req);
+
+                    // Push API call to the promises array
+                    promises.push(organisationservicetimingservice.save(req));
+                });
+            });
+
+            // Wait for all API calls to complete
+            await Promise.all(promises);
+
+            // Show success message
+            Alert.alert(environment.baseurl, "Successfully saved!");
+
+
+        } catch (error) {
+            console.error("Error saving data:", error);
+            Alert.alert(environment.baseurl, "Failed to save. Please try again.");
+        }
+    };
+    const timeStringToDate = (timeString: string): Date => {
+        const [hours, minutes, seconds] = timeString.split(":").map(Number);
+        const now = new Date(); // Use current date
+        now.setHours(hours, minutes, seconds, 0); // Set time
+        return now;
+    };
+
+    const gettimingdata = async (id: number) => {
+        try {
+            var req = new OrganisationServiceTimingSelectReq()
+            req.organisationid = usercontext.value.organisationid;
+            req.organizationlocationid = id;
+            var res = await organisationservicetimingservice.select(req)
+            if (res) {
+                console.log("res", res);
+                const resmodify: OrganisationServiceTiming[] = [];
+                const weeksres: Set<number> = new Set();
+                const uniqueMap: Map<string, OrganisationServiceTiming> = new Map(); // Map to ensure unique start & end times
+            
+                let i = 0;
+                res.forEach((v) => {
+                    const startTime = timeStringToDate(v.start_time);
+                    const endTime = timeStringToDate(v.end_time);
+                    const uniqueKey = `${startTime.getTime()}-${endTime.getTime()}`; // Unique key based on start & end time
+            
+                    if (!uniqueMap.has(uniqueKey)) { // Ensuring uniqueness based on start & end time
+                        const req = new OrganisationServiceTiming();
+                        req.id = v.id;
+                        req.attributes = v.attributes;
+                        req.createdby = v.createdby;
+                        req.start_time = startTime;
+                        req.end_time = endTime;
+                        req.modifiedby = v.modifiedby;
+                        req.day_of_week = v.day_of_week;
+                        req.parentid = v.parentid;
+                        req.localid = i;
+                        i += 1;
+            
+                        uniqueMap.set(uniqueKey, req);
+                    
+                    }
+                    weeksres.add(v.day_of_week);
+                });
+            
+                setSelectedDays(Array.from(weeksres)); // Convert Set to Array
+                setTimingList(Array.from(uniqueMap.values())); // Convert Map values to Array
+            }
+            
+        } catch {
+
+        }
+    }
+
 
 
     // Function to add new timing
@@ -132,18 +251,6 @@ export function TimingScreen() {
         }
     };
 
-    const onSave = async () => {
-        setIsloading(true);
-        try {
-            AppAlert({ message: "Saved" });
-            getData();
-        } catch (error: any) {
-            var message = error?.response?.data?.message;
-            AppAlert({ message });
-        } finally {
-            setIsloading(false);
-        }
-    };
 
 
     const daysOfWeek = [
@@ -176,7 +283,11 @@ export function TimingScreen() {
 
                         return (
                             <AppView>
-                                <TouchableOpacity onPress={() => setModalVisible(true)}>
+                                <TouchableOpacity onPress={() => {
+                                    gettimingdata(item.id);
+                                    setSelectedOrganisationlocation(item);
+                                    setModalVisible(true)
+                                }}>
 
                                     <AppText
                                         style={[$.p_small, $.text_tint_2, $.fw_medium]}>
@@ -208,7 +319,7 @@ export function TimingScreen() {
                                 width: '90%',
                                 height: '50%', // Fixed to half the screen height
                                 borderRadius: 20,
-                               
+
                                 elevation: 5,
                                 padding: 20,
                             }]}
@@ -255,7 +366,7 @@ export function TimingScreen() {
                                     keyExtractor={(item) => item.localid.toString()}
                                     contentContainerStyle={{ marginVertical: 15, gap: 10 }}
                                     renderItem={({ item }) => (
-                                        <AppView style={[$.flex_row, $.p_tiny,$.align_items_center, ]}>
+                                        <AppView style={[$.flex_row, $.p_tiny, $.align_items_center,]}>
                                             <AppView style={[$.flex_row]}>
                                                 {/* Start Time Picker */}
                                                 <TouchableOpacity
@@ -267,12 +378,12 @@ export function TimingScreen() {
                                                         $.mr_small,
                                                         $.align_items_center,
                                                         $.justify_content_center,
-                                                        $.bg_tint_10,$.border_tint_7,
+                                                        $.bg_tint_10, $.border_tint_7,
                                                         {
                                                             width: 100,
                                                             height: 40,
                                                             borderRadius: 20,
-                                                          
+
                                                         }
                                                     ]}
                                                 >
@@ -291,12 +402,12 @@ export function TimingScreen() {
                                                         $.mr_small,
                                                         $.align_items_center,
                                                         $.justify_content_center,
-                                                        $.bg_tint_10,$.border_tint_7,
+                                                        $.bg_tint_10, $.border_tint_7,
                                                         {
                                                             width: 100,
                                                             height: 40,
                                                             borderRadius: 20,
-                                                            
+
                                                         }
                                                     ]}
                                                 >
@@ -308,7 +419,7 @@ export function TimingScreen() {
 
                                             {/* Delete Button */}
                                             <TouchableOpacity onPress={() => deleteTiming(item.localid)}>
-                                                <AppText style={[$.text_tint_4,{ fontSize: 15, fontWeight: "bold" }]}>×</AppText>
+                                                <AppText style={[$.text_tint_4, { fontSize: 15, fontWeight: "bold" }]}>×</AppText>
                                             </TouchableOpacity>
                                         </AppView>
                                     )}
@@ -342,7 +453,7 @@ export function TimingScreen() {
                                 {/* Close Button */}
                                 <TouchableOpacity
                                     onPress={() => setModalVisible(false)}
-                                    style={[$.flex_1,$.m_tiny,$.align_items_center,{
+                                    style={[$.flex_1, $.m_tiny, $.align_items_center, {
                                         marginTop: 10,
                                         alignItems: "center",
                                         paddingVertical: 8,
@@ -355,13 +466,18 @@ export function TimingScreen() {
 
                                 {/* Close Button */}
                                 <TouchableOpacity
-                                    onPress={() => setModalVisible(false)}
-                                    style={[$.flex_1,$.m_tiny,$.align_items_center,$.bg_tint_10,{
+                                    onPress={() => {
+
+                                        save();
+                                        setModalVisible(false);
+                                    }
+                                    }
+                                    style={[$.flex_1, $.m_tiny, $.align_items_center, $.bg_tint_10, {
                                         marginTop: 10,
                                         alignItems: "center",
                                         paddingVertical: 8,
                                         borderRadius: 10,
-                                       
+
                                     }]}
                                 >
                                     <AppText style={{ fontSize: 14, color: "#333", fontWeight: "bold" }}>Save</AppText>

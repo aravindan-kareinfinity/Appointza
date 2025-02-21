@@ -22,6 +22,7 @@ import { Line } from 'react-native-svg';
 import { AppAlert } from '../../components/appalert.component';
 import { AppSingleSelect } from '../../components/appsingleselect.component';
 import { FilesService } from '../../services/files.service';
+import { OrganisationService } from '../../services/organisation.service';
 
 type EventsScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Events'>,
@@ -35,6 +36,9 @@ export function EventsScreen() {
   const [isloading, setIsloading] = useState(false);
 
   const filesservice = useMemo(() => new FilesService(), []);
+
+
+   const Organizationlist= useMemo(() => new OrganisationService(), []);
 
   useEffect(() => {
   }, []);
