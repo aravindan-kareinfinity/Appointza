@@ -3,6 +3,7 @@ import { ActionRes } from '../models/actionres.model';
 import {
   Organisation,
   OrganisationDeleteReq,
+  OrganisationDetail,
   OrganisationSelectReq,
 } from '../models/organisation.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
@@ -63,6 +64,18 @@ export class OrganisationService {
             postdata
         );
                 
+        return resp.item;
+    }
+
+
+    async SelectOrganisationDetail(req: OrganisationSelectReq) {
+        let postdata: ActionReq<OrganisationSelectReq> =
+            new ActionReq<OrganisationSelectReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<Array<OrganisationDetail>>>(
+            this.baseurl + '/SelectOrganisationDetail', 
+            postdata
+        );
         return resp.item;
     }
 }

@@ -23,6 +23,7 @@ import { AppAlert } from '../../components/appalert.component';
 import { AppSingleSelect } from '../../components/appsingleselect.component';
 import { FilesService } from '../../services/files.service';
 import { OrganisationService } from '../../services/organisation.service';
+import { OrganisationDetail, OrganisationSelectReq } from '../../models/organisation.model';
 
 type EventsScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Events'>,
@@ -36,21 +37,67 @@ export function EventsScreen() {
   const [isloading, setIsloading] = useState(false);
 
   const filesservice = useMemo(() => new FilesService(), []);
+  const Organizationlist = useMemo(() => new OrganisationService(), []);
+
+  const [OrganisatonDetailList, setOrganisationDetailList] = useState<OrganisationDetail[]>([]);
 
 
-   const Organizationlist= useMemo(() => new OrganisationService(), []);
+  const getdata = async () => {
+    try {
+      var req = new OrganisationSelectReq();
+      var res = await Organizationlist.SelectOrganisationDetail(req);
+      if (res) {
+        setOrganisationDetailList(res)
+      }
+
+    } catch {
+
+    }
+  }
 
   useEffect(() => {
+    getdata()
   }, []);
 
   return (
     <ScrollView>
-      <AppView style={[$.px_normal, $.flex_row, $.mb_medium, $.pt_medium]}>
-        <AppText style={[$.fs_enormous, $.fw_bold, $.flex_1, $.text_tint_9]}>
-          events
-        </AppText>
+      <AppText style={[$.fs_enormous, $.fw_bold, $.flex_1, $.px_small, $.text_tint_9]}>
+        Services
+      </AppText>
 
-      </AppView>
+      <FlatList
+        data={OrganisatonDetailList}
+        nestedScrollEnabled={true}
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item, index }) => (
+          <AppView style={[$.m_small, $.border, $.p_small, $.border_rounded]}>
+            <TouchableOpacity onPress={() => {navigation.navigate('AppoinmentFixing',{organisationid:item.organisationid,organisationlocationid:item.organisationlocationid}) }}>
+              <AppText style={[$.fw_bold, $.mb_small]}>
+                {item.organisationname}
+              </AppText>
+
+              <AppText style={[$.p_tiny, $.text_tint_2]}>
+                <AppText style={$.fw_medium}>Location: </AppText>
+                {item.organisationlocationname}
+              </AppText>
+
+              <AppText style={[$.p_tiny, $.text_tint_2]}>
+                <AppText style={$.fw_medium}>Service: </AppText>
+                {item.organisationprimarytypecode} ({item.organisationsecondarytypecode})
+              </AppText>
+
+              <AppText style={[$.p_tiny, $.text_tint_2]}>
+                <AppText style={$.fw_medium}>Address: </AppText>
+                {item.organisationlocationaddressline1}, {item.organisationlocationcity}, {item.organisationlocationstate}, {item.organisationlocationpincode}
+              </AppText>
+
+            </TouchableOpacity>
+          </AppView>
+        )}
+      />
+
+
     </ScrollView>
   );
 }

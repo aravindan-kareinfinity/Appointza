@@ -1,5 +1,6 @@
 import { ActionReq } from '../models/actionreq.model';
 import { ActionRes } from '../models/actionres.model';
+import { Appoinment } from '../models/appoinment.model';
 import {
   OrganisationServiceTiming,
   OrganisationServiceTimingDeleteReq,
@@ -64,6 +65,17 @@ export class OrganisationServiceTimingService {
             postdata
         );
                 
+        return resp.item;
+    }
+
+    async selecttimingslot(req: OrganisationServiceTimingSelectReq) {
+        let postdata: ActionReq<OrganisationServiceTimingSelectReq> =
+            new ActionReq<OrganisationServiceTimingSelectReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<Array<Appoinment>>>(
+            this.baseurl + '/selecttimingslot', 
+            postdata
+        );
         return resp.item;
     }
 }

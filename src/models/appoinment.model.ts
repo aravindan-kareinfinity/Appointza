@@ -24,11 +24,21 @@ export namespace Appoinment {
   
                 export class AttributesData
                 {
+
+                   servicelist: SelectedSerivice[]=[];
                     
                 }  
                 
 }
 
+
+export class SelectedSerivice{
+  id:number=0;
+  servicename:string=""
+  serviceprice:number=0
+  servicetimetaken:number =0
+  iscombo:boolean=false
+}
 export class AppoinmentSelectReq {
   id: number = 0;
 }
