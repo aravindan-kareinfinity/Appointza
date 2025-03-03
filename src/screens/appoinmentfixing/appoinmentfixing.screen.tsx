@@ -37,6 +37,7 @@ import { OrganisationServices, OrganisationServicesSelectReq } from '../../model
 import { DatePickerComponent } from '../../components/Datetimepicker.component';
 import { Appoinment, SelectedSerivice } from '../../models/appoinment.model';
 import { BottomSheetComponent } from '../../components/bottomsheet.component';
+import { AppoinmentService } from '../../services/appoinment.service';
 type AppoinmentFixingScreenProp = CompositeScreenProps<
     NativeStackScreenProps<AppStackParamList, 'AppoinmentFixing'>,
     BottomTabScreenProps<HomeTabParamList>
@@ -52,11 +53,14 @@ export function AppoinmentFixingScreen() {
     const [isloading, setIsloading] = useState(false);
     const servicesAvailableservice = useMemo(() => new OrganisationServicesService(), []);
     const organisationservicetiming = useMemo(() => new OrganisationServiceTimingService(), []);
+    const appoinmentservices = useMemo(() => new AppoinmentService(), []);
     const usercontext = useAppSelector(selectusercontext);
     const route = useRoute<AppoinmentFixingScreenProp['route']>();
     const [seleteddate, setselectedate] = useState(new Date);
     const bottomSheetRef = useRef<any>(null);
     const [selectedService, setSelectedService] = useState<SelectedSerivice[]>([]);
+
+
     const handleServiceSelection = (req: OrganisationServices) => {
         var item = new SelectedSerivice();
         item.id = req.id;
@@ -69,13 +73,11 @@ export function AppoinmentFixingScreen() {
             const isSelected = prevSelected.some(service => service.id === item.id);
 
             setSelectedtiming(prev => {
-                let baseTime = prev?.totime ? new Date(prev.totime) : new Date(seletedTiming.fromtime);
+                let baseTime = prev?.totime instanceof Date ? new Date(prev.totime) : new Date(seletedTiming.fromtime);
 
                 if (isSelected) {
-                    // Remove: Subtract time
                     baseTime.setMinutes(baseTime.getMinutes() - req.timetaken);
                 } else {
-                    // Add: Increase time
                     baseTime.setMinutes(baseTime.getMinutes() + req.timetaken);
                 }
 
@@ -85,13 +87,12 @@ export function AppoinmentFixingScreen() {
                 };
             });
 
-            if (isSelected) {
-                return prevSelected.filter(service => service.id !== item.id);
-            } else {
-                return [...prevSelected, item];
-            }
+            return isSelected
+                ? prevSelected.filter(service => service.id !== item.id)
+                : [...prevSelected, item];
         });
     };
+
 
 
 
@@ -153,10 +154,37 @@ export function AppoinmentFixingScreen() {
     const closeBottomSheet = () => {
         bottomSheetRef.current?.close();
     }
+    const convertToUTCDate = (dateString: string | Date): Date => {
+        return new Date(new Date(dateString).toISOString());
+    };
+
 
     const save = async () => {
-        bottomSheetRef.current?.close();
-    }
+
+
+
+        try {
+            console.log("selectedService", selectedService);
+            var a = new Appoinment()
+            a.appoinmentdate = seleteddate
+             a.totime= seletedTiming.totime;
+             a.userid = usercontext.value.userid;
+            a.parentid = route.params.organisationid;
+            a.organizationid = route.params.organisationlocationid;
+    
+            a.fromtime = convertToUTCDate(a.fromtime); 
+            a.attributes.servicelist = selectedService;
+            console.log("seletedTiming", a);
+            var res = await appoinmentservices.save(a);
+            console.log("Appointment saved:", res);
+            Alert.alert("seved succesully")
+        } catch (error) {
+            console.error("Error saving appointment:", error);
+        }
+    };
+
+
+
 
 
     return (
@@ -233,57 +261,57 @@ export function AppoinmentFixingScreen() {
 
             </BottomSheetComponent>
 
-            
+
             {organisationlocationTiming && organisationlocationTiming.length > 0 &&
-            <AppView style={[$.py_huge]}>
+                <AppView style={[$.py_huge]}>
 
-                <FlatList
-                   data={organisationlocationTiming}
-                   nestedScrollEnabled={true}
-                   // refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} />}
-                   showsHorizontalScrollIndicator={false}
-                   keyExtractor={(item, index) => index.toString()}
-                   renderItem={({ item, index }) => {
-   
-   
-                       return (
-                           <TouchableOpacity
-                               onPress={() => {
-                                   setSelectedtiming(item);
-                                   bottomSheetRef.current?.open();
-                               }}
-                               style={[$.flex_1, $.p_tiny, $.flex_row, $.align_items_center, $.p_small]}
-                           >
-                               {/* Time Display */}
-                               <AppText style={[$.p_small, $.fw_medium,{position:'relative',top:-35}]}>
-                               {item?.fromtime 
-  ? new Date(item.fromtime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) 
-  : "N/A"}
+                    <FlatList
+                        data={organisationlocationTiming}
+                        nestedScrollEnabled={true}
+                        // refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} />}
+                        showsHorizontalScrollIndicator={false}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={({ item, index }) => {
 
-                               </AppText>
-   
-                               {/* Status Display */}
-                               <AppText
-                                   style={[
-                                       $.p_small,
-                                       $.flex_1,
-                                       $.text_center,
-                                       $.text_tint_2,
-                                       $.fw_bold,
-                                       $.border_bottom,
-                                       $.border_tint_10,
-                                   ]}
-                               >
-                                   Status: {item?.statuscode ?? "N/A"}
-                               </AppText>
-                           </TouchableOpacity>
-   
-   
-   
-                       );
-                   }}
-               />
-            </AppView>
+
+                            return (
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setSelectedtiming(item);
+                                        bottomSheetRef.current?.open();
+                                    }}
+                                    style={[$.flex_1, $.p_tiny, $.flex_row, $.align_items_center, $.p_small]}
+                                >
+                                    {/* Time Display */}
+                                    <AppText style={[$.p_small, $.fw_medium, { position: 'relative', top: -35 }]}>
+                                        {item?.fromtime
+                                            ? new Date(item.fromtime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+                                            : "N/A"}
+
+                                    </AppText>
+
+                                    {/* Status Display */}
+                                    <AppText
+                                        style={[
+                                            $.p_small,
+                                            $.flex_1,
+                                            $.text_center,
+                                            $.text_tint_2,
+                                            $.fw_bold,
+                                            $.border_bottom,
+                                            $.border_tint_10,
+                                        ]}
+                                    >
+                                        Status: {item?.statuscode ?? "N/A"}
+                                    </AppText>
+                                </TouchableOpacity>
+
+
+
+                            );
+                        }}
+                    />
+                </AppView>
             }
 
 

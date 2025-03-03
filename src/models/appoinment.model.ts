@@ -41,6 +41,8 @@ export class SelectedSerivice{
 }
 export class AppoinmentSelectReq {
   id: number = 0;
+  organizationid: number = 0
+  parentid: number = 0
 }
 
 export class AppoinmentDeleteReq {
