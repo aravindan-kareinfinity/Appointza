@@ -56,7 +56,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
   const [signUpModel, setSignUpModel] = useState(new UsersRegisterReq());
   const fileservice = useMemo(() => new FilesService(), []);
   const usercontext = useAppSelector(selectusercontext);
-  const [IsOrganizer, SetIsOrganizer] = useState(false);
+  
   const [PrimaryBussinessType, SetPrimaryBussinessType] = useState<ReferenceType[]>([])
   const [PrimaryBussinessId, SetPrimaryBussinesId] = useState(0)
 
@@ -76,8 +76,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
 
   useFocusEffect(
     useCallback(() => {
-      const { isorganization } = props.route.params;
-      SetIsOrganizer(props.route.params.isorganization);
+  
       getrefererencetype()
     }, [props.route.params.isorganization])
   );
@@ -94,7 +93,10 @@ export function SignUpScreen(props: SignUpScreenProp) {
       });
       dispatch(usercontextactions.set(registerresp!));
       AppAlert({ message: 'Registered' });
-      navigation.navigate('ServiceAvailable');
+      if(signUpModel.primarytype == 0){
+        navigation.navigate('ServiceAvailable');
+      }
+    
     } catch (error: any) {
       var message = error?.response?.data?.message;
       AppAlert({ message: message });
@@ -167,7 +169,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
           )}
         </TouchableOpacity>
 
-        <AppSingleSelect
+     {props.route.params.isorganization &&   <AppSingleSelect
           data={PrimaryBussinessType}
           keyExtractor={e => e.id.toString()}
           searchKeyExtractor={e => e.displaytext}
@@ -180,16 +182,16 @@ export function SignUpScreen(props: SignUpScreenProp) {
             setSignUpModel(prevState => ({
               ...prevState, // Ensure you preserve the existing state
               primarytypecode:item.identifier,
-              PrimaryBussinessType: item.id     // Update the property `d` with the value from `item.d`
+              primarytype:item.id
             }));   
             getrefererencevalue(item.id);
             SetPrimaryBussinesId(item.id)
           }}
           title="Bussines Type"
           style={[$.mb_normal]}
-        />
+        />}
 
-        <AppSingleSelect
+   {props.route.params.isorganization &&     <AppSingleSelect
           data={SecondaryBussinessType}
           keyExtractor={e => e.id.toString()}
           searchKeyExtractor={e => e.displaytext}
@@ -207,9 +209,9 @@ export function SignUpScreen(props: SignUpScreenProp) {
           }}
           title="Bussines Type more detail"
           style={[$.mb_normal]}
-        />
+        />}
         
-        {IsOrganizer && <AppTextInput
+        {props.route.params.isorganization && <AppTextInput
           style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
           placeholder="Organisation Name"
           value={signUpModel.organisationname}
@@ -231,7 +233,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
             });
           }}
         />
-        <AppTextInput
+       { props.route.params.isorganization && <AppTextInput
           style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
           placeholder="GST no"
           value={signUpModel.organisationgstnumber}
@@ -241,8 +243,8 @@ export function SignUpScreen(props: SignUpScreenProp) {
               organisationgstnumber: e,
             });
           }}
-        />
-        {IsOrganizer && <AppTextInput
+        />}
+        {props.route.params.isorganization &&<AppTextInput
           style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
           placeholder="Location"
           value={signUpModel.locationname}
@@ -330,7 +332,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
             });
           }}
         />
-        <AppTextInput
+  { props.route.params.isorganization &&      <AppTextInput
           style={[$.mb_regular, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
           placeholder="Designation"
           value={signUpModel.userdesignation}
@@ -340,7 +342,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
               userdesignation: e,
             });
           }}
-        />
+        />}
         <AppButton
           name="Sign Up"
           style={[$.bg_tint_10, $.mb_medium]}

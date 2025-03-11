@@ -2,12 +2,13 @@ import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { HomeTabParamList } from '../../hometab.navigation';
 import {
   CompositeScreenProps,
+  useFocusEffect,
   useNavigation,
   useRoute,
 } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../appstack.navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppView } from '../../components/appview.component';
 import { AppText } from '../../components/apptext.component';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks.redux';
@@ -24,6 +25,7 @@ import { AppSingleSelect } from '../../components/appsingleselect.component';
 import { FilesService } from '../../services/files.service';
 import { OrganisationService } from '../../services/organisation.service';
 import { OrganisationDetail, OrganisationSelectReq } from '../../models/organisation.model';
+import { selectusercontext } from '../../redux/usercontext.redux';
 
 type EventsScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Events'>,
@@ -40,7 +42,7 @@ export function EventsScreen() {
   const Organizationlist = useMemo(() => new OrganisationService(), []);
 
   const [OrganisatonDetailList, setOrganisationDetailList] = useState<OrganisationDetail[]>([]);
-
+  const usercontext = useAppSelector(selectusercontext);
 
   const getdata = async () => {
     try {
@@ -55,15 +57,21 @@ export function EventsScreen() {
     }
   }
 
-  useEffect(() => {
-    getdata()
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getdata();
+    }, [])
+  );
 
   return (
     <ScrollView>
       <AppText style={[$.fs_enormous, $.fw_bold, $.flex_1, $.px_small, $.text_tint_9]}>
         Services
       </AppText>
+      <AppText style={[$.fw_bold, $.mb_small]}>
+                {usercontext.value.organisationlocationid}
+              </AppText>
+      
 
       <FlatList
         data={OrganisatonDetailList}

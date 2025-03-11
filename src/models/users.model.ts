@@ -88,6 +88,7 @@ export class UsersContext {
   organisationlocationname: string = '';
   refreshtoken: string = '';
   accesstoken: string = '';
+  static value: any;
 }
 
 export class UsersPermissionData {
@@ -96,6 +97,8 @@ export class UsersPermissionData {
   approveusersingroup: UsersPermissionGroupData = new UsersPermissionGroupData();
   createmessage: UsersPermissionGroupData = new UsersPermissionGroupData();
   createtask:UsersPermissionGroupData = new UsersPermissionGroupData();
+  dashboard:UsersPermissionGroupData = new UsersPermissionGroupData();
+  approveappoinment: UsersPermissionGroupData = new UsersPermissionGroupData();
 }
 export class UsersPermissionGroupData {
   view: boolean = false;

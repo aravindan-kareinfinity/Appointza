@@ -35,6 +35,7 @@ export namespace OrganisationLocation {
 
 export class OrganisationLocationSelectReq {
   id: number = 0;
+  organisationid: number = 0
 }
 
 export class OrganisationLocationDeleteReq {

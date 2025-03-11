@@ -64,8 +64,8 @@ export function OrganisationScreen() {
           setOrganisation(orgresp[0]);
         }
 
-        var locreq: OrganisationLocationSelectReq =
-          new OrganisationLocationSelectReq();
+        var locreq: OrganisationLocationSelectReq = new OrganisationLocationSelectReq();
+        locreq.organisationid = usercontext.value.organisationid
         let locresp = await organisationlocationservice.select(locreq);
         if (locresp) {
           setOrganisationlocation(locresp);

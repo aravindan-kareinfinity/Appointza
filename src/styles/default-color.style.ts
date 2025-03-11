@@ -3,7 +3,7 @@ import { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { Theme } from '../models/theme.model';
 
 
-export type ThemeType = 'light' | 'dark' | 'custom';
+export type ThemeType = 'light' | 'dark' | 'custom'  | 'Aravind';
 
 export class DefaultColor {
   private constructor() { }
@@ -62,6 +62,11 @@ export class DefaultColor {
       danger: '#FF3B30',
       success: '#34C759',
       warn: '#FFD60A',
+      primary1:'',
+      primary2:'',
+      primary3:'',
+      primary4:'',
+      primary5:'',
     },
     light: {
       tint_1: '#3E3E3E',
@@ -78,7 +83,35 @@ export class DefaultColor {
       danger: '#FF453A',
       success: '#32D74B',
       warn: '#FFD60A',
+      primary1:'#1b4332',
+      primary2:'#40916c',
+      primary3:'#52b788',
+      primary4:'#95d5b2',
+      primary5:'#b7e4c7',
     },
+
+    Aravind: {
+      tint_1: '#404040',  // Dark Gray
+      tint_2: '#2B2B2B',  // Almost Black
+      tint_3: '#565656',  // Charcoal Gray
+      tint_4: '#6B6B6B',  // Medium Gray
+      tint_5: '#818181',  // Soft Gray
+      tint_6: '#969696',  // Neutral Gray
+      tint_7: '#ADADAD',  // Light Gray
+      tint_8: '#C3C3C3',  // Very Light Gray
+      tint_9: '#D9D9D9',  // Pale Gray
+      tint_10: '#EFEFEF', // Almost White
+      tint_11: '#FFFFFF', // Pure White
+      danger: '#FF3B30',  // Bright Red
+      success: '#30D158', // Fresh Green
+      warn: '#FFC300',    // Warm Yellow
+      primary1:'',
+      primary2:'',
+      primary3:'',
+      primary4:'',
+      primary5:'',
+},
+
     custom: {
       tint_1: '#2B2B2B',
       tint_2: '#3C3C3C',
@@ -94,6 +127,11 @@ export class DefaultColor {
       danger: '#FF6B6B',
       success: '#51CF66',
       warn: '#FFC107',
+      primary1:'',
+      primary2:'',
+      primary3:'',
+      primary4:'',
+      primary5:'',
     },
   };
 

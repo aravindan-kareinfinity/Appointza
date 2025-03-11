@@ -45,8 +45,9 @@ export function LocationScreen(props: LocationScreenProp) {
       if (props.route.params.id > 0) {
         var locreq: OrganisationLocationSelectReq =
           new OrganisationLocationSelectReq();
-        locreq.id = props.route.params.id;
-        console.log("locreq",locreq);
+        locreq.organisationid = usercontext.value.organisationid;
+      console.log("locreq",locreq);
+      
         
         let locresp = await organisationlocationservice.select(locreq);
         if(locresp){

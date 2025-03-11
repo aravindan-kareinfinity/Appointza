@@ -1,17 +1,27 @@
-import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
-import {HomeTabParamList} from '../../hometab.navigation';
-import {CompositeScreenProps, useNavigation} from '@react-navigation/native';
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {AppStackParamList} from '../../appstack.navigation';
-import {AppView} from '../../components/appview.component';
-import {$} from '../../styles';
-import {TouchableOpacity} from 'react-native';
-import {AppText} from '../../components/apptext.component';
-import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {AppTextInput} from '../../components/apptextinput.component';
-import {useState} from 'react';
-import {AppButton} from '../../components/appbutton.component';
-import {AppSwitch} from '../../components/appswitch.component';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { HomeTabParamList } from '../../hometab.navigation';
+import { CompositeScreenProps, useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../../appstack.navigation';
+import { AppView } from '../../components/appview.component';
+import { $ } from '../../styles';
+import { Alert, Platform, ScrollView, TouchableOpacity } from 'react-native';
+import { AppText } from '../../components/apptext.component';
+import { CustomIcon, CustomIcons } from '../../components/customicons.component';
+import { AppTextInput } from '../../components/apptextinput.component';
+import { useCallback, useMemo, useState } from 'react';
+import { AppButton } from '../../components/appbutton.component';
+import { AppSwitch } from '../../components/appswitch.component';
+import { useAppSelector } from '../../redux/hooks.redux';
+import { selectusercontext } from '../../redux/usercontext.redux';
+import { UsersContext, UsersLoginReq, UsersPermissionData } from '../../models/users.model';
+import { OrganisationLocationService } from '../../services/organisationlocation.service';
+import { StaffService } from '../../services/staff.service';
+import { OrganisationLocation, OrganisationLocationSelectReq } from '../../models/organisationlocation.model';
+import { UsersService } from '../../services/users.service';
+import { Staff } from '../../models/staff.model';
+import { AppSingleSelect } from '../../components/appsingleselect.component';
+import { environment } from '../../utils/environment';
 
 type AddedAccountsDetailsScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'AddedAccountsDetails'>,
@@ -28,131 +38,164 @@ export function AddedAccountsDetailsScreen() {
   const [canCreateAcc, setCreateAcc] = useState(false);
   const [canCreateDesign, setCreateDesign] = useState(false);
   const [canCreatePost, setCreatePost] = useState(false);
-  const Cancle = () => {};
-  const Save = () => {};
+  const Cancle = () => { };
+  const Save = () => { };
+  const [Selectorganisationlocationid, Setselectorganisationlocationid] = useState(0)
+  const [searchcontact, Setsearchcontact] = useState("")
+  const usercontext = useAppSelector(selectusercontext);
+  const [selecteduser, Serselecteduser] = useState(new UsersContext())
+  const organisationlocationservice = useMemo(() => new OrganisationLocationService(), [],);
+  const staffservice = useMemo(() => new StaffService(), [],);
+  const [organisationlocation, setOrganisationlocation] = useState<
+    OrganisationLocation[]
+  >([]);
+  const [userPermissions, setUserPermissions] = useState<UsersPermissionData>(new UsersPermissionData());
+  const formatLabel = (key: string) => {
+    return key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
+  };
+  let usersservice = new UsersService();
+  const search = async () => {
+    var req = new UsersLoginReq()
+    req.mobile = searchcontact;
+    console.log("req", req);
+    var res = await usersservice.SelectUser(req);
+    if (res) {
+      Serselecteduser(res)
+    }
+
+  }
+
+  const getorganisation = async () => {
+    var locreq: OrganisationLocationSelectReq = new OrganisationLocationSelectReq();
+    locreq.organisationid = usercontext.value.organisationid
+    let locresp = await organisationlocationservice.select(locreq);
+    if (locresp) {
+      setOrganisationlocation(locresp);
+    } else {
+      setOrganisationlocation([]); // Provide an empty array as a fallback
+    }
+  }
+
+
+  const Addstaff = async () => {
+    var req = new Staff()
+    req.userid = selecteduser.userid;
+    req.roles = userPermissions
+    req.organizationid = Selectorganisationlocationid.toString();
+    req.parentid = usercontext.value.organisationid;
+    var res = await staffservice.save(req)
+    if (res) {
+      Alert.alert(environment.baseurl, "successfully created")
+    }
+
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      getorganisation();
+    }, [])
+  );
   return (
-    <AppView style={[$.flex_1]}>
-      <AppView style={[$.pt_medium]}>
-        <AppView
-          style={[$.flex_row, $.align_items_center, $.px_normal, $.mb_medium]}>
-          <TouchableOpacity
-            onPress={() => {
-              navigation.goBack();
-            }}>
-            <CustomIcon
-              name={CustomIcons.LeftArrow}
-              size={$.s_regular}
-              color={$.tint_2}
-            />
-          </TouchableOpacity>
-          <AppText
-            style={[$.ml_compact, $.p_small, $.text_tint_2, $.fw_medium]}>
-            Profile
-          </AppText>
-        </AppView>
-      </AppView>
-      <AppView style={[$.px_normal]}>
-        <AppView style={[$.mb_medium]}>
-          <AppTextInput
-            placeholder="Name"
-            onChangeText={name => {
-              setName(name);
-            }}
-            value={name}
-          />
-        </AppView>
-        <AppView style={[$.mb_medium]}>
-          <AppTextInput
-            placeholder="Contact"
-            onChangeText={contact => {
-              setContact(contact);
-            }}
-            value={contact}
-          />
-        </AppView>
-        <AppView style={[$.mb_medium]}>
-          <AppTextInput
-            placeholder="Role"
-            onChangeText={role => {
-              setRole(role);
-            }}
-            value={role}
-          />
-        </AppView>
-        <AppView style={[$.mb_medium]}>
-          <AppTextInput
-            placeholder="Location"
-            onChangeText={location => {
-              setLocation(location);
-            }}
-            value={location}
-          />
-        </AppView>
-      </AppView>
-      <AppView style={[$.px_normal, $.flex_1]}>
-        <AppView style={[$.flex_row, $.align_items_center, $.mb_regular]}>
-          <AppText style={[$.text_tint_2, $.fw_medium, $.flex_1]}>Chat</AppText>
-          <AppSwitch
-            value={canChat}
-            onValueChange={toggle => {
-              setCanChat(toggle);
-            }}></AppSwitch>
-        </AppView>
-        <AppView style={[$.flex_row, $.align_items_center, $.mb_regular]}>
-          <AppText style={[$.text_tint_2, $.fw_medium, $.flex_1]}>
-            Create Accounts
-          </AppText>
-          <AppSwitch
-            value={canCreateAcc}
-            onValueChange={toggle => {
-              setCreateAcc(toggle);
-            }}></AppSwitch>
-        </AppView>
-        <AppView style={[$.flex_row, $.align_items_center, $.mb_regular]}>
-          <AppText style={[$.text_tint_2, $.fw_medium, $.flex_1]}>
-            Create Designs
-          </AppText>
-          <AppSwitch
-            value={canCreateDesign}
-            onValueChange={toggle => {
-              setCreateDesign(toggle);
-            }}></AppSwitch>
-        </AppView>
-        <AppView style={[$.flex_row, $.align_items_center, $.mb_regular]}>
-          <AppText style={[$.text_tint_2, $.fw_medium, $.flex_1]}>
-            Create Post
-          </AppText>
-          <AppSwitch
-            value={canCreatePost}
-            onValueChange={toggle => {
-              setCreatePost(toggle);
-            }}></AppSwitch>
-        </AppView>
-      </AppView>
-      <AppView
-        style={[
-          $.flex_row,
-          $.justify_content_center,
-          $.px_normal,
-          $.mb_normal,
-        ]}>
-        <AppButton
-          name="Cancel"
-          style={[$.bg_tint_10, $.flex_1, $.mr_huge]}
-          textstyle={[$.text_danger]}
-          onPress={() => {
-            Cancle();
+    <AppView style={[$.flex_1, $.m_small]}>
+
+      <AppView style={[$.flex_row]}>
+
+        <AppTextInput
+          style={[$.bg_tint_10, $.flex_1]}
+          placeholder="Name"
+          value={searchcontact}
+          onChangeText={text => {
+            Setsearchcontact(text)
           }}
         />
+
         <AppButton
-          name="Save"
-          style={[$.bg_success, $.flex_1]}
+          name="S"
+          style={[$.bg_success,]}
           textstyle={[$.text_tint_11]}
-          onPress={() => {
-            Save();
-          }}
+          onPress={search}
         />
       </AppView>
+
+      {selecteduser && selecteduser.userid > 0 &&
+
+        <AppView style={[$.flex_1]}>
+          <AppText>name     : {selecteduser.username}</AppText>
+          <AppText>mobile   :{selecteduser.usermobile}</AppText>
+          <AppText>location : {selecteduser.organisationlocationname}</AppText>
+
+          <AppSingleSelect
+            data={organisationlocation}
+            keyExtractor={e => e.id.toString()}
+            searchKeyExtractor={e => e.city}
+            renderItemLabel={item => (
+              <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_1]}>{item.city}</AppText>
+            )}
+            selecteditemid={Selectorganisationlocationid.toString()}
+            onSelect={item => Setselectorganisationlocationid(item.id)}
+            title="Bussines Type more detail"
+            style={[$.mb_normal]}
+          />
+
+          <ScrollView style={[$.px_normal, $.flex_1]}>
+            {Object.entries(userPermissions).map(([key, permission], index) => (
+              <AppView key={index} style={[$.mb_regular, $.border_bottom, $.pb_small]}>
+                <AppText style={[$.text_tint_2, $.fw_medium, $.mb_small]}>
+                  {formatLabel(key)}
+                </AppText>
+
+                <AppView style={[$.flex_row, $.align_items_center]}>
+                  {/* View Permission */}
+                  <AppView style={[$.flex_row, $.align_items_center]}>
+                    <AppText style={[$.mr_small]}>View</AppText>
+                    <AppSwitch
+                      value={permission.view}
+                      onValueChange={toggle => {
+                        setUserPermissions(prev => ({
+                          ...prev,
+                          [key as keyof UsersPermissionData]: {
+                            ...prev[key as keyof UsersPermissionData],
+                            view: toggle // ✅ Correctly updating 'view'
+                          }
+                        }));
+                      }}
+                    />
+                  </AppView>
+
+                  {/* Manage Permission */}
+                  <AppView style={[$.flex_row, $.align_items_center]}>
+                    <AppText style={[$.mr_small]}>Manage</AppText>
+                    <AppSwitch
+                      value={permission.manage}
+                      onValueChange={toggle => {
+                        setUserPermissions(prev => ({
+                          ...prev,
+                          [key as keyof UsersPermissionData]: {
+                            ...prev[key as keyof UsersPermissionData],
+                            manage: toggle // ✅ Correctly updating 'manage'
+                          }
+                        }));
+                      }}
+                    />
+                  </AppView>
+                </AppView>
+              </AppView>
+            ))}
+          </ScrollView>
+
+
+          <AppButton
+            name="Save"
+            style={[$.bg_success]}
+            textstyle={[$.text_tint_11]}
+            onPress={Addstaff}
+          />
+        </AppView>
+      }
+
+
+
+
     </AppView>
   );
 }

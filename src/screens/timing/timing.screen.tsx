@@ -240,6 +240,7 @@ export function TimingScreen() {
 
                 var locreq: OrganisationLocationSelectReq =
                     new OrganisationLocationSelectReq();
+                    locreq.organisationid = usercontext.value.organisationid;
                 let locresp = await organisationlocationservice.select(locreq);
                 setOrganisationlocation(locresp || []);
             }

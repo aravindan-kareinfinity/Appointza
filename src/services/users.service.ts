@@ -103,6 +103,18 @@ export class UsersService {
 
     return resp.item!;
   }
+
+  async SelectUser(req: UsersLoginReq) {
+    let postdata: ActionReq<UsersLoginReq> = new ActionReq<UsersLoginReq>();
+    postdata.item = req;
+    let resp = await this.http.post<ActionRes<UsersContext>>(
+      this.baseurl + '/SelectUser',
+      postdata,
+      true,
+    );
+
+    return resp.item!;
+  }
   async GetOtp(req: UsersGetOtpReq) {
     let postdata: ActionReq<UsersGetOtpReq> = new ActionReq<UsersGetOtpReq>();
     postdata.item = req;

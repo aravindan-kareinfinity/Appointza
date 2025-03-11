@@ -98,6 +98,10 @@ export function ServiceAvailableScreen(props: ServiceAvailableScreenProp) {
 
   return (
     <AppView style={[$.pt_normal, $.flex_1]}>
+       <AppText
+            style={[$.ml_compact, $.p_small, $.text_tint_2, $.fw_medium]}>
+            Add Service  {usercontext.value.organisationid}
+          </AppText>
       <AppView
         style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_medium]}>
         <AppView style={[$.flex_row, $.flex_1, $.align_items_center]}>
@@ -113,7 +117,7 @@ export function ServiceAvailableScreen(props: ServiceAvailableScreenProp) {
           </TouchableOpacity>
           <AppText
             style={[$.ml_compact, $.p_small, $.text_tint_2, $.fw_medium]}>
-            Add Service
+            Add Service 
           </AppText>
         </AppView>
         <TouchableOpacity onPress={() => { bottomSheetRef.current?.open(); }}>
