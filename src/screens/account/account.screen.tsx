@@ -39,7 +39,7 @@ export function AccountScreen() {
 
 
       {usercontext && usercontext.value.userid > 0 && 
-      <AppView style={[ $.flex_row,$.border_rounded ,$.bg_tint_11 ,$.mx_small,
+      <AppView style={[ $.flex_row,$.border_rounded ,$.bg_tint_11 ,$.m_small,$.mb_big,
         Platform.OS === 'android' ? $.elevation_5 : {shadowOpacity:0.4, },
       ]}>
 
@@ -78,7 +78,7 @@ export function AccountScreen() {
    
       {usercontext && usercontext.value.organisationid > 0 && <TouchableOpacity
         onPress={() =>   navigation.navigate('ServiceAvailable')}
-         style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,$.p_small,$.justify_content_center,$.align_items_center,$.mx_small ,$.my_compact]}>
+         style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,,$.justify_content_center,$.align_items_center,$.p_medium]}>
     
           <CustomIcon
             color={$.tint_6}
@@ -86,11 +86,11 @@ export function AccountScreen() {
             size={$.s_normal}
           />
        
-        <AppView style={[$.px_normal, $.justify_content_center, $.flex_1]}>
-          <AppText style={[$.fs_compact, $.fw_light, $.text_tint_4]}>
+       
+          <AppText style={[$.fs_compact,$.flex_1, $.fw_light, $.text_tint_4,$.px_normal, $.justify_content_center, $.flex_1]}>
             services
           </AppText>
-        </AppView>
+      
         <AppView style={[$.justify_content_center]}>
           <CustomIcon
             color={$.tint_6}
@@ -101,7 +101,7 @@ export function AccountScreen() {
       </TouchableOpacity>}
       {usercontext && usercontext.value.organisationid > 0 && <TouchableOpacity
         onPress={() => navigation.navigate('Organisation')}
-         style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,$.p_small,$.justify_content_center,$.align_items_center,$.mx_small ,$.my_compact]}>
+         style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,,$.justify_content_center,$.align_items_center,$.p_medium]}>
     
           <CustomIcon
             color={$.tint_6}
@@ -124,7 +124,7 @@ export function AccountScreen() {
       </TouchableOpacity>}
       {usercontext && usercontext.value.userid > 0 && <TouchableOpacity
         onPress={() => navigation.navigate('Profile')}
-         style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,$.p_small,$.justify_content_center,$.align_items_center,$.mx_small ,$.my_compact]}>
+         style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,,$.justify_content_center,$.align_items_center,$.p_medium]}>
     
           <CustomIcon
             color={$.tint_6}
@@ -147,7 +147,7 @@ export function AccountScreen() {
 
       {usercontext && usercontext.value.organisationid > 0 && <TouchableOpacity
         onPress={() =>   navigation.navigate('Timing')}
-        style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,$.p_small,$.justify_content_center,$.align_items_center,$.mx_small ,$.my_compact]}>
+        style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,,$.justify_content_center,$.align_items_center,$.p_medium]}>
     
           <CustomIcon
             color={$.tint_6}
@@ -171,7 +171,7 @@ export function AccountScreen() {
      
         {usercontext && usercontext.value.organisationid > 0 && <TouchableOpacity
         onPress={() => navigation.navigate('AddedAccounts')}
-        style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,$.p_small,$.justify_content_center,$.align_items_center,$.mx_small ,$.my_compact]}>
+        style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,,$.justify_content_center,$.align_items_center,$.p_medium]}>
     
           <CustomIcon
             color={$.tint_6}
@@ -267,7 +267,7 @@ export function AccountScreen() {
         onPress={() => {
 logout()
         }}
-         style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,$.p_small,$.justify_content_center,$.align_items_center,$.mx_small ,$.my_compact]}>
+         style={[ $.flex_row, $.align_items_center,$.border_bottom,$.border_tint_10,,$.justify_content_center,$.align_items_center,$.p_medium]}>
     
           <CustomIcon
             color={$.tint_6}

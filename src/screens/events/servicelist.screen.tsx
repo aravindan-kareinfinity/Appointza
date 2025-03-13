@@ -27,12 +27,12 @@ import { OrganisationService } from '../../services/organisation.service';
 import { OrganisationDetail, OrganisationSelectReq } from '../../models/organisation.model';
 import { selectusercontext } from '../../redux/usercontext.redux';
 
-type EventsScreenProp = CompositeScreenProps<
-  BottomTabScreenProps<HomeTabParamList, 'Events'>,
+type ServiceScreenProp = CompositeScreenProps<
+  BottomTabScreenProps<HomeTabParamList, 'Service'>,
   NativeStackScreenProps<AppStackParamList>
 >;
-export function EventsScreen() {
-  const navigation = useNavigation<EventsScreenProp['navigation']>();
+export function ServiceScreen() {
+  const navigation = useNavigation<ServiceScreenProp['navigation']>();
   const [categoryid, setCategoryid] = useState(0);
   const [subcategoryid, setsubcategoryid] = useState(0);
   const [productid, setproductid] = useState(0);
@@ -47,6 +47,7 @@ export function EventsScreen() {
   const getdata = async () => {
     try {
       var req = new OrganisationSelectReq();
+      
       var res = await Organizationlist.SelectOrganisationDetail(req);
       if (res) {
         setOrganisationDetailList(res)
@@ -68,9 +69,7 @@ export function EventsScreen() {
       <AppText style={[$.fs_enormous, $.fw_bold, $.flex_1, $.px_small, $.text_tint_9]}>
         Services
       </AppText>
-      <AppText style={[$.fw_bold, $.mb_small]}>
-                {usercontext.value.organisationlocationid}
-              </AppText>
+    
       
 
       <FlatList

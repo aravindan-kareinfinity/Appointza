@@ -19,7 +19,7 @@ import { AppSingleSelect } from '../../components/appsingleselect.component';
 import { useAppSelector } from '../../redux/hooks.redux';
 import { selectusercontext } from '../../redux/usercontext.redux';
 import { StaffService } from '../../services/staff.service';
-import { Staff, StaffSelectReq } from '../../models/staff.model';
+import { Staff, StaffSelectReq, StaffUser } from '../../models/staff.model';
 import { AppSwitch } from '../../components/appswitch.component';
 import { environment } from '../../utils/environment';
 
@@ -30,13 +30,13 @@ type AddedAccountsScreenProp = CompositeScreenProps<
 export function AddedAccountsScreen() {
   const navigation = useNavigation<AddedAccountsScreenProp['navigation']>();
   const usercontext = useAppSelector(selectusercontext);
-  const [stafflist, SetStafflist] = useState<Staff[]>([])
+  const [stafflist, SetStafflist] = useState<StaffUser[]>([])
 
   const staffservice = useMemo(() => new StaffService(), [],);
 
   const getdata = async () => {
     var req = new StaffSelectReq()
-    var res = await staffservice.select(req)
+    var res = await staffservice.SelectStaffDetail(req)
     if (res) {
       SetStafflist(res)
     }
@@ -102,12 +102,12 @@ export function AddedAccountsScreen() {
                   <AppView style={[$.ml_normal]}>
                     <AppView style={[$.flex_row]}>
                       <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_2]}>
-                        Kamlesh
+                        {item.name}
                       </AppText>
                     </AppView>
                     <AppView style={[$.flex_row, $.align_items_center]}>
                       <AppText style={[$.fs_extrasmall, $.fw_regular, $.text_tint_6]}>
-                        shared designs
+                        {item.city}
                       </AppText>
                       <CustomIcon
                         name={CustomIcons.Dot}
@@ -115,7 +115,7 @@ export function AddedAccountsScreen() {
                         color={$.tint_8}
                       />
                       <AppText style={[$.fs_extrasmall, $.fw_regular, $.text_tint_6]}>
-                        shared designs
+                        {item.country}
                       </AppText>
                     </AppView>
                   </AppView>

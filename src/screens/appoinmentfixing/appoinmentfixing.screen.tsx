@@ -72,6 +72,7 @@ export function AppoinmentFixingScreen() {
         setSelectedService(prevSelected => {
             const isSelected = prevSelected.some(service => service.id === item.id);
 
+          
             setSelectedtiming(prev => {
                 let baseTime = prev?.totime instanceof Date ? new Date(prev.totime) : new Date(seletedTiming.fromtime);
 
@@ -116,7 +117,7 @@ export function AppoinmentFixingScreen() {
         try {
             var organizariontimereq = new OrganisationServiceTimingSelectReq()
             organizariontimereq.organisationid = route.params.organisationid;
-            organizariontimereq.organizationlocationid = route.params.organisationlocationid;
+            organizariontimereq.organisationlocationid = route.params.organisationlocationid;
 
             const dayName = seleteddate.toLocaleDateString('en-US', { weekday: 'long' }); // "Friday"
 
@@ -124,6 +125,7 @@ export function AppoinmentFixingScreen() {
 
             organizariontimereq.day_of_week = dayNumber;
             console.log("organizariontimereq", organizariontimereq);
+            console.log("timing", organizariontimereq);
 
             var organisationtimingres = await organisationservicetiming.selecttimingslot(organizariontimereq)
 
@@ -131,7 +133,7 @@ export function AppoinmentFixingScreen() {
                 setOrganisationlocationTiming(organisationtimingres)
             }
         } catch {
-            Alert.alert(environment.baseurl, "error")
+            Alert.alert(environment.baseurl, "error jnk")
         }
     }
 
@@ -154,10 +156,20 @@ export function AppoinmentFixingScreen() {
     const closeBottomSheet = () => {
         bottomSheetRef.current?.close();
     }
-    const convertToUTCDate = (dateString: string | Date): Date => {
-        return new Date(new Date(dateString).toISOString());
-    };
+    // function convertToUTCFormat(dateInput: string | Date): string {
+    //     // Ensure the input is a Date object
+    //     const date = new Date(dateInput);
+        
+    //     // Convert to ISO format with milliseconds and 'Z' (UTC)
+    //     return date.toISOString(); 
+    // }
 
+    function convertToUTCFormat(dateInput: string | Date): Date {
+        return new Date(dateInput); // Returns a Date object
+    }
+
+    
+    
 
     const save = async () => {
 
@@ -167,21 +179,25 @@ export function AppoinmentFixingScreen() {
             console.log("selectedService", selectedService);
             var a = new Appoinment()
             a.appoinmentdate = seleteddate
-             a.totime= seletedTiming.totime;
-             a.userid = usercontext.value.userid;
-            a.parentid = route.params.organisationid;
-            a.organizationid = route.params.organisationlocationid;
-    
-            a.fromtime = convertToUTCDate(a.fromtime); 
+            a.totime = seletedTiming.totime;
+            a.userid = usercontext.value.userid;
+            a.organisationlocationid = route.params.organisationlocationid;
+            a.organizationid = route.params.organisationid;
+
+            console.log("time " , convertToUTCFormat(seletedTiming.fromtime));
+            
+            
+            a.fromtime = convertToUTCFormat(seletedTiming.fromtime)
             a.attributes.servicelist = selectedService;
             console.log("seletedTiming", a);
-            var res = await appoinmentservices.save(a);
+            var res = await appoinmentservices.Bookappoinment(a);
             console.log("Appointment saved:", res);
-            Alert.alert("seved succesully")
+            Alert.alert(environment.baseurl, res?.toString())
         } catch (error) {
             console.error("Error saving appointment:", error);
         }
-    };
+     
+       };
 
 
 
@@ -267,50 +283,44 @@ export function AppoinmentFixingScreen() {
 
                     <FlatList
                         data={organisationlocationTiming}
-                        nestedScrollEnabled={true}
-                        // refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} />}
+                        nestedScrollEnabled
                         showsHorizontalScrollIndicator={false}
                         keyExtractor={(item, index) => index.toString()}
-                        renderItem={({ item, index }) => {
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={[
+                                    $.flex_1,
+                                    $.p_small,
+                                    $.m_tiny,
+                                    $.bg_tint_11,
+                                    $.border_rounded,
+                                    
+                                    $.flex_row,
+                                    $.align_items_center,
+                                   
+                                ]}
+                                onPress={() => {
+                                    setSelectedtiming(item);
+                                    console.log("item",item);
+                                    
+                                    bottomSheetRef.current?.open();
+                                }}
+                            >
+                                {/* Time Display */}
+                                <AppText style={[$.fw_medium, $.fs_large,$.mr_big]}>
+                                    {item?.fromtime
+                                        ? new Date(item.fromtime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+                                        : "N/A"}
+                                </AppText>
 
-
-                            return (
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        setSelectedtiming(item);
-                                        bottomSheetRef.current?.open();
-                                    }}
-                                    style={[$.flex_1, $.p_tiny, $.flex_row, $.align_items_center, $.p_small]}
-                                >
-                                    {/* Time Display */}
-                                    <AppText style={[$.p_small, $.fw_medium, { position: 'relative', top: -35 }]}>
-                                        {item?.fromtime
-                                            ? new Date(item.fromtime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
-                                            : "N/A"}
-
-                                    </AppText>
-
-                                    {/* Status Display */}
-                                    <AppText
-                                        style={[
-                                            $.p_small,
-                                            $.flex_1,
-                                            $.text_center,
-                                            $.text_tint_2,
-                                            $.fw_bold,
-                                            $.border_bottom,
-                                            $.border_tint_10,
-                                        ]}
-                                    >
-                                        Status: {item?.statuscode ?? "N/A"}
-                                    </AppText>
-                                </TouchableOpacity>
-
-
-
-                            );
-                        }}
+                                {/* Status Display */}
+                                <AppText style={[ $.text_tint_2, $.text_right]}>
+                                    {item?.statuscode ? `Status: ${item.statuscode}` : "Status: N/A"}
+                                </AppText>
+                            </TouchableOpacity>
+                        )}
                     />
+
                 </AppView>
             }
 

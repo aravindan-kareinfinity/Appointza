@@ -20,7 +20,7 @@ import {AppoinmentScreen} from './screens/appoinment/appoinment.screen';
 import { useAppSelector } from './redux/hooks.redux';
 import { selectTheme } from './redux/theme.redux';
 import { DefaultColor } from './styles/default-color.style';
-import { ServiceAvailableScreen } from './screens/servicesavailable/servicesavailable.screen';
+import { ServiceAvailableScreen } from './screens/servicesavailable/service.screen';
 import { TimingScreen } from './screens/timing/timing.screen';
 import { AppoinmentFixingScreen } from './screens/appoinmentfixing/appoinmentfixing.screen';
 

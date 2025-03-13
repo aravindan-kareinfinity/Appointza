@@ -1,6 +1,6 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { HomeTabParamList } from '../../hometab.navigation';
-import { CompositeScreenProps, useNavigation } from '@react-navigation/native';
+import { CompositeScreenProps, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../appstack.navigation';
 import { AppView } from '../../components/appview.component';
@@ -9,7 +9,7 @@ import { AppButton } from '../../components/appbutton.component';
 import { $ } from '../../styles';
 import { CustomIcon, CustomIcons } from '../../components/customicons.component';
 import { FlatList, Image, ScrollView, TouchableOpacity } from 'react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FilesService } from '../../services/files.service';
 
 import { AppAlert } from '../../components/appalert.component';
@@ -44,15 +44,22 @@ export function AppoinmentScreen() {
     return unsubscribe;
   }, [navigation]);
 
-  useEffect(() => {
-    getData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getData();
+    }, [])
+  );
   const getData = async () => {
     setIsloading(true);
     try {
       var req = new AppoinmentSelectReq();
-      req.parentid = usercontext.value.organisationid;
-      req.organizationid = usercontext.value.organisationlocationid;
+      if(usercontext.value.organisationid){
+
+        req.organisationlocationid = usercontext.value.organisationid;
+        req.organisationid = usercontext.value.organisationlocationid;
+      }else{
+        req.userid = usercontext.value.userid
+      }
       var res = await appoinmentservices.select(req)
       if (res) {
         setAppoinmentList(res)
@@ -66,6 +73,14 @@ export function AppoinmentScreen() {
     }
   };
 
+  function convertToIST(utcTimestamp: string | number | Date) {
+    const utcDate = new Date(utcTimestamp);
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+    const istDate = new Date(utcDate.getTime() + istOffset);
+    
+    return istDate.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+}
+
   return (
     <ScrollView contentContainerStyle={[$.flex_1]}>
 
@@ -78,7 +93,8 @@ export function AppoinmentScreen() {
           $.mb_normal,
         ]}>
         <AppText style={[$.fs_enormous, $.fw_bold, $.text_tint_9, $.flex_1]}>
-          Appoinment
+          Appoinment {usercontext.value.organisationid} {usercontext.value.organisationlocationid}
+          {usercontext.value.userid}
         </AppText>
       </AppView>
 
@@ -93,13 +109,13 @@ export function AppoinmentScreen() {
             onPress={() => { }}
           >
             {/* Appointment Timing */}
-            <AppView style={[$.flex_row, ]}>
+            <AppView style={[$.flex_row,$.flex_column ]}>
               <AppText style={[$.fw_bold,]}>
 
-                from {item.fromtime ? new Date(item.fromtime).toLocaleTimeString() : ''}
+                from {item.fromtime ?convertToIST(item.fromtime) : new Date(item.fromtime).toLocaleString() }
               </AppText>
               <AppText style={[$.fw_bold,]}>
-                To:{item.totime ? new Date(item.totime).toLocaleTimeString() : ''}
+                To:{item.totime ? convertToIST(item.totime) : new Date(item.totime).toLocaleString() }
 
               </AppText>
             </AppView>

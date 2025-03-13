@@ -15,7 +15,7 @@ modifiedon: Date = new Date()
 attributes: Appoinment.AttributesData = new Appoinment.AttributesData()
 isactive: boolean = false
 issuspended: boolean = false
-parentid: number = 0
+organisationlocationid: number = 0
 isfactory: boolean = false
 notes: string = ""
 }
@@ -41,8 +41,10 @@ export class SelectedSerivice{
 }
 export class AppoinmentSelectReq {
   id: number = 0;
-  organizationid: number = 0
-  parentid: number = 0
+  organisationid: number = 0
+  organisationlocationid: number = 0
+  userid:number =0
+
 }
 
 export class AppoinmentDeleteReq {

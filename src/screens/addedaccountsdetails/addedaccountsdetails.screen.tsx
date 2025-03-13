@@ -81,8 +81,8 @@ export function AddedAccountsDetailsScreen() {
     var req = new Staff()
     req.userid = selecteduser.userid;
     req.roles = userPermissions
-    req.organizationid = Selectorganisationlocationid.toString();
-    req.parentid = usercontext.value.organisationid;
+    req.organisationid = usercontext.value.organisationid;
+    req.organisationlocationid =  Selectorganisationlocationid;
     var res = await staffservice.save(req)
     if (res) {
       Alert.alert(environment.baseurl, "successfully created")

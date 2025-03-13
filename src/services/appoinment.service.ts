@@ -65,4 +65,17 @@ export class AppoinmentService {
                 
         return resp.item;
     }
+
+
+    async Bookappoinment(req: Appoinment) {
+        let postdata: ActionReq<Appoinment> = new ActionReq<Appoinment>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<string>>(
+            this.baseurl + '/Bookappoinment',
+            postdata
+        );
+                
+        return resp.item;
+    }
+
 }

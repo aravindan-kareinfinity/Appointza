@@ -4,6 +4,7 @@ import {
   Staff,
   StaffDeleteReq,
   StaffSelectReq,
+  StaffUser,
 } from '../models/staff.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
 import {environment} from '../utils/environment';
@@ -63,6 +64,18 @@ export class StaffService {
             postdata
         );
                 
+        return resp.item;
+    }
+
+
+    async SelectStaffDetail(req: StaffSelectReq) {
+        let postdata: ActionReq<StaffSelectReq> =
+            new ActionReq<StaffSelectReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<Array<StaffUser>>>(
+            this.baseurl + '/SelectStaffDetail', 
+            postdata
+        );
         return resp.item;
     }
 }

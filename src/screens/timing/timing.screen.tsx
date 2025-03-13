@@ -114,13 +114,13 @@ export function TimingScreen() {
 
                     req.modifiedby = usercontext.value.userid;
                     req.organisationid = usercontext.value.organisationid;
-                    req.parentid = Selectedorganisationlocation.id;
+                    req.organisationlocationid = Selectedorganisationlocation.id;
                     req.day_of_week = w;
 
                     console.log("Saving timing:", req);
 
                     // Push API call to the promises array
-                    promises.push(organisationservicetimingservice.save(req));
+                     promises.push(organisationservicetimingservice.save(req));
                 });
             });
 
@@ -147,7 +147,7 @@ export function TimingScreen() {
         try {
             var req = new OrganisationServiceTimingSelectReq()
             req.organisationid = usercontext.value.organisationid;
-            req.organizationlocationid = id;
+            req.organisationlocationid = id;
             var res = await organisationservicetimingservice.select(req)
             if (res) {
                 console.log("res", res);
@@ -170,7 +170,7 @@ export function TimingScreen() {
                         req.end_time = endTime;
                         req.modifiedby = v.modifiedby;
                         req.day_of_week = v.day_of_week;
-                        req.parentid = v.parentid;
+                        req.organisationlocationid = v.organisationlocationid;
                         req.localid = i;
                         i += 1;
             
@@ -235,12 +235,10 @@ export function TimingScreen() {
         setIsloading(true);
         try {
             if (usercontext.value.userid > 0) {
-                var orgreq: OrganisationSelectReq = new OrganisationSelectReq();
-                orgreq.id = usercontext.value.organisationid;
-
+              
                 var locreq: OrganisationLocationSelectReq =
                     new OrganisationLocationSelectReq();
-                    locreq.organisationid = usercontext.value.organisationid;
+                locreq.organisationid = usercontext.value.organisationid;
                 let locresp = await organisationlocationservice.select(locreq);
                 setOrganisationlocation(locresp || []);
             }
@@ -271,7 +269,7 @@ export function TimingScreen() {
 
             <AppView style={[$.px_normal, $.mb_medium, $.pt_medium]}>
                 <AppText style={[$.fs_enormous, $.fw_bold, $.flex_1, $.text_tint_9]}>
-                    Location
+                    Location  {usercontext.value.organisationid}
                 </AppText>
                 <FlatList
                     data={organisationlocation}
@@ -292,7 +290,7 @@ export function TimingScreen() {
 
                                     <AppText
                                         style={[$.p_small, $.text_tint_2, $.fw_medium]}>
-                                        {item.city}
+                                        {item.name} - {item.city}
                                     </AppText>
                                 </TouchableOpacity>
                             </AppView>

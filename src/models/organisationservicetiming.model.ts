@@ -13,7 +13,7 @@ modifiedon: Date = new Date()
 attributes: OrganisationServiceTiming.AttributesData = new OrganisationServiceTiming.AttributesData()
 isactive: boolean = false
 issuspended: boolean = false
-parentid: number = 0
+organisationlocationid: number = 0
 isfactory: boolean = false
 notes: string = ""
 }
@@ -34,7 +34,7 @@ modifiedon: Date = new Date()
 attributes: OrganisationServiceTiming.AttributesData = new OrganisationServiceTiming.AttributesData()
 isactive: boolean = false
 issuspended: boolean = false
-parentid: number = 0
+organisationlocationid: number = 0
 isfactory: boolean = false
 notes: string = ""
 }
@@ -50,7 +50,7 @@ export namespace OrganisationServiceTiming {
 export class OrganisationServiceTimingSelectReq {
   id: number = 0;
   organisationid:number =0;
-  organizationlocationid:number = 0;
+  organisationlocationid:number = 0;
   day_of_week:number =0;
 }
 

@@ -7,15 +7,16 @@ import {AccountScreen} from './screens/account/account.screen';
 import {TouchableOpacity} from 'react-native';
 import {ChatScreen} from './screens/chat/chat.screen';
 import {GroupScreen} from './screens/group/group.screen';
-import {EventsScreen} from './screens/events/events.screen';
 import {AppoinmentScreen} from './screens/appoinment/appoinment.screen';
+import { ServiceAvailableScreen } from './screens/servicesavailable/service.screen';
+import { ServiceScreen } from './screens/events/servicelist.screen';
 
 export type HomeTabParamList = {
   Home: undefined;
   Chat: undefined;
   Account: undefined;
   Group: undefined;
-  Events: undefined;
+  Service: undefined;
   Appoinment: undefined;
 };
 const HomeTab = createBottomTabNavigator<HomeTabParamList>();
@@ -80,8 +81,8 @@ function HomeTabNavigation() {
         }}
       />
       <HomeTab.Screen
-        name="Events"
-        component={EventsScreen}
+        name="Service"
+        component={ServiceScreen}
         options={{
           tabBarIcon: ({focused}) => (
             <TabBarIcon focused={focused} icon={CustomIcons.Account} />

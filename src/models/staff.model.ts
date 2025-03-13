@@ -1,7 +1,7 @@
 export class Staff {
   id: number = 0
 userid: number = 0
-organizationid: string = ""
+organisationid: number = 0
 roles: UsersPermissionData = new UsersPermissionData();
 image: number = 0
 version: number = 0
@@ -12,7 +12,7 @@ modifiedon: Date = new Date()
 attributes: Staff.AttributesData = new Staff.AttributesData()
 isactive: boolean = false
 issuspended: boolean = false
-parentid: number = 0
+organisationlocationid: number = 0
 isfactory: boolean = false
 notes: string = ""
 }
@@ -53,4 +53,19 @@ export class StaffSelectReq {
 export class StaffDeleteReq {
   id: number = 0;
   version: number = 0;
+}
+
+export class StaffUser extends Staff {
+ name : string = ""
+ email : string = ""
+ mobile : string = ""
+ mobilecountrycode : string = ""
+ designation : string = ""
+
+ locationname : string = ""
+ addressline1 : string = ""
+ addressline2 : string = ""
+ city : string = ""
+ state: string = "" 
+ country : string = ""
 }

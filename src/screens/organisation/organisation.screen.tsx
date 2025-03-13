@@ -85,6 +85,8 @@ export function OrganisationScreen() {
   const onSave = async () => {
     setIsloading(true);
     try {
+      console.log("organisation",organisation);
+      
       let orgresp = await organisationservice.save(organisation);
       AppAlert({message: 'Saved'});
       getData();

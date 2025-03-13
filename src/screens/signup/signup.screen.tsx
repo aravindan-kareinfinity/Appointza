@@ -88,12 +88,13 @@ export function SignUpScreen(props: SignUpScreenProp) {
       console.log("logg",signUpModel);
       
       let usersservice = new UsersService();
+
       let registerresp = await usersservice.register({
         ...signUpModel
       });
       dispatch(usercontextactions.set(registerresp!));
       AppAlert({ message: 'Registered' });
-      if(signUpModel.primarytype == 0){
+      if(signUpModel.primarytype != 0){
         navigation.navigate('ServiceAvailable');
       }
     
