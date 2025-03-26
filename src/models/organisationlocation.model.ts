@@ -6,6 +6,7 @@ addressline1: string = ""
 addressline2: string = ""
 city: string = ""
 state: string = ""
+district:string=""
 country: string = ""
 latitude: number = 0
 longitude: number = 0

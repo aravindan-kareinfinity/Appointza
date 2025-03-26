@@ -15,7 +15,7 @@ modifiedon: Date = new Date()
 attributes: OrganisationServices.AttributesData = new OrganisationServices.AttributesData()
 isactive: boolean = false
 issuspended: boolean = false
-parentid: number = 0
+organisationid: number = 0
 isfactory: boolean = false
 notes: string = ""
 }
@@ -42,7 +42,7 @@ export class comboids{
 
 export class OrganisationServicesSelectReq {
   id: number = 0;
-  parentid:number =0
+  organisationid:number =0
 }
 
 export class OrganisationServicesDeleteReq {

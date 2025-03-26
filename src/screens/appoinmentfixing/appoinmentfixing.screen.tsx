@@ -35,7 +35,7 @@ import { OrganisationServiceTimingFinal, OrganisationServiceTimingSelectReq, Wee
 import { OrganisationServicesService } from '../../services/organisationservices.service';
 import { OrganisationServices, OrganisationServicesSelectReq } from '../../models/organisationservices.model';
 import { DatePickerComponent } from '../../components/Datetimepicker.component';
-import { Appoinment, SelectedSerivice } from '../../models/appoinment.model';
+import { Appoinment, AppoinmentFinal, SelectedSerivice } from '../../models/appoinment.model';
 import { BottomSheetComponent } from '../../components/bottomsheet.component';
 import { AppoinmentService } from '../../services/appoinment.service';
 type AppoinmentFixingScreenProp = CompositeScreenProps<
@@ -46,9 +46,9 @@ export function AppoinmentFixingScreen() {
     const navigation = useNavigation<AppoinmentFixingScreenProp['navigation']>();
     const [organisationservices, setOrganisationservices] = useState<OrganisationServices[]>([]);
     const [organisationlocationTiming, setOrganisationlocationTiming] = useState<
-        Appoinment[]
+    AppoinmentFinal[]
     >([]);
-    const [seletedTiming, setSelectedtiming] = useState(new Appoinment());
+    const [seletedTiming, setSelectedtiming] = useState(new AppoinmentFinal());
     const [showdatepicker, setshowdatepicker] = useState(false)
     const [isloading, setIsloading] = useState(false);
     const servicesAvailableservice = useMemo(() => new OrganisationServicesService(), []);
@@ -62,32 +62,36 @@ export function AppoinmentFixingScreen() {
 
 
     const handleServiceSelection = (req: OrganisationServices) => {
-        var item = new SelectedSerivice();
+        const item = new SelectedSerivice();
         item.id = req.id;
         item.servicename = req.Servicename;
         item.serviceprice = req.offerprize;
         item.servicetimetaken = req.timetaken;
         item.iscombo = req.Iscombo;
-
+    
         setSelectedService(prevSelected => {
             const isSelected = prevSelected.some(service => service.id === item.id);
-
-          
+    
             setSelectedtiming(prev => {
-                let baseTime = prev?.totime instanceof Date ? new Date(prev.totime) : new Date(seletedTiming.fromtime);
-
+                // Convert `totime` from string to Date object
+                const baseTime = prev?.totime ? new Date(`1970-01-01T${prev.totime}`) : new Date(`1970-01-01T${seletedTiming.fromtime}`);
+    
+                // Add or subtract time based on selection
                 if (isSelected) {
                     baseTime.setMinutes(baseTime.getMinutes() - req.timetaken);
                 } else {
                     baseTime.setMinutes(baseTime.getMinutes() + req.timetaken);
                 }
-
+    
+                // Convert the updated time back to "hh:mm:ss" string format
+                const updatedTotime = baseTime.toTimeString().split(' ')[0];
+    
                 return {
                     ...prev,
-                    totime: baseTime
+                    totime: updatedTotime, // Store as string
                 };
             });
-
+    
             return isSelected
                 ? prevSelected.filter(service => service.id !== item.id)
                 : [...prevSelected, item];
@@ -140,7 +144,7 @@ export function AppoinmentFixingScreen() {
     const getdata = async () => {
         try {
             var organisationservicereq = new OrganisationServicesSelectReq()
-            organisationservicereq.parentid = route.params.organisationid;
+            organisationservicereq.organisationid = route.params.organisationid;
             var organisationserviceres = await servicesAvailableservice.select(organisationservicereq)
             if (organisationserviceres) {
                 setOrganisationservices(organisationserviceres)
@@ -176,21 +180,25 @@ export function AppoinmentFixingScreen() {
 
 
         try {
-            console.log("selectedService", selectedService);
-            var a = new Appoinment()
+          
+            var a = new AppoinmentFinal()
             a.appoinmentdate = seleteddate
-            a.totime = seletedTiming.totime;
+         
             a.userid = usercontext.value.userid;
             a.organisationlocationid = route.params.organisationlocationid;
             a.organizationid = route.params.organisationid;
 
-            console.log("time " , convertToUTCFormat(seletedTiming.fromtime));
+
+           var fromtimeconverted = convertToUTCFormat(seletedTiming.fromtime)
+           a.totime = seletedTiming.totime
+
+            a.fromtime = seletedTiming.fromtime
             
             
-            a.fromtime = convertToUTCFormat(seletedTiming.fromtime)
+           // a.fromtime = convertToUTCFormat(seletedTiming.fromtime)
             a.attributes.servicelist = selectedService;
             console.log("seletedTiming", a);
-            var res = await appoinmentservices.Bookappoinment(a);
+            var res = await organisationservicetiming.Bookappoinment(a);
             console.log("Appointment saved:", res);
             Alert.alert(environment.baseurl, res?.toString())
         } catch (error) {
@@ -230,8 +238,8 @@ export function AppoinmentFixingScreen() {
 
             <BottomSheetComponent ref={bottomSheetRef} screenname='New Service' Save={save} close={closeBottomSheet}>
                 <AppView>
-                    <AppText>{seletedTiming?.fromtime ? new Date(seletedTiming.fromtime).toLocaleTimeString() : ''} -
-                        {seletedTiming?.totime ? new Date(seletedTiming.totime).toLocaleTimeString() : ''}
+                    <AppText>{seletedTiming.fromtime } -
+                        {seletedTiming.totime }
                     </AppText>
                 </AppView>
 
@@ -308,9 +316,7 @@ export function AppoinmentFixingScreen() {
                             >
                                 {/* Time Display */}
                                 <AppText style={[$.fw_medium, $.fs_large,$.mr_big]}>
-                                    {item?.fromtime
-                                        ? new Date(item.fromtime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
-                                        : "N/A"}
+                                    {item.fromtime}
                                 </AppText>
 
                                 {/* Status Display */}

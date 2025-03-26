@@ -1,6 +1,6 @@
 import { ActionReq } from '../models/actionreq.model';
 import { ActionRes } from '../models/actionres.model';
-import { Appoinment } from '../models/appoinment.model';
+import { Appoinment, AppoinmentFinal } from '../models/appoinment.model';
 import {
   OrganisationServiceTiming,
   OrganisationServiceTimingDeleteReq,
@@ -72,10 +72,24 @@ export class OrganisationServiceTimingService {
         let postdata: ActionReq<OrganisationServiceTimingSelectReq> =
             new ActionReq<OrganisationServiceTimingSelectReq>();
         postdata.item = req;
-        let resp = await this.http.post<ActionRes<Array<Appoinment>>>(
+        let resp = await this.http.post<ActionRes<Array<AppoinmentFinal>>>(
             this.baseurl + '/selecttimingslot', 
             postdata
         );
         return resp.item;
     }
+
+
+    
+    async Bookappoinment(req: AppoinmentFinal) {
+        let postdata: ActionReq<AppoinmentFinal> = new ActionReq<AppoinmentFinal>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<string>>(
+            this.baseurl + '/Bookappoinment',
+            postdata
+        );
+                
+        return resp.item;
+    }
+
 }

@@ -43,7 +43,7 @@ export function ServiceAvailableScreen(props: ServiceAvailableScreenProp) {
 
     try {
       var req = new OrganisationServicesSelectReq();
-      req.parentid = usercontext.value.organisationid
+      req.organisationid = usercontext.value.organisationid
       var res = await servicesAvailableservice.select(req);
       if (res) {
 
@@ -65,11 +65,12 @@ export function ServiceAvailableScreen(props: ServiceAvailableScreenProp) {
 
       // If the service is new, add it
       if (!updatedList.some(item => item.Servicename === Service.Servicename) || Service.id > 0) {
-        var req = { ...Service, parentid: usercontext.value.organisationid };
+        var req = { ...Service };
         console.log("req",req);
         if(!req.Iscombo){
           req.servicesids.combolist =[ new comboids() ]    
         }
+        req.organisationid= usercontext.value.organisationid
         console.log("rew",req);
         
         await servicesAvailableservice.save(req);

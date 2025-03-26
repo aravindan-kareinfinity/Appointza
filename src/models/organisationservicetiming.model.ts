@@ -37,6 +37,8 @@ issuspended: boolean = false
 organisationlocationid: number = 0
 isfactory: boolean = false
 notes: string = ""
+counter:number=0
+openbefore:number=0
 }
 export namespace OrganisationServiceTiming {
   

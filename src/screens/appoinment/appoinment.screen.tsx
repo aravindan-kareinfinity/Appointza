@@ -55,8 +55,8 @@ export function AppoinmentScreen() {
       var req = new AppoinmentSelectReq();
       if(usercontext.value.organisationid){
 
-        req.organisationlocationid = usercontext.value.organisationid;
-        req.organisationid = usercontext.value.organisationlocationid;
+        req.organisationlocationid = usercontext.value.organisationlocationid;
+        req.organisationid =usercontext.value.organisationid ;
       }else{
         req.userid = usercontext.value.userid
       }
@@ -72,6 +72,10 @@ export function AppoinmentScreen() {
       setIsloading(false);
     }
   };
+
+  // const getlocation
+
+
 
   function convertToIST(utcTimestamp: string | number | Date) {
     const utcDate = new Date(utcTimestamp);
@@ -105,39 +109,42 @@ export function AppoinmentScreen() {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[$.mb_small, $.border, $.border_rounded, $.bg_tint_10, $.p_medium]}
-            onPress={() => { }}
-          >
-            {/* Appointment Timing */}
-            <AppView style={[$.flex_row,$.flex_column ]}>
-              <AppText style={[$.fw_bold,]}>
-
-                from {item.fromtime ?convertToIST(item.fromtime) : new Date(item.fromtime).toLocaleString() }
-              </AppText>
-              <AppText style={[$.fw_bold,]}>
-                To:{item.totime ? convertToIST(item.totime) : new Date(item.totime).toLocaleString() }
-
-              </AppText>
+          style={[$.mx_small,$.mb_small,$.border, $.border_rounded, $.bg_tint_10, $.p_medium]}
+          onPress={() => {}}
+        >
+          {/* Appointment Date */}
+          <AppText style={[$.fw_bold, $.fs_medium, $.mb_small]}>
+            {new Date(item.appoinmentdate).toLocaleDateString()}
+          </AppText>
+        
+          {/* Appointment Timing */}
+          <AppView style={[$.flex_row ,$.align_items_center, $.mb_small]}>
+            <AppText style={[$.fw_bold, $.fs_small, $.text_tint_1]}>
+              ⏰ From: {item.fromtime.toString()}
+            </AppText>
+            <AppText style={[$.fw_bold, $.fs_small, $.text_danger]}>
+              ⏳ To: {item.totime.toString()}
+            </AppText>
+          </AppView>
+        
+          {/* Service List */}
+          {item.attributes?.servicelist?.length > 0 && (
+            <AppView style={[$.mt_small, $.p_small, $.bg_tint_9, $.border, $.border_rounded]}>
+              <AppText style={[$.fw_medium, $.fs_small, $.mb_small]}>🔹 Services:</AppText>
+              {item.attributes.servicelist.map((service, index) => (
+                <AppView key={index} style={[$.flex_row]}>
+                  <AppText style={[$.fw_bold, $.fs_small, $.text_tint_4]}>
+                    {service.servicename}
+                  </AppText>
+                  <AppText style={[$.fw_bold, $.fs_small, $.text_success]}>
+                    {service.serviceprice}₹
+                  </AppText>
+                </AppView>
+              ))}
             </AppView>
-
-            {/* Service List */}
-            {item.attributes?.servicelist?.length > 0 && (
-              <AppView style={[$.mt_small]}>
-                <AppText style={[$.fw_medium, $.fs_small]}>Services:</AppText>
-
-                {item.attributes.servicelist.map((service, index) => {
-                  return (
-                    <AppView key={index} style={[]}>
-                      <AppText style={[$.fw_bold, $.fs_small]}>
-                        {service.servicename} - {service.serviceprice}₹
-                      </AppText>
-                    </AppView>
-                  );
-                })}
-              </AppView>
-            )}
-
-          </TouchableOpacity>
+          )}
+        </TouchableOpacity>
+        
         )}
       />
 

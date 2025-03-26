@@ -32,6 +32,28 @@ export namespace Appoinment {
 }
 
 
+export class AppoinmentFinal {
+  id: number = 0
+userid: number = 0
+organizationid: number = 0
+fromtime: string = ""
+totime: string = ""
+appoinmentdate: Date = new Date()
+status: number = 0
+statuscode: string = ""
+version: number = 0
+createdby: number = 0
+createdon: Date = new Date()
+modifiedby: number = 0
+modifiedon: Date = new Date()
+attributes: Appoinment.AttributesData = new Appoinment.AttributesData()
+isactive: boolean = false
+issuspended: boolean = false
+organisationlocationid: number = 0
+isfactory: boolean = false
+notes: string = ""
+}
+
 export class SelectedSerivice{
   id:number=0;
   servicename:string=""
