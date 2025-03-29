@@ -54,7 +54,7 @@ export const AppSwitch = (props: AppSwitchProps) => {
         $.border_tint_6,
         $.flex_row,
         $.align_items_center,
-        isOn ? {borderColor: 'none', backgroundColor: $.tint_9} : $.border,
+        $.border,
         {
           width: 54,
           height: 26,

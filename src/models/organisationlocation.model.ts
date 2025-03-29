@@ -43,3 +43,13 @@ export class OrganisationLocationDeleteReq {
   id: number = 0;
   version: number = 0;
 }
+
+export class OrganisationLocationStaffReq {
+  userid: number=0;
+}
+
+export class OrganisationLocationStaffRes {
+  organisationid: number=0;
+  name: string='';
+  organisationlocationid: number=0;
+}
