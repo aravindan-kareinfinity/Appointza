@@ -293,6 +293,8 @@ export class AppView {
   border_right: StyleProp<ViewStyle> = {borderRightWidth: 1};
   border_left: StyleProp<ViewStyle> = {borderLeftWidth: 1};
   border_rounded: StyleProp<ViewStyle> = {borderRadius: 5};
+  border_rounded2: StyleProp<ViewStyle> = {borderRadius: 12};
+
 
   /* elevation */
   elevation_1: StyleProp<ViewStyle> = {elevation: 1};

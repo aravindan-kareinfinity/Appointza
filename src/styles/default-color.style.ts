@@ -59,6 +59,7 @@ export class DefaultColor {
       tint_9: '#696969',
       tint_10: '#545454',
       tint_11: '#3E3E3E',
+      tint_ash: '#4B5563', // Ash Gray
       danger: '#FF3B30',
       success: '#34C759',
       warn: '#FFD60A',
@@ -79,17 +80,18 @@ export class DefaultColor {
       tint_8: '#A3EAA3',  // Mint Green  
       tint_9: '#C7F1C7',  // Pale Green  
       tint_10: '#EAF9EA', // Almost White Green  
-      tint_11: '#FFFFFF', 
+      tint_11: '#FFFFFF',
+      tint_ash: "#4B5563", // Ash Gray
     
       danger: '#D32F2F',  // Adjusted for better contrast
       success: '#388E3C', // Rich Success Green
       warn: '#FBC02D',   // Golden Warning
     
-      primary1: '#004225',  // Deep Jungle Green  
-      primary2: '#007F5F',  // Strong Teal Green  
+      primary1: '#EFF6FF',  // sky blue 
+      primary2: '#2A5EDD',  // Dark Blue  
       primary3: '#2FA866',  // Fresh Emerald Green  
       primary4: '#81C784',  // Light Mint Green  
-      primary5: '#DFFFD6',  // Softest Greenish White  
+      primary5: '#000',  // black  
     }
 ,    
 
@@ -105,6 +107,7 @@ export class DefaultColor {
       tint_9: '#D9D9D9',  // Pale Gray
       tint_10: '#EFEFEF', // Almost White
       tint_11: '#FFFFFF', // Pure White
+      tint_ash: '#4B5563', // Ash Gray
       danger: '#FF3B30',  // Bright Red
       success: '#30D158', // Fresh Green
       warn: '#FFC300',    // Warm Yellow
@@ -127,6 +130,7 @@ export class DefaultColor {
       tint_9: '#B3B3B3',
       tint_10: '#C4C4C4',
       tint_11: '#D5D5D5',
+      tint_ash: '#4B5563', // Ash Gray
       danger: '#FF6B6B',
       success: '#51CF66',
       warn: '#FFC107',
@@ -199,6 +203,18 @@ export class DefaultColor {
   get warn_(): string {
     return this.colors.warn;
   }
+  get primary__1(): string {
+    return this.colors.primary1;
+  }
+  get primary__2(): string {
+    return this.colors.primary2;
+  }
+  get primary__5(): string {
+    return this.colors.primary5;
+  }
+  get tint__ash(): string {
+    return this.colors.tint_ash;
+  }
 
   // Color variables
   tint_1: string = this.colors.tint_1;
@@ -228,6 +244,13 @@ export class DefaultColor {
   text_tint_9: StyleProp<TextStyle> = { color: this.tint__9 };
   text_tint_10: StyleProp<TextStyle> = { color: this.tint__10 };
   text_tint_11: StyleProp<TextStyle> = { color: this.tint__11 };
+  text_tint_ash: StyleProp<TextStyle> = { color: this.tint__ash };
+  text_primary1: StyleProp<TextStyle> = { color: this.primary__1 };
+  text_primary2: StyleProp<TextStyle> = { color: this.primary__2 };
+  text_primary5: StyleProp<TextStyle> = { color: this.primary__5 };
+
+
+
 
   text_danger: StyleProp<TextStyle> = { color: this.danger_ };
   text_success: StyleProp<TextStyle> = { color: this.success_ };
@@ -250,6 +273,10 @@ export class DefaultColor {
   bg_success: StyleProp<ViewStyle> = { backgroundColor: this.success_ };
   bg_warn: StyleProp<ViewStyle> = { backgroundColor: this.warn_ };
 
+  bg_primary1: StyleProp<ViewStyle> = { backgroundColor: this.primary__1 };
+  bg_primary2: StyleProp<ViewStyle> = { backgroundColor: this.primary__2 };
+  bg_primary5: StyleProp<ViewStyle> = { backgroundColor: this.primary__5 };
+
   /* Border Styles */
   border_tint_1: StyleProp<ViewStyle> = { borderColor: this.tint__1 };
   border_tint_2: StyleProp<ViewStyle> = { borderColor: this.tint__2 };
@@ -267,4 +294,8 @@ export class DefaultColor {
   border_danger: StyleProp<ViewStyle> = {borderColor: this.danger};
   border_success: StyleProp<ViewStyle> = {borderColor: this.success};
   border_warn: StyleProp<ViewStyle> = {borderColor: this.warn};
+
+  border_primary1: StyleProp<ViewStyle> = {borderColor: this.primary__1};
+  border_primary2: StyleProp<ViewStyle> = {borderColor: this.primary__2};
+  border_primary5: StyleProp<ViewStyle> = {borderColor: this.primary__5};
 }

@@ -8,7 +8,7 @@ import {
 } from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AppStackParamList} from '../../appstack.navigation';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
@@ -67,54 +67,73 @@ export function ServiceScreen() {
   );
 
   return (
-    <ScrollView>
-      <AppText
-        style={[$.fs_enormous, $.fw_bold, $.flex_1, $.px_small, $.text_tint_9]}>
+<AppView style={[$.bg_tint_11]}>
+
+<AppText
+        style={[$.fs_medium, $.fw_regular,  $.p_medium, $.mx_small, $.text_primary5, ]}>
         Services
       </AppText>
+
+
 
       <FlatList
         data={OrganisatonDetailList}
         nestedScrollEnabled={true}
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({item, index}) => (
-          <AppView style={[$.m_small, $.border, $.p_small, $.border_rounded]}>
-            <TouchableOpacity
-              onPress={() => {
-                navigation.navigate('AppoinmentFixing', {
-                  organisationid: item.organisationid,
-                  organisationlocationid: item.organisationlocationid,
-                });
-              }}>
-              <AppText style={[$.fw_bold, $.mb_small]}>
+          <AppView style={[$.m_small,$.elevation_4, $.p_medium, $.border_rounded]}>
+            
+              <AppText style={[$.fw_medium, $.fs_big, $.text_primary5]}>
                 {item.organisationname}
               </AppText>
 
-              <AppText style={[$.p_tiny, $.text_tint_2]}>
-                <AppText style={$.fw_medium}>Location: </AppText>
-                {item.organisationlocationname}
-              </AppText>
-
-              <AppText style={[$.p_tiny, $.text_tint_2]}>
-                <AppText style={$.fw_medium}>Service: </AppText>
-                {item.organisationprimarytypecode} (
-                {item.organisationsecondarytypecode})
-              </AppText>
-
-              <AppText style={[$.p_tiny, $.text_tint_2]}>
-                <AppText style={$.fw_medium}>Address: </AppText>
+              
+              <AppText style={[$.text_tint_ash, $.fs_small, $.align_items_center, $.mb_small, $.flex_1, $.text_primary5]}>
+                {/* <AppText style={$.fw_medium}>Location: </AppText> */}
+                {/* <CustomIcon name={CustomIcons.Location} size={20} color={''} /> */}
+                {item.organisationlocationname},{' '}
                 {item.organisationlocationaddressline1},{' '}
                 {item.organisationlocationcity},{' '}
                 {item.organisationlocationstate},{' '}
                 {item.organisationlocationpincode}
               </AppText>
-            </TouchableOpacity>
+
+              <AppView style={[$.flex_1, $.flex_row, $.align_items_center, $.flex_wrap_wrap, $.m_tiny]}>
+                
+
+                <AppView style={[ $.border_rounded2, $.bg_tint_9, $.p_tiny, $.px_small, $.m_tiny]}>
+                  <AppText style={[$.fw_regular,$.fs_small, $.text_tint_5, $.p_tiny]}>{item.organisationprimarytypecode} </AppText>
+                </AppView>
+
+                <AppView style={[ $.border_rounded2, $.bg_tint_10, $.p_tiny, $.px_small, $.m_tiny]}>
+                  <AppText style={[$.fw_regular, $.fs_small, $.text_tint_1, $.p_tiny]}>
+                    {item.organisationsecondarytypecode} </AppText>
+                </AppView>
+
+                {/* <AppText style={[$.p_tiny, $.text_tint_2]}>
+                  {item.organisationprimarytypecode} (
+                  {item.organisationsecondarytypecode})
+                </AppText> */}
+              </AppView>
+              
+
+              <AppButton style={[$.bg_tint_3, $.border_rounded2, $.mt_small]} textstyle={[$.text_tint_11, $.fs_small]} name={'Schedule Appointment'} onPress={() => {
+                navigation.navigate('AppoinmentFixing', {
+                  organisationid: item.organisationid,
+                  organisationlocationid: item.organisationlocationid,
+                });
+              }}>
+                
+              </AppButton>
           </AppView>
         )}
       />
 
     
-    </ScrollView>
+  
+</AppView>
+
   );
 }

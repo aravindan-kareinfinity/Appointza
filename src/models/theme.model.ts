@@ -16,6 +16,7 @@ export class Theme {
   tint_9: string='';
   tint_10: string='';
   tint_11: string='';
+  tint_ash: string='';
   danger: string='';
   success: string='';
   warn: string='';
