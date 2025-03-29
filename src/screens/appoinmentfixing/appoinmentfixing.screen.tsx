@@ -128,6 +128,7 @@ export function AppoinmentFixingScreen() {
             const dayNumber = Weeks[dayName as keyof typeof Weeks]; // Convert string to number
 
             organizariontimereq.day_of_week = dayNumber;
+            organizariontimereq.appointmentdate = seleteddate;
             console.log("organizariontimereq", organizariontimereq);
             console.log("timing", organizariontimereq);
 
@@ -315,13 +316,16 @@ export function AppoinmentFixingScreen() {
                                 }}
                             >
                                 {/* Time Display */}
-                                <AppText style={[$.fw_medium, $.fs_large,$.mr_big]}>
+                                <AppText style={[$.fw_medium,$.mr_big]}>
                                     {item.fromtime}
                                 </AppText>
 
                                 {/* Status Display */}
                                 <AppText style={[ $.text_tint_2, $.text_right]}>
                                     {item?.statuscode ? `Status: ${item.statuscode}` : "Status: N/A"}
+                                </AppText>
+                                <AppText style={[$.fw_medium,$.mr_big]}>
+                                    {item.totime}
                                 </AppText>
                             </TouchableOpacity>
                         )}

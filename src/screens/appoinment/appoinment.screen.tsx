@@ -20,6 +20,7 @@ import { AppoinmentService } from '../../services/appoinment.service';
 import { Appoinment, AppoinmentSelectReq } from '../../models/appoinment.model';
 import { useAppSelector } from '../../redux/hooks.redux';
 import { selectusercontext } from '../../redux/usercontext.redux';
+import { AppSwitch } from '../../components/appswitch.component';
 
 type AppoinmentScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList>,
@@ -33,45 +34,69 @@ export function AppoinmentScreen() {
   const userservice = useMemo(() => new UsersService(), []);
   const usercontext = useAppSelector(selectusercontext);
   const appoinmentservices = useMemo(() => new AppoinmentService(), []);
-  const [Apponmentlist, setAppoinmentList] = useState<
+
+  const [OrganisationApponmentlist, setOrganisationAppoinmentList] = useState<
+    Appoinment[]
+  >([]);
+  const [UserApponmentlist, setUserAppoinmentList] = useState<
     Appoinment[]
   >([]);
 
   React.useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      getData();
+      getuserappoinment();
+      getorganisationappoinment();
     });
     return unsubscribe;
   }, [navigation]);
 
   useFocusEffect(
     useCallback(() => {
-      getData();
+      if(usercontext.value.userid > 0){
+        getuserappoinment();
+      }
+      if(usercontext.value.organisationlocationid > 0){
+        getorganisationappoinment();
+      }
     }, [])
   );
-  const getData = async () => {
+
+  const getuserappoinment=async()=>{
     setIsloading(true);
-    try {
-      var req = new AppoinmentSelectReq();
-      if(usercontext.value.organisationid){
+    try{
+    var req = new AppoinmentSelectReq();
+    req.userid = usercontext.value.userid
+    var res = await appoinmentservices.select(req)
+    if(res){
 
-        req.organisationlocationid = usercontext.value.organisationlocationid;
-        req.organisationid =usercontext.value.organisationid ;
-      }else{
-        req.userid = usercontext.value.userid
-      }
-      var res = await appoinmentservices.select(req)
-      if (res) {
-        setAppoinmentList(res)
-      }
-
+      setUserAppoinmentList(res)
+    }
     } catch (error: any) {
       var message = error?.response?.data?.message;
       AppAlert({ message: message });
     } finally {
       setIsloading(false);
     }
-  };
+  }
+  const getorganisationappoinment=async()=>{
+    setIsloading(true);
+    try{
+    var req = new AppoinmentSelectReq();
+    req.organisationlocationid = usercontext.value.organisationlocationid;
+    req.organisationid =usercontext.value.organisationid ;
+    var res = await appoinmentservices.select(req)
+    if(res){
+
+      setOrganisationAppoinmentList(res)
+    }
+    } catch (error: any) {
+      var message = error?.response?.data?.message;
+      AppAlert({ message: message });
+    } finally {
+      setIsloading(false);
+    }
+  }
+  
 
   // const getlocation
 
@@ -85,6 +110,8 @@ export function AppoinmentScreen() {
     return istDate.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 }
 
+ const [isorganisation, setisorganisation] = useState(false);
+
   return (
     <ScrollView contentContainerStyle={[$.flex_1]}>
 
@@ -97,13 +124,17 @@ export function AppoinmentScreen() {
           $.mb_normal,
         ]}>
         <AppText style={[$.fs_enormous, $.fw_bold, $.text_tint_9, $.flex_1]}>
-          Appoinment {usercontext.value.organisationid} {usercontext.value.organisationlocationid}
-          {usercontext.value.userid}
+          Appoinment
         </AppText>
+
+          <AppSwitch
+                  onValueChange={() => {setisorganisation(!isorganisation)}}
+                  value={isorganisation}
+                />
       </AppView>
 
       <FlatList
-        data={Apponmentlist}
+        data={ isorganisation ? OrganisationApponmentlist :UserApponmentlist}
         nestedScrollEnabled
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id.toString()}

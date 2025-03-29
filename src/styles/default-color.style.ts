@@ -69,26 +69,29 @@ export class DefaultColor {
       primary5:'',
     },
     light: {
-      tint_1: '#3E3E3E',
-      tint_2: '#292929',
-      tint_3: '#545454',
-      tint_4: '#696969',
-      tint_5: '#7F7F7F',
-      tint_6: '#949494',
-      tint_7: '#A9A9A9',
-      tint_8: '#BFBFBF',
-      tint_9: '#D4D4D4',
-      tint_10: '#EAEAEA',
-      tint_11: '#FFFFFF',
-      danger: '#FF453A',
-      success: '#32D74B',
-      warn: '#FFD60A',
-      primary1:'#1b4332',
-      primary2:'#40916c',
-      primary3:'#52b788',
-      primary4:'#95d5b2',
-      primary5:'#b7e4c7',
-    },
+      tint_1: '#0B3D02',  // Deep Forest Green  
+      tint_2: '#165B12',  // Dark Green  
+      tint_3: '#1F7A1F',  // Classic Green  
+      tint_4: '#2C9B2F',  // Bright Leaf Green  
+      tint_5: '#3DBB40',  // Vivid Green  
+      tint_6: '#5DDC5A',  // Light Vibrant Green  
+      tint_7: '#7FE27F',  // Soft Pastel Green  
+      tint_8: '#A3EAA3',  // Mint Green  
+      tint_9: '#C7F1C7',  // Pale Green  
+      tint_10: '#EAF9EA', // Almost White Green  
+      tint_11: '#FFFFFF', 
+    
+      danger: '#D32F2F',  // Adjusted for better contrast
+      success: '#388E3C', // Rich Success Green
+      warn: '#FBC02D',   // Golden Warning
+    
+      primary1: '#004225',  // Deep Jungle Green  
+      primary2: '#007F5F',  // Strong Teal Green  
+      primary3: '#2FA866',  // Fresh Emerald Green  
+      primary4: '#81C784',  // Light Mint Green  
+      primary5: '#DFFFD6',  // Softest Greenish White  
+    }
+,    
 
     Aravind: {
       tint_1: '#404040',  // Dark Gray

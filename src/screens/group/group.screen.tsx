@@ -57,7 +57,7 @@ export function GroupScreen() {
     <AppView style={[$.pt_medium, $.flex_1]}>
       <AppView style={[$.flex_row, $.px_normal, $.align_items_center]}>
         <AppText style={[$.fs_enormous, $.fw_bold, $.text_tint_9, $.flex_1]}>
-         Group
+         Dashboard
         </AppText>
         <AppSwitch
           onValueChange={() => getData(!issuspended)}

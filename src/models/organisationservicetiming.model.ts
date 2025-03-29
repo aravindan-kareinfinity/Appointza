@@ -54,6 +54,7 @@ export class OrganisationServiceTimingSelectReq {
   organisationid:number =0;
   organisationlocationid:number = 0;
   day_of_week:number =0;
+  appointmentdate:Date =new Date();
 }
 
 export class OrganisationServiceTimingDeleteReq {
