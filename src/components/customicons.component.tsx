@@ -39,7 +39,17 @@ export enum CustomIcons {
   UpChevron,
   CloseCircle,
   Close,
-  Location
+  Location,
+  Dashboard,
+  Calendar,
+  Services,
+  User,
+  Add,
+  Organization,
+  Staff,
+  Clock,
+  Delete,
+  Money
 }
 type Props = {
   size: number;
@@ -911,6 +921,147 @@ export const CustomIcon = (props: Props) => {
           />
         </Svg>
       );
+
+      case CustomIcons.Dashboard:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none">
+          <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></Path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </Svg>
+      );
+
+      case CustomIcons.Calendar:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </Svg>
+      );
+
+      case CustomIcons.Services:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <Path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></Path>
+          <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
+          <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
+          <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </Svg>
+      );
+
+      case CustomIcons.User:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </Svg>
+      );
+
+      case CustomIcons.Add:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </Svg>
+      );
+
+      case CustomIcons.Organization:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="6" x2="12" y2="6.01"></line>
+          <line x1="12" y1="10" x2="12" y2="10.01"></line>
+          <line x1="12" y1="14" x2="12" y2="14.01"></line>
+          <line x1="12" y1="18" x2="12" y2="18.01"></line>
+        </Svg>
+      );
+
+      case CustomIcons.Staff:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></Path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <Path d="M23 21v-2a4 4 0 0 0-3-3.87"></Path>
+          <Path d="M16 3.13a4 4 0 0 1 0 7.75"></Path>
+        </Svg>
+      );
+
+      case CustomIcons.Clock:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </Svg>
+      );
+
+      case CustomIcons.Delete:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></Path>
+        </Svg>
+      );
+
+      case CustomIcons.Money:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <Path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></Path>
+        </Svg>
+      );
+
 
     default:
       return <AppView></AppView>;

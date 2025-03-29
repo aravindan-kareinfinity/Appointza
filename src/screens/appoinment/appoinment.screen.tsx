@@ -113,25 +113,26 @@ export function AppoinmentScreen() {
  const [isorganisation, setisorganisation] = useState(false);
 
   return (
-    <ScrollView contentContainerStyle={[$.flex_1]}>
 
-      <AppView
-        style={[
-          $.pt_medium,
-          $.px_normal,
+    <AppView style={[$.flex_1]}>
+      <AppView style={[
+          $.pr_medium,
           $.flex_row,
           $.align_items_center,
-          $.mb_normal,
+          $.mb_tiny,
+          {justifyContent: 'space-between'}
         ]}>
-        <AppText style={[$.fs_enormous, $.fw_bold, $.text_tint_9, $.flex_1]}>
-          Appoinment
-        </AppText>
+          <AppText
+              style={[$.fs_medium, $.fw_regular,  $.p_medium, $.mx_small, $.text_primary5, ]}>
+              Appointment
+          </AppText>
 
           <AppSwitch
                   onValueChange={() => {setisorganisation(!isorganisation)}}
                   value={isorganisation}
                 />
       </AppView>
+            
 
       <FlatList
         data={ isorganisation ? OrganisationApponmentlist :UserApponmentlist}
@@ -140,37 +141,55 @@ export function AppoinmentScreen() {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
-          style={[$.mx_small,$.mb_small,$.border, $.border_rounded, $.bg_tint_10, $.p_medium]}
+          style={[$.mx_small,$.mb_small,$.border, $.border_tint_3, $.border_rounded2, $.bg_tint_11, $.p_small, $.pt_regular, { borderLeftWidth: 8 }]}
           onPress={() => {}}
         >
           {/* Appointment Date */}
-          <AppText style={[$.fw_bold, $.fs_medium, $.mb_small]}>
-            {new Date(item.appoinmentdate).toLocaleDateString()}
+          <AppText style={[$.fw_bold, $.fs_medium, $.mb_small, $.text_primary5]}>
+            {new Date(item.appoinmentdate).toLocaleDateString('en-US', { 
+              weekday: 'short', // Full day name (e.g., Monday)
+              month: 'short',   // Full month name (e.g., March)
+              day: 'numeric'   // Date (e.g., 18)
+            })}
           </AppText>
         
           {/* Appointment Timing */}
           <AppView style={[$.flex_row ,$.align_items_center, $.mb_small]}>
-            <AppText style={[$.fw_bold, $.fs_small, $.text_tint_1]}>
+            <AppText style={[$.fw_medium, $.fs_small, $.text_primary5, $.mr_tiny]}>
+              {/* <CustomIcon name={CustomIcons.Clock} size={20} color={''} /> */}
               ⏰ From: {item.fromtime.toString()}
             </AppText>
-            <AppText style={[$.fw_bold, $.fs_small, $.text_danger]}>
-              ⏳ To: {item.totime.toString()}
+            <AppText style={[$.fw_medium, $.fs_small, $.text_primary5, $.ml_tiny]}>
+               To: {item.totime.toString()}
             </AppText>
           </AppView>
         
           {/* Service List */}
           {item.attributes?.servicelist?.length > 0 && (
-            <AppView style={[$.mt_small, $.p_small, $.bg_tint_9, $.border, $.border_rounded]}>
-              <AppText style={[$.fw_medium, $.fs_small, $.mb_small]}>🔹 Services:</AppText>
+            <AppView style={[$.mt_small, $.p_small,]}>
+              <AppView style={[$.flex_1, $.flex_row, $.align_items_center, {justifyContent: 'space-between'}]}> 
+                <AppText style={[$.fw_semibold, $.fs_small, $.mb_small, $.text_primary5]}> Services</AppText>
+                <AppText style={[$.fw_medium, $.fs_small, $.mb_small, $.text_tint_11, $.bg_danger, $.border_rounded]}> Total: ₹{item.attributes.servicelist.reduce((total, service) => total + (Number(service.serviceprice) || 0), 0).toString()} </AppText>
+              </AppView>
               {item.attributes.servicelist.map((service, index) => (
-                <AppView key={index} style={[$.flex_row]}>
-                  <AppText style={[$.fw_bold, $.fs_small, $.text_tint_4]}>
+              <AppView key={index} style={[$.flex_row, $.align_items_center, {flexWrap: 'wrap' }]}>
+  
+                {/* Service Name */}
+                <AppView style={[{ flex: 1 }, $.ml_tiny]}>
+                  <AppText style={[$.fw_bold, $.fs_small, $.mb_small, $.text_tint_ash, { flexShrink: 1, maxWidth: '80%' }]}>
                     {service.servicename}
                   </AppText>
-                  <AppText style={[$.fw_bold, $.fs_small, $.text_success]}>
-                    {service.serviceprice}₹
+                </AppView>
+              
+                {/* Price */}
+                <AppView style={[{ flexShrink: 0 }]}>
+                  <AppText style={[$.fw_bold, $.fs_small, $.mb_small, $.text_success]}>
+                    ₹{service.serviceprice}
                   </AppText>
                 </AppView>
+              
+              </AppView>
+              
               ))}
             </AppView>
           )}
@@ -178,7 +197,9 @@ export function AppoinmentScreen() {
         
         )}
       />
+    </AppView>
 
-    </ScrollView>
+      
+
   );
 }
