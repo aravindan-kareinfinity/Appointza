@@ -231,6 +231,7 @@ export class DefaultColor {
   danger: string = this.colors.danger;
   success: string = this.colors.success;
   warn: string = this.colors.warn;
+  tint_primary_5 :string = this.colors.primary5
 
   /* Text Styles */
   text_tint_1: StyleProp<TextStyle> = { color: this.tint__1 };

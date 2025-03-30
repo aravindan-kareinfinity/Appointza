@@ -30,7 +30,7 @@ export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, re
             {/* Bottom Sheet */}
             <RBSheet
                 ref={bottomSheetRef}
-                height={screenHeight / 1.2} // Customize height
+                height={screenHeight / 2} // Customize height
                 openDuration={250} // Animation duration
                 // closeOnDragDown={true}
                 closeOnPressMask={true}
@@ -47,9 +47,9 @@ export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, re
                 }}
             >
 
-                <AppText style={[$.text_tint_4, $.fs_medium]}>{props.screenname}</AppText>
+                <AppText style={[ $.fs_medium,$.text_primary5]}>{props.screenname}</AppText>
 
-                <ScrollView style={[$.flex_1]}>
+                <ScrollView style={[$.flex_1,$.text_primary5]}>
 
                     {props.children}
                 </ScrollView>

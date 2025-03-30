@@ -1041,14 +1041,45 @@ export const CustomIcon = (props: Props) => {
         <Svg
           width={props.size}
           height={props.size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"></polyline>
-          <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></Path>
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M16.6666 20V28.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M23.3334 20V28.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M7 12H33.6667"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M10 17V30.3333C10 33.0948 12.2386 35.3333 15 35.3333H25C27.7615 35.3333 30 33.0948 30 30.3333V17"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M15 8.33333C15 6.49238 16.4924 5 18.3333 5H21.6667C23.5077 5 25 6.49238 25 8.33333V11.6667H15V8.33333Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </Svg>
       );
-
       case CustomIcons.Money:
       return (
         <Svg

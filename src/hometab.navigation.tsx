@@ -15,7 +15,7 @@ export type HomeTabParamList = {
   Home: undefined;
   Chat: undefined;
   Account: undefined;
-  Group: undefined;
+  // Group: undefined;
   Service: undefined;
   Appoinment: undefined;
 };
@@ -67,11 +67,11 @@ function HomeTabNavigation() {
           </AppView>
         );
       }}
-      initialRouteName="Group"
+      initialRouteName="Service"
       screenOptions={{
         headerShown: false,
       }}>
-      <HomeTab.Screen
+      {/* <HomeTab.Screen
         name="Group"
         component={GroupScreen}
         options={{
@@ -79,7 +79,7 @@ function HomeTabNavigation() {
             <TabBarIcon focused={focused} icon={CustomIcons.Account} />
           ),
         }}
-      />
+      /> */}
       <HomeTab.Screen
         name="Service"
         component={ServiceScreen}
@@ -116,7 +116,7 @@ const TabBarIcon = (props: {focused: boolean; icon: CustomIcons}) => {
     <AppView style={[$.align_items_center, $.justify_content_center]}>
       <CustomIcon
         name={props.icon}
-        color={props.focused ? $.tint_1 : $.tint_7}
+        color={props.focused ? $.tint_8 : $.tint_primary_5}
         size={$.s_big}
         stroke={3}
       />

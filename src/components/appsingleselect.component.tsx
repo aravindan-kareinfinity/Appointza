@@ -84,8 +84,9 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
   return (
     <TouchableOpacity
       style={[
-        $.bg_tint_10,
-        $.p_compact,
+        $.bg_tint_11,
+        $.p_compact,$.mx_compact,
+        $.border,$.border_rounded,
         props.style,
         (istouched || props.issubmitted) && !isvalid() && [$.border, $.border_danger],
       ]}
@@ -129,7 +130,7 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
           style={[$.w_100, $.h_100, {backgroundColor: '#000000aa'}]}>
           <AppView
             style={[
-              $.bg_tint_10,
+              $.bg_tint_11,
               $.flex_1,
               $.mt_colossal,
               $.border,

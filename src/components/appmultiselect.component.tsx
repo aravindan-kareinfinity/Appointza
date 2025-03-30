@@ -81,14 +81,13 @@ export const AppMultiSelect = <T,>(props: AppMultiSelectProps<T>) => {
   return (
     <TouchableOpacity
       style={[
-        $.bg_tint_10,
-        $.p_compact,
-        props.style,
+        $.bg_tint_11,$.p_small,$.m_tiny,$.border_rounded,
+        props.style,$.elevation_4,
         props.showerror && !isvalid() && [$.border, $.border_danger],
       ]}
       onPress={toggleModel}>
       <AppView style={$.flex_row}>
-        <AppText style={[$.fs_compact, $.flex_1]}>{props.title}</AppText>
+        <AppText style={[$.fs_compact,$.text_primary5, $.flex_1]}>{props.title}</AppText>
         {props.required && (
           <AppText style={[$.text_danger, $.fs_regular]}>*</AppText>
         )}
@@ -110,7 +109,7 @@ export const AppMultiSelect = <T,>(props: AppMultiSelectProps<T>) => {
           style={[$.w_100, $.h_100, {backgroundColor: '#000000aa'}]}>
           <AppView
             style={[
-              $.bg_tint_10,
+              $.bg_tint_11,
               $.flex_1,
               $.mt_colossal,
               $.border,
@@ -118,11 +117,11 @@ export const AppMultiSelect = <T,>(props: AppMultiSelectProps<T>) => {
               {borderTopLeftRadius: 20, borderTopRightRadius: 20},
             ]}>
             <AppText
-              style={[$.fs_compact, $.fs_medium, $.text_tint_4, $.p_compact]}>
+              style={[$.fs_compact, $.fs_medium, $.text_primary5, $.p_compact]}>
               {props.title}
             </AppText>
             <AppTextInput
-              style={[$.bg_tint_11]}
+              style={[$.bg_tint_11,$.px_compact,$.text_primary5]}
               placeholder="Search"
               onChangeText={text => {
                 setSearchtext(text);
@@ -131,13 +130,13 @@ export const AppMultiSelect = <T,>(props: AppMultiSelectProps<T>) => {
             />
             <FlatList
               data={filtereddata}
-              style={[$.pt_compact, $.flex_1]}
+              style={[$.pt_compact,]}
               renderItem={({item}) => {
                 let id = props.keyExtractor(item);
 
                 return (
                   <TouchableOpacity
-                    style={[$.p_compact, isSelected(id) && [$.bg_tint_11]]}
+                    style={[$.p_compact, isSelected(id) && [$.bg_tint_8]]}
                     onPress={() => {
                       toggleSelection(id);
                     }}>

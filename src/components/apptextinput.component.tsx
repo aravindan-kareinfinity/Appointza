@@ -33,15 +33,14 @@ export const AppTextInput = (props: AppTextInputProps) => {
   return (
     <AppView
       style={[
-        $.bg_tint_10,
-        $.p_compact,
+        $.bg_primary5,
         props.style,
-        props.showerror && !isvalid() && [$.border, $.border_danger],
+        props.showerror && !isvalid() && [$.border,$.border_danger],
       ]}>
       {props.placeholder &&
         props.value != undefined &&
         props.value.length > 0 && (
-          <AppText style={[$.fs_compact]}>{props.placeholder}</AppText>
+          <AppText style={[$.fs_compact,$.text_primary5]}>{props.placeholder}</AppText>
         )}
       <AppView style={[$.flex_row, $.align_items_center]}>
         {props.icon != undefined && (
@@ -59,7 +58,7 @@ export const AppTextInput = (props: AppTextInputProps) => {
             $.flex_1,
             $.fs_compact,
             $.fw_semibold,
-            $.text_tint_1,
+            $.text_primary5,
             {padding: 0},
           ]}
           placeholder={props.placeholder}
