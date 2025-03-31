@@ -166,7 +166,7 @@ export function LocationScreen(props: LocationScreenProp) {
         </AppView>
         <ScrollView style={[$.flex_1]}>
           <AppTextInput
-            style={[$.bg_tint_10, $.mx_regular, $.mb_medium]}
+            style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
             placeholder="Location name"
             value={organisationlocation.name}
             onChangeText={loc => {
@@ -177,7 +177,7 @@ export function LocationScreen(props: LocationScreenProp) {
             }}
           />
           <AppTextInput
-            style={[$.bg_tint_10, $.mx_regular, $.mb_medium]}
+            style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
             placeholder="No, Building name"
             value={organisationlocation.addressline1}
             onChangeText={loc => {
@@ -188,7 +188,7 @@ export function LocationScreen(props: LocationScreenProp) {
             }}
           />
           <AppTextInput
-            style={[$.bg_tint_10, $.mx_regular, $.mb_medium]}
+            style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
             placeholder="Road name, Area"
             value={organisationlocation.addressline2}
             onChangeText={loc => {
@@ -200,7 +200,7 @@ export function LocationScreen(props: LocationScreenProp) {
           />
           <AppView style={[$.flex_row, $.mb_medium, $.mx_regular]}>
             <AppTextInput
-              style={[$.bg_tint_10, $.flex_1, $.mr_medium]}
+              style={[$.bg_tint_11, $.flex_1, $.mr_medium]}
               placeholder="State"
               value={organisationlocation.state}
               onChangeText={loc => {
@@ -211,7 +211,7 @@ export function LocationScreen(props: LocationScreenProp) {
               }}
             />
             <AppTextInput
-              style={[$.bg_tint_10, $.flex_1]}
+              style={[$.bg_tint_11, $.flex_1]}
               placeholder="City"
               value={organisationlocation.city}
               onChangeText={loc => {
@@ -222,7 +222,7 @@ export function LocationScreen(props: LocationScreenProp) {
               }}
             />
           </AppView>
-          <AppView>
+          {/* <AppView>
             <AppText>
               {organisationlocation.country} ,
               {organisationlocation.state} ,
@@ -230,9 +230,9 @@ export function LocationScreen(props: LocationScreenProp) {
               {organisationlocation.city} ,
               {organisationlocation.pincode} , 
             </AppText>
-          </AppView>
+          </AppView> */}
           <AppTextInput
-            style={[$.bg_tint_10, $.mx_regular, $.mb_medium]}
+            style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
             placeholder="Pincode"
             value={organisationlocation.pincode}
             onChangeText={loc => {
@@ -260,7 +260,7 @@ export function LocationScreen(props: LocationScreenProp) {
         ]}>
         <AppButton
           name="Cancel"
-          style={[$.bg_tint_10, $.flex_1, $.mr_huge]}
+          style={[$.bg_tint_11, $.flex_1, $.mr_huge]}
           textstyle={[$.text_danger]}
           onPress={() => {
             navigation.navigate('Organisation');

@@ -90,7 +90,7 @@ export function ProfileScreen() {
           </AppText>
         </AppView>
         <AppTextInput
-          style={[$.bg_tint_10, $.mx_regular, $.mb_medium]}
+          style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
           placeholder="Name"
           value={profile.name}
           onChangeText={text => {
@@ -101,7 +101,7 @@ export function ProfileScreen() {
           }}
         />
         <AppTextInput
-          style={[$.bg_tint_10, $.mx_regular, $.mb_medium]}
+          style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
           placeholder="Role"
           value={profile.designation}
           onChangeText={text => {
@@ -113,7 +113,7 @@ export function ProfileScreen() {
         />
 
         <AppTextInput
-          style={[$.bg_tint_10, $.mx_regular, $.mb_medium]}
+          style={[$.bg_tint_11, $.mx_regular, $.mb_medium,$.text_primary5]}
           placeholder="Contact"
           value={profile.mobile}
           onChangeText={text => {
@@ -133,14 +133,14 @@ export function ProfileScreen() {
         ]}>
         <AppButton
           name="Cancel"
-          style={[$.bg_tint_10, $.flex_1, $.mr_huge]}
+          style={[$.bg_tint_11, $.flex_1, $.mr_huge,$.border,$.border_rounded,$.border_danger]}
           textstyle={[$.text_danger]}
           onPress={() => {}}
         />
         <AppButton
           name="Save"
-          style={[$.bg_success, $.flex_1]}
-          textstyle={[$.text_tint_11]}
+          style={[ $.flex_1,$.border,$.border_rounded,$.border_success]}
+          textstyle={[$.text_success]}
           onPress={saveProfile}
         />
       </AppView>

@@ -26,8 +26,11 @@ import {AppAlert} from '../../components/appalert.component';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
 import {useEffect} from 'react';
 import React from 'react';
-import { Organisation, OrganisationSelectReq } from '../../models/organisation.model';
-import { OrganisationService } from '../../services/organisation.service';
+import {
+  Organisation,
+  OrganisationSelectReq,
+} from '../../models/organisation.model';
+import {OrganisationService} from '../../services/organisation.service';
 type OrganisationScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Organisation'>,
   BottomTabScreenProps<HomeTabParamList>
@@ -36,7 +39,7 @@ export function OrganisationScreen() {
   const navigation = useNavigation<OrganisationScreenProp['navigation']>();
   const [organisation, setOrganisation] = useState(new Organisation());
   const [organisationlocation, setOrganisationlocation] = useState<
-  OrganisationLocation[]
+    OrganisationLocation[]
   >([]);
   const [isloading, setIsloading] = useState(false);
   const organisationservice = useMemo(() => new OrganisationService(), []);
@@ -56,23 +59,22 @@ export function OrganisationScreen() {
       if (usercontext.value.userid > 0) {
         var orgreq: OrganisationSelectReq = new OrganisationSelectReq();
         orgreq.id = usercontext.value.organisationid;
-        console.log("orgreq",orgreq);
-        
-        let orgresp = await organisationservice.select(orgreq);
-        if(orgresp){
+        console.log('orgreq', orgreq);
 
+        let orgresp = await organisationservice.select(orgreq);
+        if (orgresp) {
           setOrganisation(orgresp[0]);
         }
 
-        var locreq: OrganisationLocationSelectReq = new OrganisationLocationSelectReq();
-        locreq.organisationid = usercontext.value.organisationid
+        var locreq: OrganisationLocationSelectReq =
+          new OrganisationLocationSelectReq();
+        locreq.organisationid = usercontext.value.organisationid;
         let locresp = await organisationlocationservice.select(locreq);
         if (locresp) {
           setOrganisationlocation(locresp);
         } else {
           setOrganisationlocation([]); // Provide an empty array as a fallback
         }
-        
       }
     } catch (error: any) {
       var message = error?.response?.data?.message;
@@ -85,8 +87,8 @@ export function OrganisationScreen() {
   const onSave = async () => {
     setIsloading(true);
     try {
-      console.log("organisation",organisation);
-      
+      console.log('organisation', organisation);
+
       let orgresp = await organisationservice.save(organisation);
       AppAlert({message: 'Saved'});
       getData();
@@ -114,12 +116,12 @@ export function OrganisationScreen() {
             />
           </TouchableOpacity>
           <AppText
-            style={[$.ml_compact, $.p_small, $.text_tint_2, $.fw_medium]}>
+            style={[$.ml_compact, $.p_small, $.text_primary5, $.fw_medium]}>
             Organisation
           </AppText>
         </AppView>
         <AppTextInput
-          style={[$.bg_tint_10, $.mx_regular, $.mb_medium]}
+          style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
           placeholder="Organisation name"
           value={organisation.name}
           onChangeText={org => {
@@ -130,7 +132,7 @@ export function OrganisationScreen() {
           }}
         />
         <AppTextInput
-          style={[$.bg_tint_10, $.mx_regular, $.mb_medium]}
+          style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
           placeholder="GST number"
           value={organisation.gstnumber}
           onChangeText={org => {
@@ -146,14 +148,23 @@ export function OrganisationScreen() {
           }}
           style={[$.flex_row, $.mx_regular, $.align_items_center, $.mb_medium]}>
           <AppText
-            style={[$.pl_extrasmall, $.text_tint_2, $.fw_medium, $.flex_1]}>
+            style={[
+              $.pl_extrasmall,
+              $.text_primary5,
+              $.fw_medium,
+              $.fw_bold,
+              $.flex_1,
+            ]}>
             Location
           </AppText>
+          <AppView style={[$.border,$.border_tint_11,$.elevation_4]}>
+
           <CustomIcon
             name={CustomIcons.AddSquareRounded}
             size={$.s_medium}
-            color={$.tint_2}
+            color={$.tint_primary_5}
           />
+          </AppView>
         </TouchableOpacity>
         <FlatList
           style={[$.flex_1]}
@@ -167,27 +178,23 @@ export function OrganisationScreen() {
                   id: item.id,
                 });
               }}>
-              <AppView
-                style={[$.bg_tint_10, $.mb_medium, $.p_compact, $.mx_regular]}>
-                <AppText style={[$.text_tint_2, $.fw_semibold, $.fs_compact]}>
-                  {item.name},
-                  {item.addressline1},
-                  {item.addressline2},
-                  {item.city},
-                  {item.state},
-                  {item.pincode}
-                </AppText>
-              </AppView>
-              <AppView
+              <AppText
                 style={[
-                  {position: 'absolute', top: 5, right: 20,},
+                  $.text_primary5,
+                  $.mx_regular,
+                  $.fw_semibold,
+                  $.fs_compact,
                 ]}>
+                {item.name},{item.addressline1},{item.addressline2},{item.city},
+                {item.state},{item.pincode}
+              </AppText>
+              <TouchableOpacity style={[$.flex_1,{position: 'absolute', top: 5, right: 20}]}>
                 <CustomIcon
-                  name={CustomIcons.AddSquareRounded}
+                  name={CustomIcons.Delete}
                   size={$.s_compact}
-                  color={$.tint_2}
+                  color={$.danger}
                 />
-              </AppView>
+              </TouchableOpacity>
             </TouchableOpacity>
           )}
         />
@@ -202,7 +209,7 @@ export function OrganisationScreen() {
         ]}>
         <AppButton
           name="Cancel"
-          style={[$.bg_tint_10, $.flex_1, $.mr_huge]}
+          style={[$.bg_tint_11,$.border,$.border_rounded,$.border_danger, $.flex_1, $.mr_huge]}
           textstyle={[$.text_danger]}
           onPress={() => {
             navigation.navigate('Settings');
@@ -210,8 +217,8 @@ export function OrganisationScreen() {
         />
         <AppButton
           name="Save"
-          style={[$.bg_success, $.flex_1]}
-          textstyle={[$.text_tint_11]}
+          style={[ $.flex_1,$.border,$.border_rounded,$.border_success]}
+          textstyle={[$.text_success]}
           onPress={onSave}
         />
       </AppView>

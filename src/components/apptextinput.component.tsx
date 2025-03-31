@@ -62,7 +62,7 @@ export const AppTextInput = (props: AppTextInputProps) => {
             {padding: 0},
           ]}
           placeholder={props.placeholder}
-          placeholderTextColor={$.tint_5}
+          placeholderTextColor={$.tint_primary_5}
           readOnly={props.readonly}></TextInput>
         {props.required && (
           <AppText style={[$.text_danger, $.fs_regular]}>*</AppText>

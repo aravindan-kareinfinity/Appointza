@@ -163,18 +163,18 @@ export function AppoinmentScreen() {
             $.mx_small,
             $.text_primary5,
           ]}>
-          Appointment {usercontext.value.userid}
+          Appointment
         </AppText>
 
-        <AppSwitch
+  { selectlocation.organisationlocationid > 0 &&      <AppSwitch
           onValueChange={() => {
             setisorganisation(!isorganisation);
           }}
           value={isorganisation}
-        />
+        />}
       </AppView>
 
-      <AppSingleSelect
+     {locationlist.length > 1 && <AppSingleSelect
         data={locationlist}
         keyExtractor={e => e.organisationlocationid.toString()}
         searchKeyExtractor={e => e.name}
@@ -191,7 +191,7 @@ export function AppoinmentScreen() {
         }}
         title="Select Location"
         style={[$.mb_normal]}
-      />
+      />}
 
       <FlatList
         data={isorganisation ? OrganisationApponmentlist : UserApponmentlist}
