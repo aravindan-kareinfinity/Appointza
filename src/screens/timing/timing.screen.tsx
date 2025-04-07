@@ -49,218 +49,30 @@ type TimingScreenProp = CompositeScreenProps<
 
 export function TimingScreen() {
   const navigation = useNavigation<TimingScreenProp['navigation']>();
-  const [organisationlocation, setOrganisationlocation] = useState<
-    OrganisationLocation[]
-  >([]);
-  const [Selectedorganisationlocation, setSelectedOrganisationlocation] =
+  const [organisationlocation, setOrganisationlocation] = useState<OrganisationLocation[]>([]);
+  const [Selectedorganisationlocation, setSelectedOrganisationlocation] = 
     useState<OrganisationLocation>(new OrganisationLocation());
   const [modalVisible, setModalVisible] = useState(false);
   const [isloading, setIsloading] = useState(false);
   const organisationservice = useMemo(() => new OrganisationService(), []);
   const timingservice = useMemo(() => new OrganisationServiceTiming(), []);
-  const organisationlocationservice = useMemo(
-    () => new OrganisationLocationService(),
-    [],
-  );
-  const organisationservicetimingservice = useMemo(
-    () => new OrganisationServiceTimingService(),
-    [],
-  );
+  const organisationlocationservice = useMemo(() => new OrganisationLocationService(), []);
+  const organisationservicetimingservice = useMemo(() => new OrganisationServiceTimingService(), []);
 
   const [counter, setCounter] = useState(0);
   const [openbefore, setopenbefore] = useState(0);
 
-  const [timingList, setTimingList] = useState<OrganisationServiceTiming[]>([]);
+
+
   const [showPicker, setShowPicker] = useState<{
     localid: number | null;
+    dayId: number | null;
     field: 'start_time' | 'end_time';
-  }>({localid: null, field: 'start_time'});
-
-  const [selectedDays, setSelectedDays] = useState<number[]>([]);
-
-  useEffect(() => {
-    if (timingList.length === 0) {
-      var timedefault = new OrganisationServiceTiming();
-      timedefault.localid = 1;
-      setTimingList([timedefault]);
-    }
-  }, [timingList]);
-
-  const toggleDaySelection = (dayId: number) => {
-    setSelectedDays(
-      prev =>
-        prev.includes(dayId)
-          ? prev.filter(id => id !== dayId) // Deselect if already selected
-          : [...prev, dayId], // Select if not selected
-    );
-  };
-
-  const save = async () => {
-    try {
-      var deletereq = new OrganisationServiceTimingDeleteReq();
-      deletereq.organisationid = usercontext.value.organisationid;
-      deletereq.organizationlocationid = Selectedorganisationlocation.id;
-      var deleteres = await organisationservicetimingservice.delete(deletereq);
-
-      const promises: Promise<any>[] = []; // Declare promises array
-
-      selectedDays.forEach(w => {
-        timingList.forEach(v => {
-          const req = new OrganisationServiceTimingFinal();
-
-          const startTime = new Date(v.start_time);
-          const endTime = new Date(v.end_time);
-
-          req.start_time = startTime.toLocaleTimeString('en-GB', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false,
-          });
-
-          req.end_time = endTime.toLocaleTimeString('en-GB', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false,
-          });
-
-          req.modifiedby = usercontext.value.userid;
-          req.organisationid = usercontext.value.organisationid;
-          req.organisationlocationid = Selectedorganisationlocation.id;
-          req.day_of_week = w;
-          req.counter = counter;
-          req.openbefore=openbefore;
-
-          console.log('Saving timing:', req);
-
-          // Push API call to the promises array
-          promises.push(organisationservicetimingservice.save(req));
-        });
-      });
-
-      // Wait for all API calls to complete
-      await Promise.all(promises);
-
-      // Show success message
-      Alert.alert(environment.baseurl, 'Successfully saved!');
-    } catch (error) {
-      console.error('Error saving data:', error);
-      Alert.alert(environment.baseurl, 'Failed to save. Please try again.');
-    }
-  };
-  const timeStringToDate = (timeString: string): Date => {
-    const [hours, minutes, seconds] = timeString.split(':').map(Number);
-    const now = new Date(); // Use current date
-    now.setHours(hours, minutes, seconds, 0); // Set time
-    return now;
-  };
-
-  const gettimingdata = async (id: number) => {
-    try {
-      var req = new OrganisationServiceTimingSelectReq();
-      req.organisationid = usercontext.value.organisationid;
-      req.organisationlocationid = id;
-      var res = await organisationservicetimingservice.select(req);
-      if (res) {
-        console.log('res', res);
-        const resmodify: OrganisationServiceTiming[] = [];
-        const weeksres: Set<number> = new Set();
-        const uniqueMap: Map<string, OrganisationServiceTiming> = new Map(); // Map to ensure unique start & end times
-
-        let i = 0;
-        res.forEach(v => {
-          const startTime = timeStringToDate(v.start_time);
-          const endTime = timeStringToDate(v.end_time);
-          const uniqueKey = `${startTime.getTime()}-${endTime.getTime()}`; // Unique key based on start & end time
-
-          if (!uniqueMap.has(uniqueKey)) {
-            // Ensuring uniqueness based on start & end time
-            const req = new OrganisationServiceTiming();
-            req.id = v.id;
-            req.attributes = v.attributes;
-            req.createdby = v.createdby;
-            req.start_time = startTime;
-            req.end_time = endTime;
-            req.modifiedby = v.modifiedby;
-            req.day_of_week = v.day_of_week;
-            req.organisationlocationid = v.organisationlocationid;
-            req.localid = i;
-            i += 1;
-
-            uniqueMap.set(uniqueKey, req);
-          }
-          weeksres.add(v.day_of_week);
-        });
-
-        setopenbefore(res[0].openbefore)
-        setCounter(res[0].counter)
-        setSelectedDays(Array.from(weeksres)); // Convert Set to Array
-        setTimingList(Array.from(uniqueMap.values())); // Convert Map values to Array
-      }
-    } catch {}
-  };
-
-  // Function to add new timing
-  const addTiming = () => {
-    const newTiming: OrganisationServiceTiming =
-      new OrganisationServiceTiming();
-    newTiming.localid = timingList.length + 1;
-    newTiming.start_time = new Date();
-    newTiming.end_time = new Date();
-
-    setTimingList([...timingList, newTiming]);
-  };
-
-  // Function to delete a timing
-  const deleteTiming = (localid: number) => {
-    setTimingList(prevList =>
-      prevList.filter(timing => timing.localid !== localid),
-    );
-  };
-
-  const openPicker = (localid: number, field: 'start_time' | 'end_time') => {
-    setShowPicker({localid, field});
-  };
-
-  const setSelectedTime = (selectedDate: Date) => {
-    if (showPicker.localid !== null) {
-      setTimingList(prevList =>
-        prevList.map(item =>
-          item.localid === showPicker.localid
-            ? {...item, [showPicker.field]: new Date(selectedDate)}
-            : item,
-        ),
-      );
-    }
-    setShowPicker({localid: null, field: 'start_time'}); // Close picker
-  };
+  }>({localid: null, dayId: null, field: 'start_time'});
 
   const usercontext = useAppSelector(selectusercontext);
-  useFocusEffect(
-    React.useCallback(() => {
-      getData();
-    }, []),
-  );
 
-  const getData = async () => {
-    setIsloading(true);
-    try {
-      if (usercontext.value.userid > 0) {
-        var locreq: OrganisationLocationSelectReq =
-          new OrganisationLocationSelectReq();
-        locreq.organisationid = usercontext.value.organisationid;
-        let locresp = await organisationlocationservice.select(locreq);
-        setOrganisationlocation(locresp || []);
-      }
-    } catch (error: any) {
-      var message = error?.response?.data?.message;
-      AppAlert({message});
-    } finally {
-      setIsloading(false);
-    }
-  };
-
+  // Initialize days of week
   const daysOfWeek = [
     {id: Weeks.Monday, label: 'Monday'},
     {id: Weeks.Tuesday, label: 'Tuesday'},
@@ -271,33 +83,214 @@ export function TimingScreen() {
     {id: Weeks.Sunday, label: 'Sunday'},
   ];
 
-  // Default selected days: Monday, Wednesday, and Friday
-  const defaultSelectedDays = [Weeks.Monday, Weeks.Wednesday, Weeks.Friday];
+  // Convert time string to Date object
+  const timeStringToDate = (timeString: string): Date => {
+    const [hours, minutes, seconds] = timeString.split(':').map(Number);
+    const now = new Date();
+    now.setHours(hours, minutes, seconds, 0);
+    return now;
+  };
+
+    // New state for managing time slots per day
+    const [dayTimeSlots, setDayTimeSlots] = useState<Record<number, OrganisationServiceTiming[]>>(() => {
+      const initialSlots: Record<number, OrganisationServiceTiming[]> = {};
+      daysOfWeek.forEach(day => {
+        initialSlots[day.id] = [];
+      });
+      return initialSlots;
+    });
+
+  // Fetch data on focus
+  useFocusEffect(
+    React.useCallback(() => {
+      getData();
+    }, []),
+  );
+
+  // Get organization locations
+  const getData = async () => {
+    setIsloading(true);
+    try {
+      if (usercontext.value.userid > 0) {
+        const locreq = new OrganisationLocationSelectReq();
+        locreq.organisationid = usercontext.value.organisationid;
+        const locresp = await organisationlocationservice.select(locreq);
+        setOrganisationlocation(locresp || []);
+      }
+    } catch (error: any) {
+      const message = error?.response?.data?.message;
+      AppAlert({message});
+    } finally {
+      setIsloading(false);
+    }
+  };
+
+  // Get timing data for a specific location
+  const gettimingdata = async (id: number) => {
+    try {
+      const req = new OrganisationServiceTimingSelectReq();
+      req.organisationid = usercontext.value.organisationid;
+      req.organisationlocationid = id;
+      const res = await organisationservicetimingservice.select(req);
+      
+      if (res && res.length > 0) {
+        const newDayTimeSlots: Record<number, OrganisationServiceTiming[]> = {};
+        
+        // Initialize all days with empty arrays
+        daysOfWeek.forEach(day => {
+          newDayTimeSlots[day.id] = [];
+        });
+
+        // Populate time slots for each day
+        res.forEach(v => {
+          const slot = new OrganisationServiceTiming();
+          slot.id = v.id;
+          slot.localid = v.id || Date.now(); // Use existing ID or generate new one
+          slot.start_time = timeStringToDate(v.start_time);
+          slot.end_time = timeStringToDate(v.end_time);
+          slot.day_of_week = v.day_of_week;
+          
+          if (newDayTimeSlots[v.day_of_week]) {
+            newDayTimeSlots[v.day_of_week].push(slot);
+          }
+        });
+
+        setDayTimeSlots(newDayTimeSlots);
+        setopenbefore(res[0].openbefore);
+        setCounter(res[0].counter);
+      }
+    } catch (error) {
+      console.error('Error fetching timing data:', error);
+    }
+  };
+
+  // Add time slot to a specific day
+  const addTimeSlot = (dayId: number) => {
+    const newTiming = new OrganisationServiceTiming();
+    newTiming.localid = Date.now(); // Use timestamp as unique ID
+    newTiming.start_time = new Date();
+    newTiming.end_time = new Date();
+    newTiming.day_of_week = dayId;
+    
+    setDayTimeSlots(prev => ({
+      ...prev,
+      [dayId]: [...prev[dayId], newTiming]
+    }));
+  };
+
+  // Remove time slot from a day
+  const removeTimeSlot = (dayId: number, slotId: number) => {
+    setDayTimeSlots(prev => ({
+      ...prev,
+      [dayId]: prev[dayId].filter(slot => slot.localid !== slotId)
+    }));
+  };
+
+  // Update time slot
+  const updateTimeSlot = (dayId: number, slotId: number, field: 'start_time' | 'end_time', value: Date) => {
+    setDayTimeSlots(prev => ({
+      ...prev,
+      [dayId]: prev[dayId].map(slot => 
+        slot.localid === slotId ? {...slot, [field]: value} : slot
+      )
+    }));
+  };
+
+  // Save all time slots
+  const save = async () => {
+    try {
+      // First delete existing timings
+      const deletereq = new OrganisationServiceTimingDeleteReq();
+      deletereq.organisationid = usercontext.value.organisationid;
+      deletereq.organizationlocationid = Selectedorganisationlocation.id;
+      await organisationservicetimingservice.delete(deletereq);
+
+      // Prepare all time slots for saving
+      const promises: Promise<any>[] = [];
+      
+      Object.entries(dayTimeSlots).forEach(([dayId, slots]) => {
+        slots.forEach(slot => {
+          if (slot.start_time && slot.end_time) {
+            const req = new OrganisationServiceTimingFinal();
+            
+            req.start_time = slot.start_time.toLocaleTimeString('en-GB', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            });
+
+            req.end_time = slot.end_time.toLocaleTimeString('en-GB', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            });
+
+            req.modifiedby = usercontext.value.userid;
+            req.organisationid = usercontext.value.organisationid;
+            req.organisationlocationid = Selectedorganisationlocation.id;
+            req.day_of_week = parseInt(dayId);
+            req.counter = counter;
+            req.openbefore = openbefore;
+
+            promises.push(organisationservicetimingservice.save(req));
+          }
+        });
+      });
+
+      await Promise.all(promises);
+      Alert.alert(environment.baseurl, 'Successfully saved!');
+    } catch (error) {
+      console.error('Error saving data:', error);
+      Alert.alert(environment.baseurl, 'Failed to save. Please try again.');
+    }
+  };
+
+  // Handle time selection from picker
+  const setSelectedTime = (selectedDate: Date) => {
+    if (showPicker.localid && showPicker.dayId) {
+      updateTimeSlot(
+        showPicker.dayId,
+        showPicker.localid,
+        showPicker.field,
+        selectedDate
+      );
+    }
+    setShowPicker({localid: null, dayId: null, field: 'start_time'});
+  };
+
   return (
     <ScrollView>
       <AppView style={[$.px_normal, $.mb_medium, $.pt_medium]}>
-        <AppText style={[$.fs_enormous, $.fw_bold, $.flex_1, $.text_tint_9]}>
-          Location {usercontext.value.organisationid}
+        <AppText style={[$.fs_compact, $.fw_bold, $.flex_1, $.px_small, $.text_primary5]}>
+          Location
         </AppText>
         <FlatList
           data={organisationlocation}
           nestedScrollEnabled={true}
-          // refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} />}
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({item, index}) => {
             return (
               <AppView>
-                <TouchableOpacity
-                  onPress={() => {
-                    gettimingdata(item.id);
-                    setSelectedOrganisationlocation(item);
-                    setModalVisible(true);
-                  }}>
-                  <AppText style={[$.p_small, $.text_tint_2, $.fw_medium]}>
+                <AppView>
+                  <AppText style={[$.p_small, $.text_tint_2, $.fw_medium, $.fs_compact, $.text_primary5]}>
                     {item.name} - {item.city}
                   </AppText>
-                </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    onPress={() => {
+                      gettimingdata(item.id);
+                      setSelectedOrganisationlocation(item);
+                      setModalVisible(true);
+                    }}
+                    style={[$.mb_small]}>
+                    <AppText style={[$.fw_bold, $.fs_compact]}>
+                      Edit Business Hours
+                    </AppText>
+                  </TouchableOpacity>
+                </AppView>
               </AppView>
             );
           }}
@@ -308,194 +301,150 @@ export function TimingScreen() {
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}>
-          <AppView
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              paddingHorizontal: 20,
-            }}>
-            <AppView
-              style={[
-                $.bg_tint_11,
-                {
-                  width: '95%',
-                  height: '90%', // Fixed to half the screen height
-                  borderRadius: 20,
-
-                  elevation: 5,
-                  padding: 20,
-                },
-              ]}>
+          <AppView style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            paddingHorizontal: 20,
+          }}>
+            <AppView style={[
+              $.bg_tint_11,
+              {
+                width: '95%',
+                height: '90%',
+                borderRadius: 20,
+                elevation: 5,
+                padding: 20,
+              },
+            ]}>
               <AppTextInput
                 style={[$.border_bottom, $.border_tint_11, $.bg_tint_11]}
-                placeholder="Counters "
+                placeholder="Counters"
                 value={counter.toString()}
-                onChangeText={e => {
-                  setCounter(parseInt(e));
-                }}
+                onChangeText={e => setCounter(parseInt(e) || 0)}
+                keyboardtype="numeric"
               />
 
               <AppTextInput
                 style={[$.border_bottom, $.border_tint_11, $.bg_tint_11]}
-                placeholder="How many days before can we book an appointment? "
+                placeholder="How many days before can we book an appointment?"
                 value={openbefore.toString()}
-                onChangeText={e => {
-                    setopenbefore(parseInt(e));
-                }}
+                onChangeText={e => setopenbefore(parseInt(e) || 0)}
+                keyboardtype="numeric"
               />
-              {/* Days of the Week Selection */}
-              <AppView
-                style={[
-                  $.flex_row,
-                  $.flex_wrap_wrap,
-                  $.justify_content_start,
-                  {gap: 4},
-                ]}>
+
+              {/* Days with Time Slots */}
+              <ScrollView style={{flex: 1}}>
                 {daysOfWeek.map(day => (
-                  <TouchableOpacity
-                    key={day.id}
-                    style={[
-                      $.border_rounded,
-                      $.border,
-                      $.align_items_center,
-                      $.justify_content_center,
-                      {
-                        width: 30,
-                        height: 30,
-                        borderRadius: 15,
-                        borderColor: selectedDays.includes(day.id)
-                          ? $.tint_5
-                          : $.tint_8,
-                        backgroundColor: selectedDays.includes(day.id)
-                          ? $.tint_5
-                          : $.tint_11,
-                      },
-                    ]}
-                    onPress={() => toggleDaySelection(day.id)}>
-                    <AppText
-                      style={{
-                        fontSize: 16,
-                        color: selectedDays.includes(day.id) ? '#fff' : '#333',
-                        fontWeight: 'bold',
-                      }}>
-                      {day.label.charAt(0)}
-                    </AppText>
-                  </TouchableOpacity>
-                ))}
-              </AppView>
-              {/* Scrollable Content */}
-              <ScrollView contentContainerStyle={{flexGrow: 1}}>
-                {/* Timing List */}
-                <FlatList
-                  data={timingList}
-                  keyExtractor={item => item.localid.toString()}
-                  contentContainerStyle={{marginVertical: 15, gap: 10}}
-                  renderItem={({item}) => (
-                    <AppView
-                      style={[$.flex_row, $.p_tiny, $.align_items_center]}>
-                      <AppView style={[$.flex_row]}>
-                        {/* Start Time Picker */}
-                        <TouchableOpacity
-                          onPress={() => openPicker(item.localid, 'start_time')}
-                          style={[
-                            $.border,
-                            $.border_rounded,
-                            $.p_small,
-                            $.mr_small,
-                            $.align_items_center,
-                            $.justify_content_center,
-                            $.bg_tint_10,
-                            $.border_tint_7,
-                            {
-                              width: 100,
-                              height: 40,
-                              borderRadius: 20,
-                            },
-                          ]}>
-                          <AppText
-                            style={{
-                              fontSize: 14,
-                              fontWeight: 'bold',
-                              color: '#333',
-                            }}>
-                            {item.start_time instanceof Date
-                              ? item.start_time.toLocaleTimeString()
-                              : 'Select Time'}
-                          </AppText>
-                        </TouchableOpacity>
-
-                        {/* End Time Picker */}
-                        <TouchableOpacity
-                          onPress={() => openPicker(item.localid, 'end_time')}
-                          style={[
-                            $.border,
-                            $.border_rounded,
-                            $.p_small,
-                            $.mr_small,
-                            $.align_items_center,
-                            $.justify_content_center,
-                            $.bg_tint_10,
-                            $.border_tint_7,
-                            {
-                              width: 100,
-                              height: 40,
-                              borderRadius: 20,
-                            },
-                          ]}>
-                          <AppText
-                            style={{
-                              fontSize: 14,
-                              fontWeight: 'bold',
-                              color: '#333',
-                            }}>
-                            {item.end_time instanceof Date
-                              ? item.end_time.toLocaleTimeString()
-                              : 'Select Time'}
-                          </AppText>
-                        </TouchableOpacity>
-                      </AppView>
-
-                      {/* Delete Button */}
+                  <AppView key={day.id} style={[$.mb_medium]}>
+                    <AppView style={[$.flex_row, $.align_items_center, $.mb_small]}>
+                      <AppText style={[$.flex_1, $.fw_bold]}>{day.label}</AppText>
                       <TouchableOpacity
-                        onPress={() => deleteTiming(item.localid)}>
-                        <AppText
-                          style={[
-                            $.text_tint_4,
-                            {fontSize: 15, fontWeight: 'bold'},
-                          ]}>
-                          ×
-                        </AppText>
+                        onPress={() => addTimeSlot(day.id)}
+                        style={[
+                          $.border,
+                          $.border_rounded,
+                          $.p_small,
+                          {
+                            borderColor: $.tint_5,
+                            backgroundColor: $.tint_11,
+                          },
+                        ]}>
+                        <AppText style={{color: $.tint_5}}>+ Add time</AppText>
                       </TouchableOpacity>
                     </AppView>
-                  )}
-                />
-                {/* Show DateTimePicker when needed */}
-                {showPicker.localid !== null && showPicker.field !== null && (
-                  <DatePickerComponent
-                    date={
-                      timingList.find(t => t.localid === showPicker.localid)?.[
-                        showPicker.field
-                      ] || new Date()
-                    }
-                    show={showPicker.localid !== null}
-                    mode="time"
-                    setShow={() =>
-                      setShowPicker({localid: null, field: 'start_time'})
-                    }
-                    setDate={setSelectedTime}
-                  />
-                )}
+
+                    {dayTimeSlots[day.id]?.map((slot) => (
+                      <AppView key={slot.localid} style={[$.flex_row, $.align_items_center, $.mb_small, {gap: 8}]}>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowPicker({
+                              localid: slot.localid,
+                              dayId: day.id,
+                              field: 'start_time'
+                            });
+                          }}
+                          style={[
+                            $.border,
+                            $.border_rounded,
+                            $.p_small,
+                            {
+                              flex: 1,
+                              height: 40,
+                              borderColor: $.tint_7,
+                              backgroundColor: $.tint_10,
+                            },
+                          ]}>
+                          <AppText>
+                            {slot.start_time instanceof Date 
+                              ? slot.start_time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                              : 'Start time'}
+                          </AppText>
+                        </TouchableOpacity>
+
+                        <AppText>to</AppText>
+
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowPicker({
+                              localid: slot.localid,
+                              dayId: day.id,
+                              field: 'end_time'
+                            });
+                          }}
+                          style={[
+                            $.border,
+                            $.border_rounded,
+                            $.p_small,
+                            {
+                              flex: 1,
+                              height: 40,
+                              borderColor: $.tint_7,
+                              backgroundColor: $.tint_10,
+                            },
+                          ]}>
+                          <AppText>
+                            {slot.end_time instanceof Date 
+                              ? slot.end_time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                              : 'End time'}
+                          </AppText>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={() => removeTimeSlot(day.id, slot.localid)}
+                          style={[
+                            {
+                              width: 30,
+                              height: 30,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            },
+                          ]}>
+                          <AppText style={[$.text_tint_4, {fontSize: 20}]}>×</AppText>
+                        </TouchableOpacity>
+                      </AppView>
+                    ))}
+                  </AppView>
+                ))}
               </ScrollView>
 
-              {/* Add Hours Button */}
-              <TouchableOpacity onPress={addTiming} style={[]}>
-                <AppText style={[]}>+ Add Hours</AppText>
-              </TouchableOpacity>
+              {/* DateTime Picker */}
+              {showPicker.localid !== null && (
+                <DatePickerComponent
+                  date={
+                    dayTimeSlots[showPicker.dayId!]?.find(t => t.localid === showPicker.localid)?.[
+                      showPicker.field
+                    ] || new Date()
+                  }
+                  show={showPicker.localid !== null}
+                  mode="time"
+                  setShow={() => setShowPicker({localid: null, dayId: null, field: 'start_time'})}
+                  setDate={setSelectedTime}
+                />
+              )}
 
-              <AppView style={[$.flex_row]}>
-                {/* Close Button */}
+              <AppView style={[$.flex_row, $.mt_medium]}>
                 <TouchableOpacity
                   onPress={() => setModalVisible(false)}
                   style={[
@@ -503,20 +452,16 @@ export function TimingScreen() {
                     $.m_tiny,
                     $.align_items_center,
                     {
-                      marginTop: 10,
-                      alignItems: 'center',
-                      paddingVertical: 8,
+                      paddingVertical: 12,
                       borderRadius: 10,
                       backgroundColor: '#ddd',
                     },
                   ]}>
-                  <AppText
-                    style={{fontSize: 14, color: '#333', fontWeight: 'bold'}}>
+                  <AppText style={{fontSize: 16, color: '#333', fontWeight: 'bold'}}>
                     Close
                   </AppText>
                 </TouchableOpacity>
 
-                {/* Close Button */}
                 <TouchableOpacity
                   onPress={() => {
                     save();
@@ -528,14 +473,11 @@ export function TimingScreen() {
                     $.align_items_center,
                     $.bg_tint_10,
                     {
-                      marginTop: 10,
-                      alignItems: 'center',
-                      paddingVertical: 8,
+                      paddingVertical: 12,
                       borderRadius: 10,
                     },
                   ]}>
-                  <AppText
-                    style={{fontSize: 14, color: '#333', fontWeight: 'bold'}}>
+                  <AppText style={{fontSize: 16, color: '#333', fontWeight: 'bold'}}>
                     Save
                   </AppText>
                 </TouchableOpacity>

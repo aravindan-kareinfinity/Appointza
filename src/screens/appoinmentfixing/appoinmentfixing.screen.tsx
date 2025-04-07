@@ -211,12 +211,20 @@ export function AppoinmentFixingScreen() {
 
       a.fromtime = seletedTiming.fromtime;
 
+      if (seletedTiming.totime == seletedTiming.fromtime) {
+        Alert.alert(environment.baseurl, 'select min one service');
+        return;
+      }
+
       // a.fromtime = convertToUTCFormat(seletedTiming.fromtime)
       a.attributes.servicelist = selectedService;
       console.log('seletedTiming', a);
       var res = await organisationservicetiming.Bookappoinment(a);
       console.log('Appointment saved:', res);
+      setSelectedService([])
       Alert.alert(environment.baseurl, res?.toString());
+      bottomSheetRef.current.close();
+      gettiming();
     } catch (error) {
       console.error('Error saving appointment:', error);
     }
@@ -226,7 +234,13 @@ export function AppoinmentFixingScreen() {
     <AppView style={[$.pt_normal, $.flex_1]}>
       <AppView style={[$.flex_row, $.align_items_center]}>
         <AppText
-          style={[$.fs_compact, $.fw_bold, $.flex_1, $.px_small, $.text_primary5]}>
+          style={[
+            $.fs_compact,
+            $.fw_bold,
+            $.flex_1,
+            $.px_small,
+            $.text_primary5,
+          ]}>
           Appoinment{' '}
         </AppText>
         <TouchableOpacity
@@ -240,11 +254,19 @@ export function AppoinmentFixingScreen() {
             $.bg_tint_10,
             $.border_tint_7,
           ]}>
+          {/* <CustomIcon
+                    name={CustomIcons.SingleTick}
+                    color={$.tint_2}
+                    size={$.s_compact}></CustomIcon> */}
           <AppText style={{fontSize: 14, fontWeight: 'bold', color: '#333'}}>
             {seleteddate.toDateString()}
           </AppText>
         </TouchableOpacity>
       </AppView>
+
+      <AppText style={[$.fs_compact, $.fw_bold, $.px_small, $.text_primary5]}>
+        {seleteddate.toDateString()}
+      </AppText>
 
       <BottomSheetComponent
         ref={bottomSheetRef}
@@ -268,42 +290,35 @@ export function AppoinmentFixingScreen() {
             );
 
             return (
-                <AppView
-                  style={[ 
-                    $.flex_row,
-                  ]}>
-                  <TouchableOpacity
-                    onPress={() => handleServiceSelection(item)}
-                    style={[$.p_small, $.flex_1]}>
+              <AppView style={[$.flex_row]}>
+                <TouchableOpacity
+                  onPress={() => handleServiceSelection(item)}
+                  style={[$.p_small, $.flex_1]}>
+                  <AppText style={[$.text_primary5, $.fs_compact, $.fw_bold]}>
+                    {item.Servicename}
+                  </AppText>
+                  <AppText style={[$.fs_small, $.text_tint_ash]}>
+                    {item.timetaken} min session
+                  </AppText>
+                  <AppText style={[$.fs_small, $.flex_1, $.text_tint_ash]}>
                     <AppText
                       style={[
-                        $.text_primary5,
-                        $.fs_compact,
-                        $.fw_bold,
+                        $.flex_1,
+                        {textDecorationLine: 'line-through', color: 'gray'},
                       ]}>
-                      {item.Servicename}
+                      ₹{item.prize}
                     </AppText>
-                    <AppText style={[$.fs_small, $.text_tint_ash]}>
-                      {item.timetaken} min session
-                    </AppText>
-                    <AppText style={[$.fs_small, $.flex_1, $.text_tint_ash]}>
-                      <AppText
-                        style={[
-                          $.flex_1,
-                          {textDecorationLine: 'line-through', color: 'gray'},
-                        ]}>
-                        ₹{item.prize}
-                      </AppText>
-                      <AppText>₹{item.offerprize}</AppText>
-                    </AppText>
-                  </TouchableOpacity>
-               
-                {   isSelected &&   <CustomIcon
-                      name={CustomIcons.SingleTick}
-                      color={$.tint_2}
-                      size={$.s_compact}></CustomIcon>}
-               
-                </AppView>
+                    <AppText>₹{item.offerprize}</AppText>
+                  </AppText>
+                </TouchableOpacity>
+
+                {isSelected && (
+                  <CustomIcon
+                    name={CustomIcons.SingleTick}
+                    color={$.tint_2}
+                    size={$.s_compact}></CustomIcon>
+                )}
+              </AppView>
             );
           }}
         />
@@ -323,28 +338,37 @@ export function AppoinmentFixingScreen() {
                   $.p_small,
                   $.bg_tint_11,
                   $.border_rounded,
-
+                  $.m_small,
+                  $.border,
                   $.flex_row,
                   $.align_items_center,
+                  item.statuscode === 'Booked' ? $.bg_danger : $.bg_tint_9,
                 ]}
                 onPress={() => {
-                  setSelectedtiming(item);
-                  console.log('item', item);
+                  var a = {...item};
+                  a.totime = item.fromtime;
+
+                  setSelectedtiming(a);
+                  console.log('item', item.totime);
 
                   bottomSheetRef.current?.open();
                 }}>
                 {/* Time Display */}
-                <AppText style={[$.fw_medium, $.mr_big,$.text_primary5]}>
+                <AppText style={[$.fw_medium, $.mr_big, $.text_primary5]}>
                   {item.fromtime} - {item.totime}
                 </AppText>
-             
+
                 {/* Status Display */}
-                <AppText style={[$.text_tint_2, $.text_right, item.statuscode === 'Booked' ? $.text_primary5 : $.text_tint_6]}>
-                  {item?.statuscode
-                    ? `${item.statuscode}`
-                    : 'N/A'}
+                <AppText
+                  style={[
+                    $.text_tint_2,
+                    $.text_right,
+                    item.statuscode === 'Booked'
+                      ? $.text_primary5
+                      : $.text_tint_6,
+                  ]}>
+                  {item?.statuscode ? `${item.statuscode}` : 'N/A'}
                 </AppText>
-             
               </TouchableOpacity>
             )}
           />

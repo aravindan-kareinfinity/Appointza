@@ -79,7 +79,7 @@ export function LoginScreen() {
   return (
     <AppView style={[$.flex_1]}>
       <AppView style={[$.align_items_center, $.pt_colossal, $.mb_giant]}>
-        <AppText style={[$.fw_bold, $.fs_enormous, $.text_tint_9]}>
+        <AppText style={[$.fw_bold, $.fs_enormous, $.text_primary5]}>
           Login
         </AppText>
       </AppView>
@@ -124,14 +124,14 @@ export function LoginScreen() {
           onPress={getOtp}
         />
       </AppView>
-      <AppView style={[$.align_items_center, $.flex_row, $.px_massive]}>
+      {/* <AppView style={[$.align_items_center, $.flex_row, $.px_massive]}>
         <AppText style={[$.fs_small, $.fw_regular, $.text_tint_6]}>
           Don't Have an account ? {}
         </AppText>
         <TouchableOpacity onPress={()=>{gotoSignUp(false)}}>
           <AppText style={[$.text_tint_2]}>Sign Up</AppText>
         </TouchableOpacity>
-      </AppView>
+      </AppView> */}
 
       
     </AppView>

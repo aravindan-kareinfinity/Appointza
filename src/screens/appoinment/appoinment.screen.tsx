@@ -163,10 +163,10 @@ export function AppoinmentScreen() {
             $.mx_small,
             $.text_primary5,
           ]}>
-          Appointment
+          Appointment 
         </AppText>
 
-  { selectlocation.organisationlocationid > 0 &&      <AppSwitch
+  { selectlocation && selectlocation.organisationlocationid > 0 &&      <AppSwitch
           onValueChange={() => {
             setisorganisation(!isorganisation);
           }}
