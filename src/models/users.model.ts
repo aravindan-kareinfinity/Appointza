@@ -51,6 +51,9 @@ export class UsersRegisterReq {
   primarytype: number = 0
   primarytypecode: string = ""
 
+  lattitude: number = 0;
+  longitude: number = 0;
+  googlelocation: string = '';
   locationname: string = '';
   locationaddressline1: string = '';
   locationaddressline2: string = '';

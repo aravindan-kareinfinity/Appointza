@@ -36,6 +36,7 @@ import { ReferenceType, ReferenceTypeSelectReq } from '../../models/referencetyp
 import { AppSingleSelect } from '../../components/appsingleselect.component';
 import { ReferenceValueService } from '../../services/referencevalue.service';
 import { ReferenceValue, ReferenceValueSelectReq } from '../../models/referencevalue.model';
+import { LocationPicker } from '../../components/LocationPicker';
 
 // type SignUpScreenProp = CompositeScreenProps<
 //   BottomTabScreenProps<HomeTabParamList>,
@@ -47,310 +48,334 @@ type SignUpScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList>
 >;
 export function SignUpScreen(props: SignUpScreenProp) {
+
   const navigation = useNavigation<SignUpScreenProp['navigation']>();
-  const referencetypeservice = useMemo(() => new ReferenceTypeService(), [],);
-  const referencevalueservice = useMemo(() => new ReferenceValueService(), [],);
+  const route = useRoute();
   const dispatch = useAppDispatch();
-  const route = useRoute<SignUpScreenProp['route']>();
-  const [isloading, setIsloading] = useState(false);
+  const userContext = useAppSelector(selectusercontext);
+  
+  const [isLoading, setIsLoading] = useState(false);
   const [signUpModel, setSignUpModel] = useState(new UsersRegisterReq());
-  const fileservice = useMemo(() => new FilesService(), []);
-  const usercontext = useAppSelector(selectusercontext);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   
-  const [PrimaryBussinessType, SetPrimaryBussinessType] = useState<ReferenceType[]>([])
-  const [PrimaryBussinessId, SetPrimaryBussinesId] = useState(0)
-
-  const [SecondaryBussinessType, SetSecondaryBussinessType] = useState<ReferenceValue[]>([])
-  const [SecondaryBussinessId, SetSecondaryBussinesId] = useState(0)
-
+  const [primaryBusinessTypes, setPrimaryBusinessTypes] = useState<ReferenceType[]>([]);
+  const [secondaryBusinessTypes, setSecondaryBusinessTypes] = useState<ReferenceValue[]>([]);
   
-  const pickAndUploadImage = async () => {
-    let imagelist = await imagepickerutil.launchImageLibrary();
-    let filelist = await fileservice.upload(imagelist);
-    setSignUpModel({
-      ...signUpModel,
-      organisationimageid: filelist[0],
-    });
-  };
+  const filesService = useMemo(() => new FilesService(), []);
+  const referenceTypeService = useMemo(() => new ReferenceTypeService(), []);
+  const referenceValueService = useMemo(() => new ReferenceValueService(), []);
 
+  const isOrganization = props.route.params.isorganization;
 
+  // Fetch business types on focus
   useFocusEffect(
     useCallback(() => {
-  
-      getrefererencetype()
-    }, [props.route.params.isorganization])
+      fetchReferenceTypes();
+    }, [isOrganization])
   );
 
-
-  const signUp = async () => {
-    setIsloading(true);
+  const fetchReferenceTypes = async () => {
     try {
-      console.log("logg",signUpModel);
-      
-      let usersservice = new UsersService();
-
-      let registerresp = await usersservice.register({
-        ...signUpModel
-      });
-      dispatch(usercontextactions.set(registerresp!));
-      AppAlert({ message: 'Registered' });
-      if(signUpModel.primarytype != 0){
-        navigation.navigate('ServiceAvailable');
+      const response = await referenceTypeService.select(new ReferenceTypeSelectReq());
+      if (response) {
+        setPrimaryBusinessTypes(response);
       }
-    
-    } catch (error: any) {
-      var message = error?.response?.data?.message;
-      AppAlert({ message: message });
-    } finally {
-      setIsloading(false);
+    } catch (error) {
+      handleError(error, 'Failed to fetch business types');
     }
   };
 
-  const getrefererencetype = async () => {
+  const fetchReferenceValues = async (id: number) => {
     try {
-      var req = new ReferenceTypeSelectReq()
-      var response = await referencetypeservice.select(req);
-      if (response) {
-
-        SetPrimaryBussinessType(response)
-      }
-    } catch (error: any) {
-      var message = error?.response?.data?.message;
-      AppAlert({ message: message });
-    } finally {
-      setIsloading(false);
-    }
-  }
-
-  const getrefererencevalue = async (id: number) => {
-    try {
-      var req = new ReferenceValueSelectReq();
+      const req = new ReferenceValueSelectReq();
       req.parentid = id;
-      var response = await referencevalueservice.select(req);
+      const response = await referenceValueService.select(req);
       if (response) {
-        SetSecondaryBussinessType(response)
+        setSecondaryBusinessTypes(response);
       }
-    } catch (error: any) {
-      var message = error?.response?.data?.message;
-      AppAlert({ message: message });
-    } finally {
-      setIsloading(false);
+    } catch (error) {
+      handleError(error, 'Failed to fetch business details');
     }
-  }
+  };
 
+  const pickAndUploadImage = async () => {
+    try {
+      const images = await imagepickerutil.launchImageLibrary();
+      const files = await filesService.upload(images);
+      if (files.length > 0) {
+        setSignUpModel(prev => ({
+          ...prev,
+          organisationimageid: files[0],
+        }));
+      }
+    } catch (error) {
+      handleError(error, 'Failed to upload image');
+    }
+  };
+
+  const handleLocationSelect = (location: {
+    latitude: number;
+    longitude: number;
+    address: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    pincode?: string;
+  }) => {
+    setSignUpModel(prev => ({
+      ...prev,
+      lattitude: location.latitude,
+      longitude: location.longitude,
+      googlelocation: location.address,
+      locationname: location.address,
+      locationcity: location.city || '',
+      locationstate: location.state || '',
+      locationcountry: location.country || '',
+      locationpincode: location.pincode || '',
+    }));
+    setShowLocationPicker(false);
+  };
+
+  const validateForm = (): boolean => {
+    // Basic validation - expand as needed
+    if (!signUpModel.username) {
+      AppAlert({ message: 'Please enter your name' });
+      return false;
+    }
+    if (!signUpModel.usermobile) {
+      AppAlert({ message: 'Please enter mobile number' });
+      return false;
+    }
+    if (isOrganization && !signUpModel.organisationname) {
+      AppAlert({ message: 'Please enter organization name' });
+      return false;
+    }
+    if (isOrganization && !signUpModel.lattitude) {
+      AppAlert({ message: 'Please select a location' });
+      return false;
+    }
+    return true;
+  };
+
+  const handleSignUp = async () => {
+    if (!validateForm()) return;
+    
+    setIsLoading(true);
+    try {
+      const userService = new UsersService();
+      const response = await userService.register(signUpModel);
+      
+      if (response) {
+        dispatch(usercontextactions.set(response));
+        AppAlert({ message: 'Registration successful' });
+        
+        if (signUpModel.primarytype !== 0) {
+          navigation.navigate('ServiceAvailable');
+        } else {
+          // Navigate to appropriate screen for non-org users
+        }
+      }
+    } catch (error) {
+      handleError(error, 'Registration failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleError = (error: any, defaultMessage: string) => {
+    const message = error?.response?.data?.message || defaultMessage;
+    AppAlert({ message });
+    console.error('Error:', error);
+  };
 
   return (
-    <ScrollView>
-      <AppView style={[$.pt_medium, $.px_normal]}>
-        <AppView style={[$.align_items_center, $.mb_medium]}>
-          <AppText style={[$.fs_enormous, $.fw_bold, $.align_items_center]}>
-            SignUp
-          </AppText>
-        </AppView>
+    <ScrollView contentContainerStyle={[$.p_medium]}>
+      <AppView style={[$.align_items_center, $.mb_medium]}>
+        <AppText style={[$.fs_large, $.fw_bold]}>Sign Up</AppText>
+      </AppView>
 
-        <TouchableOpacity
-          onPress={pickAndUploadImage}
-          style={[$.mb_normal, $.bg_tint_10]}>
-          {signUpModel.organisationimageid == 0 ? (
-            <AppView style={[$.p_compact, $.flex_row, $.align_items_center]}>
-              <CustomIcon name={CustomIcons.Image} color={$.tint_4} size={40} />
-              <AppText style={[$.ml_normal]}>Choose Image</AppText>
-            </AppView>
-          ) : (
-            <AppView style={[$.p_compact, $.flex_row, $.align_items_center]}>
-              <Image
-                source={{
-                  uri: fileservice.get(signUpModel.organisationimageid),
-                  width: 100,
-                  height: 100,
-                }}
-              />
-              <AppText style={[$.ml_normal]}>Change Image</AppText>
-            </AppView>
-          )}
-        </TouchableOpacity>
+      {/* Image Upload */}
+      <TouchableOpacity
+        onPress={pickAndUploadImage}
+        style={[$.mb_medium, $.bg_tint_10, $.p_small, $.border_rounded]}>
+        {signUpModel.organisationimageid === 0 ? (
+          <AppView style={[$.flex_row, $.align_items_center]}>
+            <CustomIcon name={CustomIcons.Image} color={$.tint_4} size={40} />
+            <AppText style={[$.ml_normal]}>Choose Image</AppText>
+          </AppView>
+        ) : (
+          <AppView style={[$.flex_row, $.align_items_center]}>
+            <Image
+              source={{
+                uri: filesService.get(signUpModel.organisationimageid),
+                width: 100,
+                height: 100,
+              }}
+            />
+            <AppText style={[$.ml_normal]}>Change Image</AppText>
+          </AppView>
+        )}
+      </TouchableOpacity>
 
-     {props.route.params.isorganization &&   <AppSingleSelect
-          data={PrimaryBussinessType}
-          keyExtractor={e => e.id.toString()}
-          searchKeyExtractor={e => e.displaytext}
-          renderItemLabel={item => {
-            return <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_1]}>{item.displaytext}</AppText>;
-          }}
-          selecteditemid={PrimaryBussinessId.toString()}
-          onSelect={item => {
-       
-            setSignUpModel(prevState => ({
-              ...prevState, // Ensure you preserve the existing state
-              primarytypecode:item.identifier,
-              primarytype:item.id
-            }));   
-            getrefererencevalue(item.id);
-            SetPrimaryBussinesId(item.id)
-          }}
-          title="Bussines Type"
-          style={[$.mb_normal]}
-        />}
+      {isOrganization && (
+        <>
+          <AppSingleSelect
+            data={primaryBusinessTypes}
+            keyExtractor={item => item.id.toString()}
+            searchKeyExtractor={item => item.displaytext}
+            renderItemLabel={item => (
+              <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_1]}>
+                {item.displaytext}
+              </AppText>
+            )}
+            selecteditemid={signUpModel.primarytype.toString()}
+            onSelect={item => {
+              setSignUpModel(prev => ({
+                ...prev,
+                primarytypecode: item.identifier,
+                primarytype: item.id,
+                secondarytype: 0,
+                secondarytypecode: '',
+              }));
+              fetchReferenceValues(item.id);
+            }}
+            title="Business Type"
+            style={[$.mb_normal]}
+          />
 
-   {props.route.params.isorganization &&     <AppSingleSelect
-          data={SecondaryBussinessType}
-          keyExtractor={e => e.id.toString()}
-          searchKeyExtractor={e => e.displaytext}
-          renderItemLabel={item => {
-            return <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_1]}>{item.displaytext}</AppText>;
-          }}
-          selecteditemid={SecondaryBussinessId.toString()}
-          onSelect={item => {
-            setSignUpModel(prevState => ({
-              ...prevState, // Ensure you preserve the existing state
-              secondarytype: item.id ,
-              secondarytypecode:item.identifier
-            }));
-            SetSecondaryBussinesId(item.id)
-          }}
-          title="Bussines Type more detail"
-          style={[$.mb_normal]}
-        />}
-        
-        {props.route.params.isorganization && <AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
-          placeholder="Organisation Name"
-          value={signUpModel.organisationname}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              organisationname: e,
-            });
-          }}
-        />}
+          <AppSingleSelect
+            data={secondaryBusinessTypes}
+            keyExtractor={item => item.id.toString()}
+            searchKeyExtractor={item => item.displaytext}
+            renderItemLabel={item => (
+              <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_1]}>
+                {item.displaytext}
+              </AppText>
+            )}
+            selecteditemid={signUpModel.secondarytype.toString()}
+            onSelect={item => {
+              setSignUpModel(prev => ({
+                ...prev,
+                secondarytype: item.id,
+                secondarytypecode: item.identifier,
+              }));
+            }}
+            title="Business Details"
+            style={[$.mb_normal]}
+          />
+
+          <AppTextInput
+            placeholder="Organization Name"
+            value={signUpModel.organisationname}
+            onChangeText={text => setSignUpModel(prev => ({ ...prev, organisationname: text }))}
+            style={[$.mb_normal]}
+          />
+
+          <AppTextInput
+            placeholder="GST Number"
+            value={signUpModel.organisationgstnumber}
+            onChangeText={text => setSignUpModel(prev => ({ ...prev, organisationgstnumber: text }))}
+            style={[$.mb_normal]}
+          />
+        </>
+      )}
+
+      {/* Location Picker */}
+      <TouchableOpacity 
+        onPress={() => setShowLocationPicker(true)}
+        style={[$.mb_normal, $.p_small, $.bg_tint_10, $.border_rounded]}
+      >
+        <AppText style={[$.text_tint_3]}>
+          {signUpModel.locationname || 'Select Location on Map'}
+        </AppText>
+      </TouchableOpacity>
+
+      {/* Location Details (auto-filled from map selection) */}
+      <AppTextInput
+        placeholder="Address Line 1"
+        value={signUpModel.locationaddressline1}
+        onChangeText={text => setSignUpModel(prev => ({ ...prev, locationaddressline1: text }))}
+        style={[$.mb_normal]}
+      />
+      
+      <AppTextInput
+        placeholder="Address Line 2"
+        value={signUpModel.locationaddressline2}
+        onChangeText={text => setSignUpModel(prev => ({ ...prev, locationaddressline2: text }))}
+        style={[$.mb_normal]}
+      />
+
+      <AppView style={[$.flex_row, $.mb_normal]}>
         <AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
-          placeholder="Name"
-          value={signUpModel.username}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              username: e,
-            });
-          }}
-        />
-       { props.route.params.isorganization && <AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
-          placeholder="GST no"
-          value={signUpModel.organisationgstnumber}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              organisationgstnumber: e,
-            });
-          }}
-        />}
-        {props.route.params.isorganization &&<AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
-          placeholder="Location"
-          value={signUpModel.locationname}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              locationname: e,
-            });
-          }}
-        />}
-        <AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
-          placeholder="Address Line 1"
-          value={signUpModel.locationaddressline1}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              locationaddressline1: e,
-            });
-          }}
-        />
-        <AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
-          placeholder="Address Line 2"
-          value={signUpModel.locationaddressline2}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              locationaddressline2: e,
-            });
-          }}
-        />
-        <AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
           placeholder="City"
           value={signUpModel.locationcity}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              locationcity: e,
-            });
-          }}
+          onChangeText={text => setSignUpModel(prev => ({ ...prev, locationcity: text }))}
+          style={[$.flex_1, $.mr_small]}
         />
         <AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
           placeholder="State"
           value={signUpModel.locationstate}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              locationstate: e,
-            });
-          }}
-        />
-        <AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
-          placeholder="Country"
-          value={signUpModel.locationcountry}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              locationcountry: e,
-            });
-          }}
-        />
-        <AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
-          placeholder="Pincode"
-          value={signUpModel.locationpincode}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              locationpincode: e,
-            });
-          }}
-        />
-        <AppTextInput
-          style={[$.mb_compact, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
-          placeholder="Mobile number"
-          value={signUpModel.usermobile}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              usermobile: e,
-            });
-          }}
-        />
-  { props.route.params.isorganization &&      <AppTextInput
-          style={[$.mb_regular, $.bg_tint_11, $.border_bottom, $.border_tint_8]}
-          placeholder="Designation"
-          value={signUpModel.userdesignation}
-          onChangeText={e => {
-            setSignUpModel({
-              ...signUpModel,
-              userdesignation: e,
-            });
-          }}
-        />}
-        <AppButton
-          name="Sign Up"
-          style={[$.bg_tint_10, $.mb_medium]}
-          textstyle={[$.fs_compact, $.fw_medium, $.text_tint_1]}
-          onPress={signUp}
+          onChangeText={text => setSignUpModel(prev => ({ ...prev, locationstate: text }))}
+          style={[$.flex_1]}
         />
       </AppView>
+
+      <AppView style={[$.flex_row, $.mb_normal]}>
+        <AppTextInput
+          placeholder="Country"
+          value={signUpModel.locationcountry}
+          onChangeText={text => setSignUpModel(prev => ({ ...prev, locationcountry: text }))}
+          style={[$.flex_1, $.mr_small]}
+        />
+        <AppTextInput
+          placeholder="Pincode"
+          value={signUpModel.locationpincode}
+          onChangeText={text => setSignUpModel(prev => ({ ...prev, locationpincode: text }))}
+          keyboardtype="numeric"
+          style={[$.flex_1]}
+        />
+      </AppView>
+
+      <AppTextInput
+        placeholder="Your Name"
+        value={signUpModel.username}
+        onChangeText={text => setSignUpModel(prev => ({ ...prev, username: text }))}
+        style={[$.mb_normal]}
+      />
+
+      <AppTextInput
+        placeholder="Mobile Number"
+        value={signUpModel.usermobile}
+        onChangeText={text => setSignUpModel(prev => ({ ...prev, usermobile: text }))}
+        keyboardtype="phone-pad"
+        style={[$.mb_normal]}
+      />
+
+      {isOrganization && (
+        <AppTextInput
+          placeholder="Designation"
+          value={signUpModel.userdesignation}
+          onChangeText={text => setSignUpModel(prev => ({ ...prev, userdesignation: text }))}
+          style={[$.mb_medium]}
+        />
+      )}
+
+      <AppButton
+        name="Sign Up"
+        onPress={handleSignUp}
+        isLoading={isLoading}
+        style={[$.bg_tint_1, $.mb_medium]}
+        textStyle={[$.text_tint_11]}
+      />
+
+      {/* Location Picker Modal */}
+      {showLocationPicker && (
+        <LocationPicker
+          visible={showLocationPicker}
+          onClose={() => setShowLocationPicker(false)}
+          onLocationSelect={handleLocationSelect}
+        />
+      )}
     </ScrollView>
   );
 }

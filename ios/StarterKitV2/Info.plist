@@ -68,5 +68,11 @@
 		<string>Poppins-Thin.ttf</string>
 		<string>Poppins-ThinItalic.ttf</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+<string>This app needs access to your location to provide location-based services</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>This app needs access to your location to provide location-based services</string>
+<key>NSLocationAlwaysUsageDescription</key>
+<string>This app needs access to your location to provide location-based services</string>
 </dict>
 </plist>
