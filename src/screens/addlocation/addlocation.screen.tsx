@@ -2,7 +2,7 @@ import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { HomeTabParamList } from '../../hometab.navigation';
 import { CompositeScreenProps, useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppStackParamList, navigate } from '../../appstack.navigation';
+import { AppStackParamList } from '../../appstack.navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { AppView } from '../../components/appview.component';
 import { AppText } from '../../components/apptext.component';
@@ -10,7 +10,7 @@ import { AppButton } from '../../components/appbutton.component';
 import { $ } from '../../styles';
 import { AppTextInput } from '../../components/apptextinput.component';
 import { CustomIcon, CustomIcons } from '../../components/customicons.component';
-import { ScrollView, TouchableOpacity } from 'react-native';
+import { ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import {
   OrganisationLocation,
   OrganisationLocationSelectReq,
@@ -19,258 +19,269 @@ import { OrganisationLocationService } from '../../services/organisationlocation
 import { AppAlert } from '../../components/appalert.component';
 import { useAppSelector } from '../../redux/hooks.redux';
 import { selectusercontext } from '../../redux/usercontext.redux';
+
 type LocationScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Location'>,
   BottomTabScreenProps<HomeTabParamList>
 >;
+
 export function LocationScreen(props: LocationScreenProp) {
   const navigation = useNavigation<LocationScreenProp['navigation']>();
-  const [isloading, setIsloading] = useState(false);
-  const [organisationlocation, setOrganisationlocation] = useState(
-    new OrganisationLocation(),
-  );
-  const usercontext = useAppSelector(selectusercontext);
-  const organisationlocationservice = useMemo(
-    () => new OrganisationLocationService(),
-    [],
-  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  const [organisationLocation, setOrganisationLocation] = useState(new OrganisationLocation());
+  const userContext = useAppSelector(selectusercontext);
+  const organisationLocationService = useMemo(() => new OrganisationLocationService(), []);
 
+  // Minimum required fields for a valid location
+  const requiredFields = ['name', 'addressline1', 'city', 'state', 'pincode'];
+  
   useEffect(() => {
-    getData();
+    fetchLocationData();
   }, []);
 
-  const getData = async () => {
-    setIsloading(true);
+  const fetchLocationData = async () => {
+    if (!props.route.params?.id) return;
+    
+    setIsLoading(true);
     try {
-      if (props.route.params.id > 0) {
-        var locreq: OrganisationLocationSelectReq =
-          new OrganisationLocationSelectReq();
-        locreq.organisationid = usercontext.value.organisationid;
-        console.log("locreq", locreq);
+      const locReq = new OrganisationLocationSelectReq();
+      locReq.organisationid = userContext.value.organisationid;
+      locReq.organisationid = props.route.params.id;
 
-
-        let locresp = await organisationlocationservice.select(locreq);
-        if (locresp) {
-
-          setOrganisationlocation(locresp[0]);
+      const locations = await organisationLocationService.select(locReq);
+      if ((locations ?? []).length > 0) {
+        if (locations && locations.length > 0) {
+          setOrganisationLocation(locations[0]);
         }
       }
     } catch (error: any) {
-      var message = error?.response?.data?.message;
-      AppAlert({ message: message });
+      handleError(error, 'Failed to fetch location details');
     } finally {
-      setIsloading(false);
+      setIsLoading(false);
     }
   };
-  const onSave = async () => {
-    setIsloading(true);
+
+  const handleSave = async () => {
+    if (!validateLocation()) return;
+
+    setIsLoading(true);
     try {
-      var req: OrganisationLocation = new OrganisationLocation();
-      req = organisationlocation;
-      req.organisationid = usercontext.value.organisationid;
-      let locresp = await organisationlocationservice.save(req);
-      AppAlert({ message: 'Saved' });
+      const locationToSave = { ...organisationLocation };
+      locationToSave.organisationid = userContext.value.organisationid;
+
+      await organisationLocationService.save(locationToSave);
+      AppAlert({ message: 'Location saved successfully' });
       navigation.goBack();
     } catch (error: any) {
-      const message = error?.response?.data?.message;
-      AppAlert({ message: message });
+      handleError(error, 'Failed to save location');
     } finally {
-      setIsloading(false);
+      setIsLoading(false);
     }
   };
 
-  const getLocationDetailsFromPincode = async (pincode: string) => {
-    const url = `https://nominatim.openstreetmap.org/search?postalcode=${pincode}&country=India&format=json`;
+  const validateLocation = (): boolean => {
+    // Check required fields
+    for (const field of requiredFields) {
+      const fieldValue = organisationLocation[field as keyof OrganisationLocation];
+      if (typeof fieldValue === 'string' && !fieldValue.trim()) {
+        AppAlert({ message: `Please fill in the ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}` });
+        return false;
+      }
+    }
 
+    // Validate pincode (6 digits for India)
+    if (!/^\d{6}$/.test(organisationLocation.pincode)) {
+      AppAlert({ message: 'Please enter a valid 6-digit pincode' });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleError = (error: any, defaultMessage: string) => {
+    const message = error?.response?.data?.message || defaultMessage;
+    AppAlert({ message });
+    console.error('Location Error:', error);
+  };
+
+  const fetchLocationFromPincode = async (pincode: string) => {
+    if (!/^\d{6}$/.test(pincode)) return; // Only fetch if valid pincode
+    
+    setIsFetchingLocation(true);
     try {
-      const response = await fetch(url);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?postalcode=${pincode}&country=India&format=json`
+      );
       const data = await response.json();
 
       if (data.length > 0) {
         const location = data[0];
+        const parts = location.display_name.split(", ");
         
-        const { lat, lon, display_name, address = {} } = location; // Default to empty object if `address` is 
-        const parts = display_name.split(", ");
-        var locations = { ...organisationlocation }
-    
-        locations.country = parts[4] || "N/A",
-          locations.state = parts[3] || "N/A",
-          locations.district = parts[2] || "N/A",
-          locations.city = parts[1] || "N/A",
-          locations.pincode = parts[0] || "N/A"
-        setOrganisationlocation(locations)
-        getLocationDetailsFromAddress("35,valkar street thiruvathigai")
-        return ;
-      } else {
-        console.error("Location not found");
-        return null;
+        setOrganisationLocation(prev => ({
+          ...prev,
+          country: parts[4] || prev.country,
+          state: parts[3] || prev.state,
+          district: parts[2] || prev.district,
+          city: parts[1] || prev.city,
+          pincode: pincode
+        }));
+
+        // If we have address line 1, try to get precise coordinates
+        if (organisationLocation.addressline1) {
+          await fetchCoordinatesFromAddress();
+        }
       }
     } catch (error) {
-      console.error("API Error:", error);
-      return null;
+      console.error('Geocoding API Error:', error);
+      AppAlert({ message: 'Could not fetch location details. Please enter manually.' });
+    } finally {
+      setIsFetchingLocation(false);
     }
   };
 
-  const getLocationDetailsFromAddress = async (address: string) => {
-
-    const formattedAddress = `${address}, Tamil Nadu, India`; 
-    console.log("working... Fetching location for:", formattedAddress);
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(formattedAddress)}&format=json&limit=1`;
-
+  const fetchCoordinatesFromAddress = async () => {
+    if (!organisationLocation.addressline1) return;
+    
     try {
-        const response = await fetch(url);
-        const data = await response.json();
+      const fullAddress = [
+        organisationLocation.addressline1,
+        organisationLocation.addressline2,
+        organisationLocation.city,
+        organisationLocation.state,
+        organisationLocation.pincode,
+        'India'
+      ].filter(Boolean).join(', ');
 
-        console.log("API Response:", data); // Debugging
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fullAddress)}&format=json&limit=1`
+      );
+      const data = await response.json();
 
-        if (data.length > 0) {
-            const location = data[0];
-            return {
-                latitude: parseFloat(location.lat),
-                longitude: parseFloat(location.lon),
-                display_name: location.display_name || "N/A"
-            };
-        } else {
-            console.error("❌ Location not found");
-            return null;
-        }
+      if (data.length > 0) {
+        const location = data[0];
+        setOrganisationLocation(prev => ({
+          ...prev,
+          latitude: parseFloat(location.lat),
+          longitude: parseFloat(location.lon)
+        }));
+      }
     } catch (error) {
-        console.error("❌ API Error:", error);
-        return null;
+      console.error('Address Geocoding Error:', error);
     }
-};
+  };
 
+  const handleFieldChange = (field: keyof OrganisationLocation, value: string) => {
+    setOrganisationLocation(prev => ({
+      ...prev,
+      [field]: value
+    }));
 
-
-
+    // Special handling for pincode changes
+    if (field === 'pincode' && value.length === 6) {
+      fetchLocationFromPincode(value);
+    }
+  };
 
   return (
     <AppView style={[$.pt_normal, $.flex_1]}>
-      <AppView style={[$.flex_1]}>
-        <AppView
-          style={[$.flex_row, $.ml_regular, $.align_items_center, $.mb_medium]}>
-          <TouchableOpacity
-            onPress={() => {
-              navigation.goBack();
-            }}>
-            <CustomIcon
-              name={CustomIcons.LeftArrow}
-              size={$.s_regular}
-              color={$.tint_2}
-            />
-          </TouchableOpacity>
-          <AppText
-            style={[$.ml_compact, $.p_small, $.text_tint_2, $.fw_medium]}>
-            Add Location
-          </AppText>
+      {/* Header */}
+      <AppView style={[$.flex_row, $.ml_regular, $.align_items_center, $.mb_medium]}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <CustomIcon name={CustomIcons.LeftArrow} size={$.s_regular} color={$.tint_2} />
+        </TouchableOpacity>
+        <AppText style={[$.ml_compact, $.p_small, $.text_tint_2, $.fw_medium]}>
+          {props.route.params?.id ? 'Edit Location' : 'Add Location'}
+        </AppText>
+      </AppView>
+
+      {isLoading ? (
+        <AppView style={[$.flex_1, $.justify_content_center, $.align_items_center]}>
+          <ActivityIndicator size="large" color={$.tint_primary_5} />
         </AppView>
-        <ScrollView style={[$.flex_1]}>
+      ) : (
+        <ScrollView style={[$.flex_1, $.pb_large]}>
+          {/* Location Name */}
           <AppTextInput
             style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
-            placeholder="Location name"
-            value={organisationlocation.name}
-            onChangeText={loc => {
-              setOrganisationlocation({
-                ...organisationlocation,
-                name: loc,
-              });
-            }}
+            placeholder="Location name*"
+            value={organisationLocation.name}
+            onChangeText={value => handleFieldChange('name', value)}
           />
+
+          {/* Address Line 1 */}
           <AppTextInput
             style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
-            placeholder="No, Building name"
-            value={organisationlocation.addressline1}
-            onChangeText={loc => {
-              setOrganisationlocation({
-                ...organisationlocation,
-                addressline1: loc,
-              });
-            }}
+            placeholder="No, Building name*"
+            value={organisationLocation.addressline1}
+            onChangeText={value => handleFieldChange('addressline1', value)}
           />
+
+          {/* Address Line 2 */}
           <AppTextInput
             style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
             placeholder="Road name, Area"
-            value={organisationlocation.addressline2}
-            onChangeText={loc => {
-              setOrganisationlocation({
-                ...organisationlocation,
-                addressline2: loc,
-              });
-            }}
+            value={organisationLocation.addressline2}
+            onChangeText={value => handleFieldChange('addressline2', value)}
           />
-          <AppView style={[$.flex_row, $.mb_medium, $.mx_regular]}>
+
+          {/* State and City */}
+        
             <AppTextInput
-              style={[$.bg_tint_11, $.flex_1, $.mr_medium]}
-              placeholder="State"
-              value={organisationlocation.state}
-              onChangeText={loc => {
-                setOrganisationlocation({
-                  ...organisationlocation,
-                  state: loc,
-                });
-              }}
+              style={[$.bg_tint_11, $.flex_1, $.mr_medium,$.mb_medium, $.mx_regular]}
+              placeholder="State*"
+              value={organisationLocation.state}
+              onChangeText={value => handleFieldChange('state', value)}
+              readonly={!isFetchingLocation}
             />
             <AppTextInput
-              style={[$.bg_tint_11, $.flex_1]}
-              placeholder="City"
-              value={organisationlocation.city}
-              onChangeText={loc => {
-                setOrganisationlocation({
-                  ...organisationlocation,
-                  city: loc,
-                });
-              }}
+              style={[$.bg_tint_11, $.flex_1,$.mb_medium, $.mx_regular]}
+              placeholder="City*"
+              value={organisationLocation.city}
+              onChangeText={value => handleFieldChange('city', value)}
+              readonly={!isFetchingLocation}
             />
+    
+
+          {/* Pincode */}
+          <AppView style={[$.mx_regular, $.mb_medium]}>
+            <AppTextInput
+              style={[$.bg_tint_11]}
+              placeholder="Pincode*"
+              value={organisationLocation.pincode}
+              onChangeText={value => handleFieldChange('pincode', value)}
+              keyboardtype="numeric"
+              maxLength={6}
+            />
+            {isFetchingLocation && (
+              <AppView style={[$.mt_tiny, $.flex_row, $.align_items_center]}>
+                <ActivityIndicator size="small" color={$.tint_primary_5} />
+                <AppText style={[$.ml_tiny, $.fs_small, $.text_tint_3]}>
+                  Fetching location details...
+                </AppText>
+              </AppView>
+            )}
           </AppView>
-          {/* <AppView>
-            <AppText>
-              {organisationlocation.country} ,
-              {organisationlocation.state} ,
-              {organisationlocation.district} ,
-              {organisationlocation.city} ,
-              {organisationlocation.pincode} , 
-            </AppText>
-          </AppView> */}
-          <AppTextInput
-            style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
-            placeholder="Pincode"
-            value={organisationlocation.pincode}
-            onChangeText={loc => {
-              setOrganisationlocation({
-                ...organisationlocation,
-                pincode: loc,
-              });
-
-              if (loc.length >= 6) { // Ensure valid pincode length
-                getLocationDetailsFromPincode(loc);
-              }
-            }}
-
-          />
-
         </ScrollView>
-      </AppView>
-      <AppView
-        style={[
-          $.flex_row,
-          $.justify_content_center,
-          $.mx_regular,
-          $.mb_medium,
-          $.py_regular,
-        ]}>
+      )}
+
+      {/* Footer Buttons */}
+      <AppView style={[$.flex_row, $.justify_content_center, $.mx_regular, $.mb_medium, $.py_regular]}>
         <AppButton
           name="Cancel"
           style={[$.bg_tint_11, $.flex_1, $.mr_huge]}
-          textstyle={[$.text_danger]}
-          onPress={() => {
-            navigation.navigate('Organisation');
-          }}
+          textStyle={[$.text_danger]}
+          onPress={() => navigation.goBack()}
+          disabled={isLoading}
         />
         <AppButton
-          name={props.route.params.id > 0 ? 'Update' : 'Save'}
+          name={props.route.params?.id ? 'Update' : 'Save'}
           style={[$.bg_success, $.flex_1]}
-          textstyle={[$.text_tint_11]}
-          onPress={onSave}
+          textStyle={[$.text_tint_11]}
+          onPress={handleSave}
+          isLoading={isLoading}
+          disabled={isLoading}
         />
       </AppView>
     </AppView>

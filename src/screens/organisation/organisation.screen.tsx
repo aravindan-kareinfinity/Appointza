@@ -88,13 +88,13 @@ export function OrganisationScreen() {
     setIsloading(true);
     try {
       console.log('organisation', organisation);
-
+      organisation.attributes = new Organisation.AttributesData();
       let orgresp = await organisationservice.save(organisation);
       AppAlert({message: 'Saved'});
       getData();
     } catch (error: any) {
       var message = error?.response?.data?.message;
-      AppAlert({message: message});
+      AppAlert({ message: message});
     } finally {
       setIsloading(false);
     }
