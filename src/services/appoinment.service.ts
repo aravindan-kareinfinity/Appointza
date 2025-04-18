@@ -5,6 +5,7 @@ import {
   AppoinmentDeleteReq,
   AppoinmentFinal,
   AppoinmentSelectReq,
+  BookedAppoinmentRes,
 } from '../models/appoinment.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
 import {environment} from '../utils/environment';
@@ -64,6 +65,17 @@ export class AppoinmentService {
             postdata
         );
                 
+        return resp.item;
+    }
+
+    async SelectBookedAppoinment(req: AppoinmentSelectReq) {
+        let postdata: ActionReq<AppoinmentSelectReq> =
+            new ActionReq<AppoinmentSelectReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<Array<BookedAppoinmentRes>>>(
+            this.baseurl + '/SelectBookedAppoinment', 
+            postdata
+        );
         return resp.item;
     }
 

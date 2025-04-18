@@ -52,6 +52,10 @@ issuspended: boolean = false
 organisationlocationid: number = 0
 isfactory: boolean = false
 notes: string = ""
+staffid: number = 0;
+staffname: string = "";
+ispaid: boolean = false;
+
 }
 
 export class SelectedSerivice{
@@ -72,4 +76,21 @@ export class AppoinmentSelectReq {
 export class AppoinmentDeleteReq {
   id: number = 0;
   version: number = 0;
+}
+
+
+export class BookedAppoinmentRes extends Appoinment {
+
+
+  // From joined users table
+  username: string = '';
+  mobile: string = '';
+
+  // From joined organisation table
+  organisationname: string = '';
+  secondarytypecode: string = '';
+  primarytypecode: string = '';
+
+  // From joined organisationlocation table
+  city: string = '';
 }

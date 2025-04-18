@@ -124,7 +124,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
   }) => {
     setSignUpModel(prev => ({
       ...prev,
-      lattitude: location.latitude,
+      latitude: location.latitude,
       longitude: location.longitude,
       googlelocation: location.address,
       locationname: location.address,
@@ -150,7 +150,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
       AppAlert({ message: 'Please enter organization name' });
       return false;
     }
-    if (isOrganization && !signUpModel.lattitude) {
+    if (isOrganization && !signUpModel.latitude) {
       AppAlert({ message: 'Please select a location' });
       return false;
     }
@@ -163,6 +163,8 @@ export function SignUpScreen(props: SignUpScreenProp) {
     setIsLoading(true);
     try {
       const userService = new UsersService();
+      console.log("signUpModel",signUpModel);
+      
       const response = await userService.register(signUpModel);
       
       if (response) {

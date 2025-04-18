@@ -301,22 +301,10 @@ export function TimingScreen() {
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}>
-          <AppView style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            paddingHorizontal: 20,
-          }}>
+        
             <AppView style={[
               $.bg_tint_11,
-              {
-                width: '95%',
-                height: '90%',
-                borderRadius: 20,
-                elevation: 5,
-                padding: 20,
-              },
+             $.flex_1,$.p_small
             ]}>
               <AppTextInput
                 style={[$.border_bottom, $.border_tint_11, $.bg_tint_11]}
@@ -483,7 +471,7 @@ export function TimingScreen() {
                 </TouchableOpacity>
               </AppView>
             </AppView>
-          </AppView>
+       
         </Modal>
       </AppView>
     </ScrollView>

@@ -300,4 +300,6 @@ export class DefaultColor {
   border_primary1: StyleProp<ViewStyle> = {borderColor: this.primary__1};
   border_primary2: StyleProp<ViewStyle> = {borderColor: this.primary__2};
   border_primary5: StyleProp<ViewStyle> = {borderColor: this.primary__5};
+
+  
 }

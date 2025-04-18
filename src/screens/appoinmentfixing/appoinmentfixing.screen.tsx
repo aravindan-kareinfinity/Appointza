@@ -381,7 +381,6 @@ export function AppoinmentFixingScreen() {
         mode="date"
         setShow={() => setshowdatepicker(false)}
         setDate={v => {
-          console.log('jsnfls', v);
           setselectedate(v);
         }}
       />

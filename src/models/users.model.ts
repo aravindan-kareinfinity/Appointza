@@ -50,8 +50,8 @@ export class UsersRegisterReq {
   secondarytype: number = 0
   primarytype: number = 0
   primarytypecode: string = ""
-
-  lattitude: number = 0;
+  organisationtype: number = 0;
+  latitude: number = 0;
   longitude: number = 0;
   googlelocation: string = '';
   locationname: string = '';

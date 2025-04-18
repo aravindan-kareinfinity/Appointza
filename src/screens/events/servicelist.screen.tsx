@@ -119,7 +119,7 @@ export function ServiceScreen() {
               </AppView>
               
 
-              <AppButton style={[$.bg_tint_3, $.border_rounded2, $.mt_small]} textstyle={[$.text_tint_11, $.fs_small]} name={'Schedule Appointment'} onPress={() => {
+              <AppButton style={[$.bg_tint_3, $.border_rounded2, $.mt_small]}  name={'Schedule Appointment'} onPress={() => {
                 navigation.navigate('AppoinmentFixing', {
                   organisationid: item.organisationid,
                   organisationlocationid: item.organisationlocationid,

@@ -20,7 +20,7 @@ import React from 'react';
 import {UsersAddColourSetToCartReq} from '../../models/users.model';
 import {UsersService} from '../../services/users.service';
 import {AppoinmentService} from '../../services/appoinment.service';
-import {Appoinment, AppoinmentSelectReq} from '../../models/appoinment.model';
+import {Appoinment, AppoinmentSelectReq, BookedAppoinmentRes} from '../../models/appoinment.model';
 import {useAppSelector} from '../../redux/hooks.redux';
 import {selectusercontext} from '../../redux/usercontext.redux';
 import {AppSwitch} from '../../components/appswitch.component';
@@ -50,10 +50,10 @@ export function AppoinmentScreen() {
     [],
   );
 
-  const [OrganisationApponmentlist, setOrganisationAppoinmentList] = useState<Appoinment[]>([]);
+  const [OrganisationApponmentlist, setOrganisationAppoinmentList] = useState<BookedAppoinmentRes[]>([]);
   const [locationlist, Setlocationlist] = useState<OrganisationLocationStaffRes[]>([]);
   const [selectlocation, Setselectlocation] = useState<OrganisationLocationStaffRes | null>(null);
-  const [UserApponmentlist, setUserAppoinmentList] = useState<Appoinment[]>([]);
+  const [UserApponmentlist, setUserAppoinmentList] = useState<BookedAppoinmentRes[]>([]);
 
   // Load data when screen focuses
   useFocusEffect(
@@ -105,7 +105,7 @@ export function AppoinmentScreen() {
     try {
       const req = new AppoinmentSelectReq();
       req.userid = usercontext.value.userid;
-      const res = await appoinmentservices.select(req);
+      const res = await appoinmentservices.SelectBookedAppoinment(req);
       setUserAppoinmentList(res || []);
     } catch (error: any) {
       handleError(error);
@@ -117,7 +117,7 @@ export function AppoinmentScreen() {
       const req = new AppoinmentSelectReq();
       req.organisationlocationid = locid;
       req.organisationid = orgid;
-      const res = await appoinmentservices.select(req);
+      const res = await appoinmentservices.SelectBookedAppoinment(req);
       setOrganisationAppoinmentList(res || []);
     } catch (error: any) {
       handleError(error);
@@ -145,8 +145,9 @@ export function AppoinmentScreen() {
     const istDate = new Date(utcDate.getTime() + istOffset);
     return istDate.toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'});
   }
+  
 
-  const renderAppointmentItem = ({item}: {item: Appoinment}) => (
+  const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
       style={[
         $.mx_small,
@@ -160,6 +161,7 @@ export function AppoinmentScreen() {
         {borderLeftWidth: 8},
       ]}
       onPress={() => {}}>
+      {/* Common Appointment Info */}
       <AppText style={[$.fw_bold, $.fs_medium, $.mb_small, $.text_primary5]}>
         {new Date(item.appoinmentdate).toLocaleDateString('en-US', {
           weekday: 'short',
@@ -167,16 +169,57 @@ export function AppoinmentScreen() {
           day: 'numeric',
         })}
       </AppText>
-
+  
       <AppView style={[$.flex_row, $.align_items_center, $.mb_small]}>
         <AppText style={[$.fw_medium, $.fs_small, $.text_primary5, $.mr_tiny]}>
-          ⏰ From: {item.fromtime.toString()}
+          ⏰ From: {item.fromtime.toString().substring(0, 5)}
         </AppText>
         <AppText style={[$.fw_medium, $.fs_small, $.text_primary5, $.ml_tiny]}>
-          To: {item.totime.toString()}
+          To: {item.totime.toString().substring(0, 5)}
         </AppText>
       </AppView>
-
+  
+      {/* Show different info based on view mode */}
+      {isorganisation ? (
+        // Organization view - show user details
+        <AppView style={[$.mb_small]}>
+          <AppView style={[$.flex_row, $.align_items_center, $.mb_tiny]}>
+            <CustomIcon name={CustomIcons.User} size={16} color={$.tint_3} />
+            <AppText style={[$.ml_small, $.fw_semibold, $.text_tint_1]}>
+              {item.username || 'No name'}
+            </AppText>
+          </AppView>
+          <AppView style={[$.flex_row, $.align_items_center]}>
+            {/* <CustomIcon name={CustomIcons.Phone} size={16} color={$.tint_3} /> */}
+            <AppText style={[$.ml_small, $.fw_medium, $.text_tint_3]}>
+              {item.mobile || 'No mobile'}
+            </AppText>
+          </AppView>
+        </AppView>
+      ) : (
+        // User view - show organization details
+        <AppView style={[$.mb_small]}>
+          <AppView style={[$.flex_row, $.align_items_center, $.mb_tiny]}>
+           
+            <AppText style={[$.ml_small, $.fw_semibold, $.text_tint_1]}>
+              {item.organisationname || 'No organization'}
+            </AppText>
+          </AppView>
+          <AppView style={[$.flex_row, $.align_items_center]}>
+            <AppText style={[$.ml_small, $.fw_medium, $.text_tint_3]}>
+              {item.city || 'No location'}
+            </AppText>
+          </AppView>
+          <AppView style={[$.flex_row, $.align_items_center, $.mt_tiny]}>
+          <AppText style={[$.mr_small]}>👤</AppText> 
+            <AppText style={[$.ml_small, $.fw_medium, $.text_tint_3]}>
+              {item.primarytypecode || ''} {item.secondarytypecode ? `• ${item.secondarytypecode}` : ''}
+            </AppText>
+          </AppView>
+        </AppView>
+      )}
+  
+      {/* Services list (common for both views) */}
       {item.attributes?.servicelist?.length > 0 && (
         <AppView style={[$.mt_small, $.p_small]}>
           <AppView style={[$.flex_1, $.flex_row, $.align_items_center, {justifyContent: 'space-between'}]}>
