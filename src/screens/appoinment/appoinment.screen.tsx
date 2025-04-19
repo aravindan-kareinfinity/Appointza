@@ -23,7 +23,7 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import {FilesService} from '../../services/files.service';
 import {AppAlert} from '../../components/appalert.component';
 import React from 'react';
-import {UsersAddColourSetToCartReq} from '../../models/users.model';
+import {REFERENCETYPE, UsersAddColourSetToCartReq} from '../../models/users.model';
 import {UsersService} from '../../services/users.service';
 import {AppoinmentService} from '../../services/appoinment.service';
 import {
@@ -42,8 +42,12 @@ import {
 import {AppSingleSelect} from '../../components/appsingleselect.component';
 import {StaffSelectReq, StaffUser} from '../../models/staff.model';
 import {StaffService} from '../../services/staff.service';
-import { ReferenceValue, ReferenceValueSelectReq } from '../../models/referencevalue.model';
-import { ReferenceValueService } from '../../services/referencevalue.service';
+import {
+  ReferenceValue,
+  ReferenceValueSelectReq,
+} from '../../models/referencevalue.model';
+import {ReferenceValueService} from '../../services/referencevalue.service';
+import { ReferenceTypeSelectReq } from '../../models/referencetype.model';
 
 type AppoinmentScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList>,
@@ -90,6 +94,7 @@ export function AppoinmentScreen() {
         selectlocation.organisationid,
         selectlocation.organisationlocationid,
       );
+      getstafflist();
     }
   }, [selectlocation, isorganisation]);
 
@@ -106,7 +111,7 @@ export function AppoinmentScreen() {
       setIsloading(false);
     }
   };
-  const [stafflist, setStafflist] = useState<StaffUser[]>([]);
+
   const staffservice = useMemo(() => new StaffService(), []);
   const getstaff = async () => {
     try {
@@ -183,22 +188,47 @@ export function AppoinmentScreen() {
     const istDate = new Date(utcDate.getTime() + istOffset);
     return istDate.toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'});
   }
- const referenceValueService = useMemo(() => new ReferenceValueService(), []);
- const [secondaryBusinessTypes, setSecondaryBusinessTypes] = useState<ReferenceValue[]>([]);
-  
-  const fetchReferenceValues = async (id: number) => {
+
+  const [stafflist, setStafflist] = useState<StaffUser[]>([]);
+  const getstafflist = async () => {
+    if (!selectlocation) return;
+
     try {
-      const req = new ReferenceValueSelectReq();
-      req.parentid = id;
-      const response = await referenceValueService.select(req);
+      const req = new StaffSelectReq();
+      req.organisationid = selectlocation.organisationid;
+      req.organisationlocationid = selectlocation.organisationlocationid;
+      const res = await staffservice.SelectStaffDetail(req);
+      if (res) {
+        setStafflist(res);
+      } else {
+        setStafflist([]);
+      }
+    } catch (err) {
+      console.error('Error fetching staff:', err);
+      Alert.alert('Error', 'Failed to fetch staff data. Please try again.');
+    } finally {
+    }
+  };
+
+  const referenceValueService = useMemo(() => new ReferenceValueService(), []);
+
+   const [AppinmentStatuslist, setAppoinmentStatuslist] = useState<ReferenceValue[]>([]);
+  const fetchStatusReferenceTypes = async () => {
+    try {
+      var req = new ReferenceTypeSelectReq();
+      req.referencetypeid = REFERENCETYPE.ORGANISATIONPRIMARYTYPE;
+      const response = await referenceValueService.select(
+        new ReferenceTypeSelectReq(),
+      );
       if (response) {
-        setSecondaryBusinessTypes(response);
+        setAppoinmentStatuslist(response);
       }
     } catch (error) {
     
     }
   };
 
+  
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
       style={[
@@ -316,6 +346,12 @@ export function AppoinmentScreen() {
           ))}
         </AppView>
       )}
+
+      <AppView style={[$.flex_row, $.align_items_center]}>
+        <AppButton name={'add staff'}></AppButton>
+        <AppButton name={'Status'}></AppButton>
+        <AppButton name={'payment'}></AppButton>
+      </AppView>
     </TouchableOpacity>
   );
 
@@ -345,7 +381,7 @@ export function AppoinmentScreen() {
         )}
       </AppView>
 
-      {locationlist.length > 1 && (
+      {isorganisation && locationlist.length > 1 && (
         <AppSingleSelect
           data={locationlist}
           keyExtractor={e => e.organisationlocationid.toString()}
