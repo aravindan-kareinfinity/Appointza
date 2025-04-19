@@ -122,7 +122,7 @@ export function AccountScreen() {
     ]),
   ];
 
-  const renderMenuItem = (item: { onPress: ((event: GestureResponderEvent) => void) | undefined; icon: CustomIcons; isHighlighted: any; label: string | number | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | null | undefined; showChevron: any; }, index: Key | null | undefined) => (
+  const renderMenuItem = (item: any, index: any) => (
     <TouchableOpacity
       key={index}
       onPress={item.onPress}
