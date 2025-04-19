@@ -85,7 +85,7 @@ function HomeTabNavigation() {
         component={ServiceScreen}
         options={{
           tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Account} />
+            <TabBarIcon focused={focused} icon={CustomIcons.Shop} />
           ),
         }}
       />
@@ -94,7 +94,7 @@ function HomeTabNavigation() {
         component={AppoinmentScreen}
         options={{
           tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Chat} />
+            <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
           ),
         }}
       />
@@ -116,7 +116,7 @@ const TabBarIcon = (props: {focused: boolean; icon: CustomIcons}) => {
     <AppView style={[$.align_items_center, $.justify_content_center]}>
       <CustomIcon
         name={props.icon}
-        color={props.focused ? $.tint_8 : $.tint_primary_5}
+        color={props.focused ? $.tint_3 : $.tint_1}
         size={$.s_big}
         stroke={3}
       />

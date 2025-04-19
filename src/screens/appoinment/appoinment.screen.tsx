@@ -23,7 +23,10 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import {FilesService} from '../../services/files.service';
 import {AppAlert} from '../../components/appalert.component';
 import React from 'react';
-import {REFERENCETYPE, UsersAddColourSetToCartReq} from '../../models/users.model';
+import {
+  REFERENCETYPE,
+  UsersAddColourSetToCartReq,
+} from '../../models/users.model';
 import {UsersService} from '../../services/users.service';
 import {AppoinmentService} from '../../services/appoinment.service';
 import {
@@ -47,7 +50,8 @@ import {
   ReferenceValueSelectReq,
 } from '../../models/referencevalue.model';
 import {ReferenceValueService} from '../../services/referencevalue.service';
-import { ReferenceTypeSelectReq } from '../../models/referencetype.model';
+import {ReferenceTypeSelectReq} from '../../models/referencetype.model';
+import {App} from '../../app';
 
 type AppoinmentScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList>,
@@ -212,7 +216,9 @@ export function AppoinmentScreen() {
 
   const referenceValueService = useMemo(() => new ReferenceValueService(), []);
 
-   const [AppinmentStatuslist, setAppoinmentStatuslist] = useState<ReferenceValue[]>([]);
+  const [AppinmentStatuslist, setAppoinmentStatuslist] = useState<
+    ReferenceValue[]
+  >([]);
   const fetchStatusReferenceTypes = async () => {
     try {
       var req = new ReferenceTypeSelectReq();
@@ -223,12 +229,9 @@ export function AppoinmentScreen() {
       if (response) {
         setAppoinmentStatuslist(response);
       }
-    } catch (error) {
-    
-    }
+    } catch (error) {}
   };
 
-  
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
       style={[
@@ -241,116 +244,138 @@ export function AppoinmentScreen() {
         $.p_small,
         $.pt_regular,
         {borderLeftWidth: 8},
+        $.flex_row,
       ]}
       onPress={() => {}}>
-      {/* Common Appointment Info */}
-      <AppText style={[$.fw_bold, $.fs_medium, $.mb_small, $.text_primary5]}>
-        {new Date(item.appoinmentdate).toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-        })}
-      </AppText>
-
-      <AppView style={[$.flex_row, $.align_items_center, $.mb_small]}>
+      <AppView
+        style={[$.flex_row, $.align_items_center, $.mb_small, $.flex_column]}>
         <AppText style={[$.fw_medium, $.fs_small, $.text_primary5, $.mr_tiny]}>
-          ⏰ From: {item.fromtime.toString().substring(0, 5)}
+          {item.fromtime.toString().substring(0, 5)}
         </AppText>
+        <AppView style={[$.flex_1, $.border, $.border_tint_7]}></AppView>
         <AppText style={[$.fw_medium, $.fs_small, $.text_primary5, $.ml_tiny]}>
-          To: {item.totime.toString().substring(0, 5)}
+          {item.totime.toString().substring(0, 5)}
         </AppText>
       </AppView>
+      <AppView>
+        {/* Common Appointment Info */}
+        <AppText
+          style={[$.fw_semibold, $.fs_regular, $.mb_small, $.text_primary5]}>
+          {new Date(item.appoinmentdate).toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+          })}
+        </AppText>
 
-      {/* Dynamic Info Section */}
-      <AppView style={[$.mb_small]}>
-        <AppView style={[$.flex_row, $.align_items_center, $.mb_tiny]}>
-          <AppText style={[$.ml_small, $.fw_semibold, $.text_tint_1]}>
-            {isorganisation ? item.username : item.organisationname}
-          </AppText>
+        {/* Dynamic Info Section */}
+        <AppView style={[$.mb_small]}>
+          <AppView style={[$.flex_row, $.align_items_center, $.mb_tiny]}>
+            <CustomIcon
+              size={30}
+              color={$.tint_3}
+              name={isorganisation ? CustomIcons.Account : CustomIcons.Shop}
+            />
+
+            <AppView style={[$.flex_column, $.align_items_center]}>
+              <AppText style={[$.ml_small, $.fw_semibold, $.text_tint_1,$.fs_small]}>
+                {isorganisation ? item.username : item.organisationname}
+              </AppText>
+              <AppText style={[$.ml_small, $.fw_medium, $.text_tint_3,$.fs_small]}>
+                {isorganisation
+                  ? item.mobile || 'No mobile'
+                  : item.city || 'No location'}
+              </AppText>
+            </AppView>
+          </AppView>
+
+          {/* {!isorganisation && (
+            <AppView style={[$.flex_row, $.align_items_center, $.mt_tiny]}>
+              <AppText style={[ $.fw_medium, $.text_tint_3,$.fs_small]}>
+                {item.primarytypecode}
+                {item.secondarytypecode ? ` • ${item.secondarytypecode}` : ''}
+              </AppText>
+            </AppView>
+          )} */}
         </AppView>
 
-        <AppView style={[$.flex_row, $.align_items_center]}>
-          <AppText style={[$.ml_small, $.fw_medium, $.text_tint_3]}>
-            {isorganisation
-              ? item.mobile || 'No mobile'
-              : item.city || 'No location'}
-          </AppText>
-        </AppView>
-
-        {!isorganisation && (
-          <AppView style={[$.flex_row, $.align_items_center, $.mt_tiny]}>
-            <AppText style={[$.ml_small, $.fw_medium, $.text_tint_3]}>
-              {item.primarytypecode}
-              {item.secondarytypecode ? ` • ${item.secondarytypecode}` : ''}
-            </AppText>
-          </AppView>
-        )}
-      </AppView>
-
-      {/* Services list (common for both views) */}
-      {item.attributes?.servicelist?.length > 0 && (
-        <AppView style={[$.mt_small, $.p_small]}>
-          <AppView
-            style={[
-              $.flex_1,
-              $.flex_row,
-              $.align_items_center,
-              {justifyContent: 'space-between'},
-            ]}>
-            <AppText
-              style={[$.fw_semibold, $.fs_small, $.mb_small, $.text_primary5]}>
-              Services
-            </AppText>
-            <AppText
-              style={[
-                $.fw_medium,
-                $.fs_small,
-                $.mb_small,
-                $.text_tint_11,
-                $.bg_danger,
-                $.border_rounded,
-              ]}>
-              Total: ₹
-              {item.attributes.servicelist
-                .reduce(
-                  (total, service) =>
-                    total + (Number(service.serviceprice) || 0),
-                  0,
-                )
-                .toString()}
-            </AppText>
-          </AppView>
-          {item.attributes.servicelist.map((service, index) => (
+        {/* Services list (common for both views) */}
+        {item.attributes?.servicelist?.length > 0 && (
+          <AppView style={[{paddingVertical: 4}]}>
             <AppView
-              key={index}
-              style={[$.flex_row, $.align_items_center, {flexWrap: 'wrap'}]}>
-              <AppView style={[{flex: 1}, $.ml_tiny]}>
+              style={[
+                $.flex_row,
+                $.align_items_center,
+                {justifyContent: 'space-between', marginBottom: 4},
+              ]}>
+              <AppText style={[$.fw_medium, $.fs_small, $.text_primary5]}>
+                Services
+              </AppText>
+              <AppText
+                style={[
+                  $.fw_regular,
+                  $.fs_small,
+                  $.text_tint_11,
+                  {
+                    backgroundColor: $.danger,
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 6,
+                  },
+                ]}>
+                ₹
+                {item.attributes.servicelist
+                  .reduce(
+                    (total, service) =>
+                      total + (Number(service.serviceprice) || 0),
+                    0,
+                  )
+                  .toString()}
+              </AppText>
+            </AppView>
+
+            {item.attributes.servicelist.map((service, index) => (
+              <AppView
+                key={index}
+                style={[
+                  $.flex_row,
+                  $.align_items_center,
+                  {
+                    justifyContent: 'space-between',
+                    paddingVertical: 2,
+                    borderBottomWidth: 0.5,
+                    borderColor: '#e0e0e0',
+                  },
+                ]}>
                 <AppText
                   style={[
-                    $.fw_bold,
+                    $.fw_regular,
                     $.fs_small,
-                    $.mb_small,
                     $.text_tint_ash,
-                    {flexShrink: 1, maxWidth: '80%'},
-                  ]}>
+                    {flex: 1, flexShrink: 1},
+                  ]}
+                  >
                   {service.servicename}
                 </AppText>
-              </AppView>
-              <AppView style={[{flexShrink: 0}]}>
                 <AppText
-                  style={[$.fw_bold, $.fs_small, $.mb_small, $.text_success]}>
+                  style={[
+                    $.fw_semibold,
+                    $.fs_small,
+                    $.text_success,
+                    {marginLeft: 8},
+                  ]}>
                   ₹{service.serviceprice}
                 </AppText>
               </AppView>
-            </AppView>
-          ))}
-        </AppView>
-      )}
+            ))}
+          </AppView>
+        )}
 
-      <AppView style={[$.flex_row, $.align_items_center]}>
-        <AppButton name={'add staff'}></AppButton>
-        <AppButton name={'Status'}></AppButton>
-        <AppButton name={'payment'}></AppButton>
+        <AppView style={[$.flex_row, $.align_items_center]}>
+          <AppButton name={'add staff'}></AppButton>
+          <AppButton name={'Status'}></AppButton>
+          <AppButton name={'payment'}></AppButton>
+        </AppView>
       </AppView>
     </TouchableOpacity>
   );

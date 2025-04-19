@@ -49,16 +49,28 @@ export function ServiceScreen() {
   const navigation = useNavigation<ServiceScreenProp['navigation']>();
   const [isloading, setIsloading] = useState(false);
   const Organizationlist = useMemo(() => new OrganisationService(), []);
-  const [OrganisatonDetailList, setOrganisationDetailList] = useState<OrganisationDetail[]>([]);
-  const [filteredOrganisations, setFilteredOrganisations] = useState<OrganisationDetail[]>([]);
+  const [OrganisatonDetailList, setOrganisationDetailList] = useState<
+    OrganisationDetail[]
+  >([]);
+  const [filteredOrganisations, setFilteredOrganisations] = useState<
+    OrganisationDetail[]
+  >([]);
   const usercontext = useAppSelector(selectusercontext);
 
   // State for filters
-  const [selectedPrimaryType, setSelectedPrimaryType] = useState<number | null>(null);
-  const [selectedSecondaryType, setSelectedSecondaryType] = useState<number | null>(null);
-  const [primaryBusinessTypes, setPrimaryBusinessTypes] = useState<ReferenceType[]>([]);
-  const [secondaryBusinessTypes, setSecondaryBusinessTypes] = useState<ReferenceValue[]>([]);
-  
+  const [selectedPrimaryType, setSelectedPrimaryType] = useState<number | null>(
+    null,
+  );
+  const [selectedSecondaryType, setSelectedSecondaryType] = useState<
+    number | null
+  >(null);
+  const [primaryBusinessTypes, setPrimaryBusinessTypes] = useState<
+    ReferenceType[]
+  >([]);
+  const [secondaryBusinessTypes, setSecondaryBusinessTypes] = useState<
+    ReferenceValue[]
+  >([]);
+
   const referenceValueService = useMemo(() => new ReferenceValueService(), []);
   const PrimarybottomSheetRef = useRef<any>(null);
   const SecondarybottomSheetRef = useRef<any>(null);
@@ -86,13 +98,13 @@ export function ServiceScreen() {
 
     if (selectedPrimaryType) {
       filtered = filtered.filter(
-        org => org.organisationprimarytype === selectedPrimaryType
+        org => org.organisationprimarytype === selectedPrimaryType,
       );
     }
 
     if (selectedSecondaryType) {
       filtered = filtered.filter(
-        org => org.organisationsecondarytype === selectedSecondaryType
+        org => org.organisationsecondarytype === selectedSecondaryType,
       );
     }
 
@@ -154,7 +166,7 @@ export function ServiceScreen() {
     useCallback(() => {
       getInitialData();
       fetchReferenceTypes();
-    }, [])
+    }, []),
   );
 
   // Re-apply filters when selections change
@@ -184,83 +196,138 @@ export function ServiceScreen() {
 
       {/* Change data={OrganisatonDetailList} to data={filteredOrganisations} */}
       <FlatList
-        data={filteredOrganisations}
-        nestedScrollEnabled={true}
-        contentContainerStyle={{paddingBottom: 100}}
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({item, index}) => (
-          <AppView
-            style={[$.m_small, $.elevation_4, $.p_medium, $.border_rounded]}>
-            <AppText style={[$.fw_medium, $.fs_big, $.text_primary5]}>
-              {item.organisationname}
-            </AppText>
-
-            <AppText
-              style={[
-                $.text_tint_ash,
-                $.fs_small,
-                $.align_items_center,
-                $.mb_small,
-                $.flex_1,
-                $.text_primary5,
-              ]}>
-              {item.organisationlocationname},{' '}
-              {item.organisationlocationaddressline1},{' '}
-              {item.organisationlocationcity}, {item.organisationlocationstate},{' '}
-              {item.organisationlocationpincode}
-            </AppText>
-
+  data={filteredOrganisations}
+  nestedScrollEnabled={true}
+  contentContainerStyle={{paddingBottom: 100}}
+  showsHorizontalScrollIndicator={false}
+  keyExtractor={(item, index) => index.toString()}
+  renderItem={({item, index}) => (
+    <AppView 
+      style={[
+        $.elevation_4, 
+        $.border_rounded, 
+        $.bg_tint_11,
+        $.mb_medium,
+        $.mx_small,
+        {borderLeftWidth: 4, borderLeftColor: $.tint_3}
+      ]}
+    >
+      {/* Header Section */}
+      <AppView style={[$.p_medium, $.pb_small]}>
+        <AppView style={[$.flex_row, $.align_items_center,]}>
+          <AppText style={[$.fw_bold, $.fs_big, $.text_primary5,$.flex_1]}>
+            {item.organisationname}
+          </AppText>
+          <TouchableOpacity 
+            style={[$.p_tiny, $.border_rounded2, $.bg_tint_10]}
+          >
+            <CustomIcon
+              color={$.tint_3}
+              name={CustomIcons.Information}
+              size={$.s_medium}
+            />
+          </TouchableOpacity>
+        </AppView>
+        
+        {/* Address with Location Icon */}
+        <AppView style={[$.flex_row, $.align_items_center, $.mt_small]}>
+          {/* <CustomIcon
+            color={$.tint_ash}
+            name={CustomIcons.}
+            size={$.s_small}
+          /> */}
+          <AppText
+            style={[
+              $.text_tint_ash,
+              $.fs_small,
+              $.flex_1,
+            ]}
+          
+          >
+            {item.organisationlocationname}, {item.organisationlocationaddressline1},{' '}
+            {item.organisationlocationcity}, {item.organisationlocationstate},{' '}
+            {item.organisationlocationpincode}
+          </AppText>
+        </AppView>
+      </AppView>
+      
+      {/* Footer Section with Tags and Button */}
+      <AppView 
+        style={[
+          $.flex_row, 
+          $.align_items_center,
+        ,
+          $.p_medium,
+          $.pt_small,
+          $.border_top,
+          {borderTopColor: $.tint_10}
+        ]}
+      >
+        {/* Tags */}
+        <AppView style={[$.flex_row, $.flex_wrap_wrap, $.flex_1]}>
+          {item.organisationprimarytypecode && (
             <AppView
               style={[
-                $.flex_1,
-                $.flex_row,
-                $.align_items_center,
-                $.flex_wrap_wrap,
-                $.m_tiny,
-              ]}>
-              <AppView
-                style={[
-                  $.border_rounded2,
-                  $.bg_tint_9,
-                  $.p_tiny,
-                  $.px_small,
-                  $.m_tiny,
-                ]}>
-                <AppText
-                  style={[$.fw_regular, $.fs_small, $.text_tint_5, $.p_tiny]}>
-                  {item.organisationprimarytypecode}{' '}
-                </AppText>
-              </AppView>
-
-              <AppView
-                style={[
-                  $.border_rounded2,
-                  $.bg_tint_10,
-                  $.p_tiny,
-                  $.px_small,
-                  $.m_tiny,
-                ]}>
-                <AppText
-                  style={[$.fw_regular, $.fs_small, $.text_tint_1, $.p_tiny]}>
-                  {item.organisationsecondarytypecode}{' '}
-                </AppText>
-              </AppView>
+              
+                $.bg_tint_9,
+                $.px_small,
+                $.py_tiny,
+                $.mr_small,
+              ]}
+            >
+              <AppText style={[$.fw_medium, $.fs_small, $.text_tint_2]}>
+                {item.organisationprimarytypecode}
+              </AppText>
             </AppView>
-
-            <AppButton
-              style={[$.bg_tint_3, $.border_rounded2, $.mt_small]}
-              name={'Schedule Appointment'}
-              onPress={() => {
-                navigation.navigate('AppoinmentFixing', {
-                  organisationid: item.organisationid,
-                  organisationlocationid: item.organisationlocationid,
-                });
-              }}></AppButton>
-          </AppView>
-        )}
-      />
-
+          )}
+          
+          {item.organisationsecondarytypecode && (
+            <AppView
+              style={[
+               
+                $.bg_tint_10,
+                $.px_small,
+                $.py_tiny,
+              ]}
+            >
+              <AppText style={[$.fw_medium, $.fs_small, $.text_tint_1]}>
+                {item.organisationsecondarytypecode}
+              </AppText>
+            </AppView>
+          )}
+        </AppView>
+        
+        {/* Book Appointment Button */}
+        <TouchableOpacity
+          style={[
+            $.elevation_2,
+            $.border_rounded,
+            $.bg_tint_3,
+            $.p_small,
+            $.flex_row,
+            $.align_items_center,
+          ]}
+          onPress={() => {
+            navigation.navigate('AppoinmentFixing', {
+              organisationid: item.organisationid,
+              organisationlocationid: item.organisationlocationid,
+            });
+          }}
+        >
+          <CustomIcon
+            color={$.tint_11}
+            name={CustomIcons.Scheduled}
+            size={$.s_small}
+          
+          />
+          <AppText style={[$.fw_medium, $.fs_small, $.text_tint_11]}>
+            Book Now
+          </AppText>
+        </TouchableOpacity>
+      </AppView>
+    </AppView>
+  )}
+/>
       {/* Keep your existing BottomSheetComponents exactly as is, just update the onPress handlers */}
       <BottomSheetComponent
         ref={PrimarybottomSheetRef}
@@ -274,11 +341,7 @@ export function ServiceScreen() {
             horizontal={true}
             showsHorizontalScrollIndicator={false}
             nestedScrollEnabled={true}
-            contentContainerStyle={[
-              $.py_small,
-              $.flex_1,
-              {flexWrap: 'wrap'},
-            ]}
+            contentContainerStyle={[$.py_small, $.flex_1, {flexWrap: 'wrap'}]}
             keyExtractor={(item, index) => index.toString()}
             renderItem={({item, index}) => (
               <TouchableOpacity
@@ -288,7 +351,7 @@ export function ServiceScreen() {
                 }}
                 style={[
                   $.border,
-                  $.border_rounded2,
+                  $.border_rounded,
                   $.mr_small,
                   $.mb_small,
                   $.px_small,
@@ -328,11 +391,7 @@ export function ServiceScreen() {
             horizontal={true}
             showsHorizontalScrollIndicator={false}
             nestedScrollEnabled={true}
-            contentContainerStyle={[
-              $.py_small,
-              $.flex_1,
-              {flexWrap: 'wrap'},
-            ]}
+            contentContainerStyle={[$.py_small, $.flex_1, {flexWrap: 'wrap'}]}
             keyExtractor={(item, index) => index.toString()}
             renderItem={({item, index}) => (
               <TouchableOpacity

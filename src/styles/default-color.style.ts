@@ -69,30 +69,59 @@ export class DefaultColor {
       primary4:'',
       primary5:'',
     },
-    light: {
-      tint_1: '#0B3D02',  // Deep Forest Green  
-      tint_2: '#165B12',  // Dark Green  
-      tint_3: '#1F7A1F',  // Classic Green  
-      tint_4: '#2C9B2F',  // Bright Leaf Green  
-      tint_5: '#3DBB40',  // Vivid Green  
-      tint_6: '#5DDC5A',  // Light Vibrant Green  
-      tint_7: '#7FE27F',  // Soft Pastel Green  
-      tint_8: '#A3EAA3',  // Mint Green  
-      tint_9: '#C7F1C7',  // Pale Green  
-      tint_10: '#EAF9EA', // Almost White Green  
-      tint_11: '#FFFFFF',
-      tint_ash: "#4B5563", // Ash Gray
-    
-      danger: '#D32F2F',  // Adjusted for better contrast
-      success: '#388E3C', // Rich Success Green
-      warn: '#FBC02D',   // Golden Warning
-    
-      primary1: '#EFF6FF',  // sky blue 
-      primary2: '#2A5EDD',  // Dark Blue  
-      primary3: '#2FA866',  // Fresh Emerald Green  
-      primary4: '#81C784',  // Light Mint Green  
-      primary5: '#000',  // black  
+    light: 
+    {
+      tint_1: '#0D2B4B',  // Deep Navy Blue
+      tint_2: '#1A4D80',  // Royal Blue
+      tint_3: '#2E6BA8',  // Classic Blue
+      tint_4: '#4285C7',  // Bright Blue
+      tint_5: '#5A9AD0',  // Sky Blue
+      tint_6: '#7DB1DA',  // Light Blue
+      tint_7: '#9BC5E3',  // Soft Pastel Blue
+      tint_8: '#B9D8EB',  // Powder Blue
+      tint_9: '#D7E9F4',  // Pale Blue
+      tint_10: '#F0F7FC', // Almost White Blue
+      
+      tint_11: '#FFFFFF',  // White
+      tint_ash: "#505A6B", // Sophisticated Ash
+      
+      // accent_1: '#8A6D3B', // Warm Gold
+      // accent_2: '#C0A875', // Light Gold
+      
+      danger: '#C93C3C',  // Refined Red
+      success: '#2F8A6A', // Emerald Success
+      warn: '#E6B54C',    // Rich Amber
+      
+      primary1: '#F5F7FA',  // Light Background
+      primary2: '#1E4C8A',  // Deep Blue
+      primary3: '#3F7CAC',  // Medium Blue
+      primary4: '#B8A88A',  // Warm Taupe (luxury touch)
+      primary5: '#212836',  // Almost Black
     }
+    // {
+    //   tint_1: '#0B3D02',  // Deep Forest Green  
+    //   tint_2: '#165B12',  // Dark Green  
+    //   tint_3: '#1F7A1F',  // Classic Green  
+    //   tint_4: '#2C9B2F',  // Bright Leaf Green  
+    //   tint_5: '#3DBB40',  // Vivid Green  
+    //   tint_6: '#5DDC5A',  // Light Vibrant Green  
+    //   tint_7: '#7FE27F',  // Soft Pastel Green  
+    //   tint_8: '#A3EAA3',  // Mint Green  
+    //   tint_9: '#C7F1C7',  // Pale Green  
+    //   tint_10: '#EAF9EA', // Almost White Green  
+    //   tint_11: '#FFFFFF',
+    //   tint_ash: "#4B5563", // Ash Gray
+    
+    //   danger: '#D32F2F',  // Adjusted for better contrast
+    //   success: '#388E3C', // Rich Success Green
+    //   warn: '#FBC02D',   // Golden Warning
+    
+    //   primary1: '#EFF6FF',  // sky blue 
+    //   primary2: '#2A5EDD',  // Dark Blue  
+    //   primary3: '#2FA866',  // Fresh Emerald Green  
+    //   primary4: '#81C784',  // Light Mint Green  
+    //   primary5: '#000',  // black  
+    // }
 ,    
 
     Aravind: {
