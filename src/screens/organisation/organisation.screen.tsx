@@ -14,7 +14,7 @@ import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
 import {AppTextInput} from '../../components/apptextinput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {FlatList, TouchableOpacity} from 'react-native';
+import {FlatList, TouchableOpacity, View} from 'react-native';
 
 import {
   OrganisationLocation,
@@ -94,7 +94,7 @@ export function OrganisationScreen() {
       getData();
     } catch (error: any) {
       var message = error?.response?.data?.message;
-      AppAlert({ message: message});
+      AppAlert({message: message});
     } finally {
       setIsloading(false);
     }
@@ -157,38 +157,61 @@ export function OrganisationScreen() {
             ]}>
             Location
           </AppText>
-          <AppView style={[$.border,$.border_tint_11,$.elevation_4]}>
-
-          <CustomIcon
-            name={CustomIcons.AddSquareRounded}
-            size={$.s_medium}
-            color={$.tint_primary_5}
-          />
+          <AppView style={[$.border, $.border_tint_11, $.elevation_4]}>
+            <CustomIcon
+              name={CustomIcons.AddSquareRounded}
+              size={$.s_medium}
+              color={$.tint_primary_5}
+            />
           </AppView>
         </TouchableOpacity>
         <FlatList
-          style={[$.flex_1]}
+          style={[$.flex_1, $.bg_tint_11]}
           data={organisationlocation}
           keyExtractor={item => item.id.toString()}
+          contentContainerStyle={[$.pb_large]}
+          ItemSeparatorComponent={() => (
+            <View style={[$.border_bottom, $.border_tint_10, $.mx_regular]} />
+          )}
           renderItem={({item}) => (
             <TouchableOpacity
-              style={[$.justify_content_center]}
-              onPress={() => {
-                navigation.navigate('Location', {
-                  id: item.id,
-                });
-              }}>
-              <AppText
-                style={[
-                  $.text_primary5,
-                  $.mx_regular,
-                  $.fw_semibold,
-                  $.fs_compact,
-                ]}>
-                {item.name},{item.addressline1},{item.addressline2},{item.city},
-                {item.state},{item.pincode}
-              </AppText>
-              <TouchableOpacity style={[$.flex_1,{position: 'absolute', top: 5, right: 20}]}>
+              style={[
+                $.flex_row,
+                $.align_items_center,
+                $.justify_content_center,
+                $.p_regular,
+                $.mx_regular,
+                $.my_tiny,
+              ]}
+              onPress={() => navigation.navigate('Location', {id: item.id})}
+              activeOpacity={0.7}>
+              <AppView style={[$.flex_1, $.mr_compact]}>
+                <AppText
+                  style={[$.text_tint_2, $.fw_semibold, $.mb_tiny]}
+                 
+                 >
+                  {item.name}
+                </AppText>
+
+                <AppText
+                  style={[$.text_tint_3, $.fs_small, $.mb_tiny]}
+               >
+                  {[item.addressline1, item.addressline2]
+                    .filter(Boolean)
+                    .join(', ')}
+                </AppText>
+
+                <AppText style={[$.text_tint_4, $.fs_small]}>
+                  {[item.city, item.state, item.pincode]
+                    .filter(Boolean)
+                    .join(', ')}
+                </AppText>
+              </AppView>
+
+              <TouchableOpacity
+                style={[$.p_tiny]}
+                onPress={() =>{}}
+                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
                 <CustomIcon
                   name={CustomIcons.Delete}
                   size={$.s_compact}
@@ -197,6 +220,25 @@ export function OrganisationScreen() {
               </TouchableOpacity>
             </TouchableOpacity>
           )}
+          ListEmptyComponent={
+            <AppView
+              style={[
+                $.flex_1,
+                $.justify_content_center,
+                $.align_items_center,
+                $.p_large,
+              ]}>
+              <CustomIcon
+                name={CustomIcons.Location}
+                size={$.s_large}
+                color={$.tint_5}
+               
+              />
+              <AppText style={[$.text_tint_4, $.text_center]}>
+                No locations found. Add your first location to get started.
+              </AppText>
+            </AppView>
+          }
         />
       </AppView>
       <AppView
@@ -209,16 +251,22 @@ export function OrganisationScreen() {
         ]}>
         <AppButton
           name="Cancel"
-          style={[$.bg_tint_11,$.border,$.border_rounded,$.border_danger, $.flex_1, $.mr_huge]}
-          textstyle={[$.text_danger]}
+          style={[
+            $.bg_tint_11,
+            $.border,
+            $.border_rounded,
+            $.border_danger,
+            $.flex_1,
+            $.mr_huge,
+          ]}
           onPress={() => {
             navigation.navigate('Settings');
           }}
         />
         <AppButton
           name="Save"
-          style={[ $.flex_1,$.border,$.border_rounded,$.border_success]}
-          textstyle={[$.text_success]}
+          style={[$.flex_1, $.border, $.border_rounded, $.border_success]}
+      
           onPress={onSave}
         />
       </AppView>

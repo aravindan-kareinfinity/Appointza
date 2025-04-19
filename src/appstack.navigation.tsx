@@ -36,7 +36,7 @@ export type AppStackParamList = {
   AddedAccounts: undefined;
   ProfileConfiguration: undefined;
 
-  AddedAccountsDetails: undefined;
+  AddedAccountsDetails: { mobile:string};
   Sort: undefined;
  
   Settings: undefined;

@@ -48,6 +48,9 @@ export class UsersPermissionGroupData {
 
 export class StaffSelectReq {
   id: number = 0;
+  userid: number = 0;
+  organisationid: number = 0;
+  organisationlocationid: number = 0;
 }
 
 export class StaffDeleteReq {

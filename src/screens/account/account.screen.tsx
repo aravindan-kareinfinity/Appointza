@@ -229,7 +229,7 @@ export function AccountScreen() {
         </TouchableOpacity>
       )}
 
-      {/* {usercontext && usercontext.value.organisationid > 0 && (
+      {usercontext && usercontext.value.organisationid > 0 && (
         <TouchableOpacity
           onPress={() => navigation.navigate('AddedAccounts')}
           style={[
@@ -259,7 +259,7 @@ export function AccountScreen() {
             />
           </AppView>
         </TouchableOpacity>
-      )} */}
+      )}
 
       {usercontext && usercontext.value.userid == 0 && (
         <TouchableOpacity

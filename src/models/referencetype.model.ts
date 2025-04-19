@@ -28,6 +28,8 @@ export namespace ReferenceType {
 
 export class ReferenceTypeSelectReq {
   id: number = 0;
+  referencetypeid: number = 0;
+  parentid: number = 0;
 }
 
 export class ReferenceTypeDeleteReq {

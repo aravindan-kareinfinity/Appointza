@@ -1,6 +1,7 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { HomeTabParamList } from '../../hometab.navigation';
 import {
+  CommonActions,
   CompositeScreenProps,
   useFocusEffect,
   useNavigation,
@@ -14,7 +15,7 @@ import { AppText } from '../../components/apptext.component';
 import { $ } from '../../styles';
 import { AppButton } from '../../components/appbutton.component';
 import { AppTextInput } from '../../components/apptextinput.component';
-import { UsersRegisterReq } from '../../models/users.model';
+import { REFERENCETYPE, UsersRegisterReq } from '../../models/users.model';
 import {
   Alert,
   Image,
@@ -76,7 +77,9 @@ export function SignUpScreen(props: SignUpScreenProp) {
 
   const fetchReferenceTypes = async () => {
     try {
-      const response = await referenceTypeService.select(new ReferenceTypeSelectReq());
+      var req= new ReferenceTypeSelectReq();
+      req.referencetypeid = REFERENCETYPE.ORGANISATIONPRIMARYTYPE;
+      const response = await referenceValueService.select(new ReferenceTypeSelectReq());
       if (response) {
         setPrimaryBusinessTypes(response);
       }
@@ -89,6 +92,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
     try {
       const req = new ReferenceValueSelectReq();
       req.parentid = id;
+      req.referencetypeid = REFERENCETYPE.ORGANISATIONSECONDARYTYPE;
       const response = await referenceValueService.select(req);
       if (response) {
         setSecondaryBusinessTypes(response);
@@ -172,8 +176,31 @@ export function SignUpScreen(props: SignUpScreenProp) {
         AppAlert({ message: 'Registration successful' });
         
         if (signUpModel.primarytype !== 0) {
-          navigation.navigate('ServiceAvailable');
+
+           navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [
+                      {
+                        name: 'ServiceAvailable',
+                      },
+                    ],
+                  }),
+                );
+         
         } else {
+
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'HomeTab',
+                },
+              ],
+            }),
+          );
+      
           // Navigate to appropriate screen for non-org users
         }
       }

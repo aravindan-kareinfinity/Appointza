@@ -29,6 +29,7 @@ export namespace ReferenceValue {
 export class ReferenceValueSelectReq {
   id: number = 0;
   parentid:Number =0;
+  referencetypeid: number = 0;
 }
 
 export class ReferenceValueDeleteReq {

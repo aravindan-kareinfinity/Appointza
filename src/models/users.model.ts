@@ -178,3 +178,9 @@ export class UserUpdateOrderStatusReq {
   orderid: number = 0;
 
 }
+
+export enum REFERENCETYPE {
+  ORGANISATIONPRIMARYTYPE  = 1,
+ORGANISATIONSECONDARYTYPE  = 2,
+APPOINTMENTSTATUS  = 3
+}

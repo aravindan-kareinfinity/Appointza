@@ -12,7 +12,13 @@ import {AppText} from '../../components/apptext.component';
 import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {FlatList, Image, ScrollView, TouchableOpacity} from 'react-native';
+import {
+  Alert,
+  FlatList,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {FilesService} from '../../services/files.service';
 import {AppAlert} from '../../components/appalert.component';
@@ -34,6 +40,10 @@ import {
   OrganisationLocationStaffRes,
 } from '../../models/organisationlocation.model';
 import {AppSingleSelect} from '../../components/appsingleselect.component';
+import {StaffSelectReq, StaffUser} from '../../models/staff.model';
+import {StaffService} from '../../services/staff.service';
+import { ReferenceValue, ReferenceValueSelectReq } from '../../models/referencevalue.model';
+import { ReferenceValueService } from '../../services/referencevalue.service';
 
 type AppoinmentScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList>,
@@ -96,7 +106,24 @@ export function AppoinmentScreen() {
       setIsloading(false);
     }
   };
-
+  const [stafflist, setStafflist] = useState<StaffUser[]>([]);
+  const staffservice = useMemo(() => new StaffService(), []);
+  const getstaff = async () => {
+    try {
+      const req = new StaffSelectReq();
+      req.organisationlocationid = selectlocation?.organisationlocationid || 0;
+      const res = await staffservice.SelectStaffDetail(req);
+      if (res) {
+        setStafflist(res);
+      } else {
+        setStafflist([]);
+      }
+    } catch (err) {
+      console.error('Error fetching staff:', err);
+      Alert.alert('Error', 'Failed to fetch staff data. Please try again.');
+    } finally {
+    }
+  };
   const getstafflocation = async () => {
     try {
       const req = new OrganisationLocationStaffReq();
@@ -156,6 +183,21 @@ export function AppoinmentScreen() {
     const istDate = new Date(utcDate.getTime() + istOffset);
     return istDate.toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'});
   }
+ const referenceValueService = useMemo(() => new ReferenceValueService(), []);
+ const [secondaryBusinessTypes, setSecondaryBusinessTypes] = useState<ReferenceValue[]>([]);
+  
+  const fetchReferenceValues = async (id: number) => {
+    try {
+      const req = new ReferenceValueSelectReq();
+      req.parentid = id;
+      const response = await referenceValueService.select(req);
+      if (response) {
+        setSecondaryBusinessTypes(response);
+      }
+    } catch (error) {
+    
+    }
+  };
 
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
@@ -179,7 +221,7 @@ export function AppoinmentScreen() {
           day: 'numeric',
         })}
       </AppText>
-  
+
       <AppView style={[$.flex_row, $.align_items_center, $.mb_small]}>
         <AppText style={[$.fw_medium, $.fs_small, $.text_primary5, $.mr_tiny]}>
           ⏰ From: {item.fromtime.toString().substring(0, 5)}
@@ -188,23 +230,23 @@ export function AppoinmentScreen() {
           To: {item.totime.toString().substring(0, 5)}
         </AppText>
       </AppView>
-  
+
       {/* Dynamic Info Section */}
       <AppView style={[$.mb_small]}>
         <AppView style={[$.flex_row, $.align_items_center, $.mb_tiny]}>
-        
-          
           <AppText style={[$.ml_small, $.fw_semibold, $.text_tint_1]}>
             {isorganisation ? item.username : item.organisationname}
           </AppText>
         </AppView>
-  
+
         <AppView style={[$.flex_row, $.align_items_center]}>
           <AppText style={[$.ml_small, $.fw_medium, $.text_tint_3]}>
-            {isorganisation ? item.mobile || 'No mobile' : item.city || 'No location'}
+            {isorganisation
+              ? item.mobile || 'No mobile'
+              : item.city || 'No location'}
           </AppText>
         </AppView>
-  
+
         {!isorganisation && (
           <AppView style={[$.flex_row, $.align_items_center, $.mt_tiny]}>
             <AppText style={[$.ml_small, $.fw_medium, $.text_tint_3]}>
@@ -214,7 +256,7 @@ export function AppoinmentScreen() {
           </AppView>
         )}
       </AppView>
-  
+
       {/* Services list (common for both views) */}
       {item.attributes?.servicelist?.length > 0 && (
         <AppView style={[$.mt_small, $.p_small]}>
