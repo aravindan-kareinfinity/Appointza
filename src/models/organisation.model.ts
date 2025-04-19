@@ -32,6 +32,8 @@ export class OrganisationSelectReq {
   id: number = 0;
   gstnumber: string = ''
   organisationid:number=0
+  organisationsecondarytype :number=0
+  organisationprimarytype :number=0
 }
 
 export class OrganisationDeleteReq {

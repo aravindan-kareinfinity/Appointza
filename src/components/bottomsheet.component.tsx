@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef } from 'react';
+import React, { forwardRef, useEffect, useRef, useState } from 'react';
 import { Dimensions, ScrollView, TouchableOpacity } from 'react-native';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import { AppView } from './appview.component';
@@ -12,6 +12,7 @@ type BottomSheetProps = {
     screenname: string
     Save: () => void;
     close: () => void;
+    showbutton?: boolean;
 
 }
 export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, ref) => {
@@ -20,6 +21,11 @@ export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, re
         open: () => bottomSheetRef.current?.open(),
         close: () => bottomSheetRef.current?.close(),
     }));
+    const [showbutton, setShowbutton] = useState<boolean>(props?.showbutton ?? true);
+
+    useEffect(() => {
+        setShowbutton(props?.showbutton ?? true);
+    }, []);
 
     const screenHeight = Dimensions.get('window').height;
 
@@ -53,7 +59,7 @@ export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, re
 
                     {props.children}
                 </ScrollView>
-                <AppView
+           { showbutton &&    <AppView
                     style={[
                         $.flex_row,
                         $.justify_content_center,
@@ -62,7 +68,7 @@ export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, re
                     <AppButton
                         name="Cancel"
                         style={[$.bg_tint_10, $.flex_1, $.mr_small]}
-                        textstyle={[$.text_danger]}
+                        textStyle={[$.text_danger]}
                         onPress={
                             () => { props.close() }
                         }
@@ -70,10 +76,10 @@ export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, re
                     <AppButton
                         name="Save"
                         style={[$.bg_success, $.flex_1]}
-                        textstyle={[$.text_tint_11]}
+                        textStyle={[$.text_tint_11]}
                         onPress={() => { props.Save() }}
                     />
-                </AppView>
+                </AppView>}
             </RBSheet>
         </AppView>
     );
