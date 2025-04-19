@@ -291,44 +291,26 @@ export function AppoinmentFixingScreen() {
 
             return (
               <AppView style={[$.flex_row]}>
-
-<TouchableOpacity
-                onPress={() => handleServiceSelection(item)}
-                style={[
-                  $.p_medium,
-                  $.m_small,
-                  $.border_rounded,
-                  $.flex_row,
-                  $.align_items_center,
-                  isSelected ? $.bg_tint_9 : $.bg_tint_11,
-                  $.elevation_1
-                ]}>
-                <AppView style={[$.flex_1]}>
+                <TouchableOpacity
+                  onPress={() => handleServiceSelection(item)}
+                  style={[$.p_small, $.flex_1]}>
                   <AppText style={[$.text_primary5, $.fs_compact, $.fw_bold]}>
                     {item.Servicename}
                   </AppText>
-                  <AppView style={[$.flex_row, $.mt_small]}>
-                    <AppText style={[$.text_tint_6, $.mr_small]}>
-                      {item.timetaken} min
-                    </AppText>
-                    <AppText style={[{textDecorationLine: 'line-through'}, $.text_tint_ash, $.mr_tiny]}>
+                  <AppText style={[$.fs_small, $.text_tint_ash]}>
+                    {item.timetaken} min session
+                  </AppText>
+                  <AppText style={[$.fs_small, $.flex_1, $.text_tint_ash]}>
+                    <AppText
+                      style={[
+                        $.flex_1,
+                        {textDecorationLine: 'line-through', color: 'gray'},
+                      ]}>
                       ₹{item.prize}
                     </AppText>
-                    <AppText style={[$.text_tint_2, $.fw_bold]}>
-                      ₹{item.offerprize}
-                    </AppText>
-                  </AppView>
-                </AppView>
-                
-                {isSelected && (
-                  <CustomIcon
-                    name={CustomIcons.SingleTick}
-                    color={$.tint_2}
-                    size={$.s_compact} />
-                )}
-              </TouchableOpacity>
-
-               
+                    <AppText>₹{item.offerprize}</AppText>
+                  </AppText>
+                </TouchableOpacity>
 
                 {isSelected && (
                   <CustomIcon

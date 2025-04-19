@@ -66,13 +66,13 @@ export function AccountScreen() {
         showChevron: true,
       },
       {
-        icon: CustomIcons.Shop,
-        label: 'Organisation',
+        icon: CustomIcons.Supplier,
+        label: 'Location',
         onPress: () => navigation.navigate('Organisation'),
         showChevron: true,
       },
       {
-        icon: CustomIcons.Shop,
+        icon: CustomIcons.Clock,
         label: 'Services Timing',
         onPress: () => navigation.navigate('Timing'),
         showChevron: true,

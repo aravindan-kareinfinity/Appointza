@@ -8,8 +8,9 @@ import {TouchableOpacity} from 'react-native';
 import {ChatScreen} from './screens/chat/chat.screen';
 import {GroupScreen} from './screens/group/group.screen';
 import {AppoinmentScreen} from './screens/appoinment/appoinment.screen';
-import { ServiceAvailableScreen } from './screens/servicesavailable/service.screen';
-import { ServiceScreen } from './screens/events/servicelist.screen';
+import {ServiceAvailableScreen} from './screens/servicesavailable/service.screen';
+import {ServiceScreen} from './screens/events/servicelist.screen';
+import {DashboardScreen} from './screens/dashboard/dashboard.screen';
 
 export type HomeTabParamList = {
   Home: undefined;
@@ -18,6 +19,7 @@ export type HomeTabParamList = {
   // Group: undefined;
   Service: undefined;
   Appoinment: undefined;
+  Dashboard: undefined;
 };
 const HomeTab = createBottomTabNavigator<HomeTabParamList>();
 function HomeTabNavigation() {
@@ -80,6 +82,16 @@ function HomeTabNavigation() {
           ),
         }}
       /> */}
+
+<HomeTab.Screen
+        name="Dashboard"
+        component={DashboardScreen}
+        options={{
+          tabBarIcon: ({focused}) => (
+            <TabBarIcon focused={focused} icon={CustomIcons.Diagram} />
+          ),
+        }}
+      />
       <HomeTab.Screen
         name="Service"
         component={ServiceScreen}
@@ -107,6 +119,8 @@ function HomeTabNavigation() {
           ),
         }}
       />
+
+  
     </HomeTab.Navigator>
   );
 }

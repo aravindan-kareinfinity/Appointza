@@ -1,77 +1,66 @@
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
-import {HomeTabParamList} from '../../hometab.navigation';
 import {
   CompositeScreenProps,
   useFocusEffect,
   useNavigation,
 } from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {AppStackParamList} from '../../appstack.navigation';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {
-  Alert,
-  FlatList,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
-import {useCallback, useEffect, useMemo, useState} from 'react';
-import {FilesService} from '../../services/files.service';
 import {AppAlert} from '../../components/appalert.component';
-import React from 'react';
-import {
-  REFERENCETYPE,
-  UsersAddColourSetToCartReq,
-} from '../../models/users.model';
-import {UsersService} from '../../services/users.service';
-import {AppoinmentService} from '../../services/appoinment.service';
-import {
-  Appoinment,
-  AppoinmentSelectReq,
-  BookedAppoinmentRes,
-} from '../../models/appoinment.model';
+import {AppSwitch} from '../../components/appswitch.component';
+import {AppSingleSelect} from '../../components/appsingleselect.component';
+import {BottomSheetComponent} from '../../components/bottomsheet.component';
 import {useAppSelector} from '../../redux/hooks.redux';
 import {selectusercontext} from '../../redux/usercontext.redux';
-import {AppSwitch} from '../../components/appswitch.component';
+import {AppoinmentService} from '../../services/appoinment.service';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
+import {StaffService} from '../../services/staff.service';
+import {ReferenceValueService} from '../../services/referencevalue.service';
+import {
+  BookedAppoinmentRes,
+  AppoinmentSelectReq,
+} from '../../models/appoinment.model';
 import {
   OrganisationLocationStaffReq,
   OrganisationLocationStaffRes,
 } from '../../models/organisationlocation.model';
-import {AppSingleSelect} from '../../components/appsingleselect.component';
 import {StaffSelectReq, StaffUser} from '../../models/staff.model';
-import {StaffService} from '../../services/staff.service';
-import {
-  ReferenceValue,
-  ReferenceValueSelectReq,
-} from '../../models/referencevalue.model';
-import {ReferenceValueService} from '../../services/referencevalue.service';
 import {ReferenceTypeSelectReq} from '../../models/referencetype.model';
-import {App} from '../../app';
+import {REFERENCETYPE} from '../../models/users.model';
+import {ReferenceValue} from '../../models/referencevalue.model';
+import {HomeTabParamList} from '../../hometab.navigation';
+import {AppStackParamList} from '../../appstack.navigation';
 
 type AppoinmentScreenProp = CompositeScreenProps<
-  NativeStackScreenProps<AppStackParamList>,
-  BottomTabScreenProps<HomeTabParamList, 'Appoinment'>
+  BottomTabScreenProps<HomeTabParamList, 'Appoinment'>,
+  NativeStackScreenProps<AppStackParamList>
 >;
 
 export function AppoinmentScreen() {
   const navigation = useNavigation<AppoinmentScreenProp['navigation']>();
-  const [isloading, setIsloading] = useState(false);
+  const [isloading, setIsloading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isorganisation, setisorganisation] = useState(false);
 
-  const fileservice = useMemo(() => new FilesService(), []);
-  const userservice = useMemo(() => new UsersService(), []);
-  const usercontext = useAppSelector(selectusercontext);
-  const appoinmentservices = useMemo(() => new AppoinmentService(), []);
-  const organisationLocationService = useMemo(
-    () => new OrganisationLocationService(),
-    [],
-  );
+  // Refs for bottom sheets
+  const addStaffSheetRef = useRef<any>(null);
+  const statusSheetRef = useRef<any>(null);
+  const paymentSheetRef = useRef<any>(null);
 
+  // Data states
   const [OrganisationApponmentlist, setOrganisationAppoinmentList] = useState<
     BookedAppoinmentRes[]
   >([]);
@@ -83,6 +72,20 @@ export function AppoinmentScreen() {
   const [UserApponmentlist, setUserAppoinmentList] = useState<
     BookedAppoinmentRes[]
   >([]);
+  const [stafflist, setStafflist] = useState<StaffUser[]>([]);
+  const [AppinmentStatuslist, setAppoinmentStatuslist] = useState<
+    ReferenceValue[]
+  >([]);
+
+  // Services
+  const usercontext = useAppSelector(selectusercontext);
+  const appoinmentservices = useMemo(() => new AppoinmentService(), []);
+  const organisationLocationService = useMemo(
+    () => new OrganisationLocationService(),
+    [],
+  );
+  const staffservice = useMemo(() => new StaffService(), []);
+  const referenceValueService = useMemo(() => new ReferenceValueService(), []);
 
   // Load data when screen focuses
   useFocusEffect(
@@ -106,6 +109,7 @@ export function AppoinmentScreen() {
     setIsloading(true);
     try {
       await getstafflocation();
+      await fetchStatusReferenceTypes();
       if (usercontext.value.userid > 0) {
         await getuserappoinment();
       }
@@ -116,23 +120,26 @@ export function AppoinmentScreen() {
     }
   };
 
-  const staffservice = useMemo(() => new StaffService(), []);
-  const getstaff = async () => {
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
     try {
-      const req = new StaffSelectReq();
-      req.organisationlocationid = selectlocation?.organisationlocationid || 0;
-      const res = await staffservice.SelectStaffDetail(req);
-      if (res) {
-        setStafflist(res);
+      if (isorganisation) {
+        if (selectlocation) {
+          await getorganisationappoinment(
+            selectlocation.organisationid,
+            selectlocation.organisationlocationid,
+          );
+        }
       } else {
-        setStafflist([]);
+        await getuserappoinment();
       }
-    } catch (err) {
-      console.error('Error fetching staff:', err);
-      Alert.alert('Error', 'Failed to fetch staff data. Please try again.');
+    } catch (error) {
+      handleError(error);
     } finally {
+      setIsRefreshing(false);
     }
   };
+
   const getstafflocation = async () => {
     try {
       const req = new OrganisationLocationStaffReq();
@@ -142,6 +149,9 @@ export function AppoinmentScreen() {
       if (res && res.length > 0) {
         Setlocationlist(res);
         Setselectlocation(res[0]);
+      } else {
+        Setlocationlist([]);
+        Setselectlocation(null);
       }
     } catch (error: any) {
       handleError(error);
@@ -150,17 +160,21 @@ export function AppoinmentScreen() {
 
   const getuserappoinment = async () => {
     try {
+      setIsloading(true);
       const req = new AppoinmentSelectReq();
       req.userid = usercontext.value.userid;
       const res = await appoinmentservices.SelectBookedAppoinment(req);
       setUserAppoinmentList(res || []);
     } catch (error: any) {
       handleError(error);
+    } finally {
+      setIsloading(false);
     }
   };
 
   const getorganisationappoinment = async (orgid: number, locid: number) => {
     try {
+      setIsloading(true);
       const req = new AppoinmentSelectReq();
       req.organisationlocationid = locid;
       req.organisationid = orgid;
@@ -168,36 +182,16 @@ export function AppoinmentScreen() {
       setOrganisationAppoinmentList(res || []);
     } catch (error: any) {
       handleError(error);
+    } finally {
+      setIsloading(false);
     }
   };
 
-  const handleError = (error: any) => {
-    const message = error?.response?.data?.message || 'An error occurred';
-    AppAlert({message});
-  };
-
-  const handleToggleView = () => {
-    setisorganisation(!isorganisation);
-    // No need to fetch data here - useEffect will handle it
-  };
-
-  const handleLocationChange = (item: OrganisationLocationStaffRes) => {
-    Setselectlocation(item);
-    // No need to fetch data here - useEffect will handle it
-  };
-
-  function convertToIST(utcTimestamp: string | number | Date) {
-    const utcDate = new Date(utcTimestamp);
-    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
-    const istDate = new Date(utcDate.getTime() + istOffset);
-    return istDate.toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'});
-  }
-
-  const [stafflist, setStafflist] = useState<StaffUser[]>([]);
   const getstafflist = async () => {
     if (!selectlocation) return;
 
     try {
+      setIsloading(true);
       const req = new StaffSelectReq();
       req.organisationid = selectlocation.organisationid;
       req.organisationlocationid = selectlocation.organisationlocationid;
@@ -211,25 +205,37 @@ export function AppoinmentScreen() {
       console.error('Error fetching staff:', err);
       Alert.alert('Error', 'Failed to fetch staff data. Please try again.');
     } finally {
+      setIsloading(false);
     }
   };
 
-  const referenceValueService = useMemo(() => new ReferenceValueService(), []);
-
-  const [AppinmentStatuslist, setAppoinmentStatuslist] = useState<
-    ReferenceValue[]
-  >([]);
   const fetchStatusReferenceTypes = async () => {
     try {
+      setIsloading(true);
       var req = new ReferenceTypeSelectReq();
-      req.referencetypeid = REFERENCETYPE.ORGANISATIONPRIMARYTYPE;
-      const response = await referenceValueService.select(
-        new ReferenceTypeSelectReq(),
-      );
+      req.referencetypeid = REFERENCETYPE.APPOINTMENTSTATUS;
+      const response = await referenceValueService.select(req);
       if (response) {
         setAppoinmentStatuslist(response);
       }
-    } catch (error) {}
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setIsloading(false);
+    }
+  };
+
+  const handleError = (error: any) => {
+    const message = error?.response?.data?.message || 'An error occurred';
+    AppAlert({message});
+  };
+
+  const handleToggleView = () => {
+    setisorganisation(!isorganisation);
+  };
+
+  const handleLocationChange = (item: OrganisationLocationStaffRes) => {
+    Setselectlocation(item);
   };
 
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
@@ -257,8 +263,7 @@ export function AppoinmentScreen() {
           {item.totime.toString().substring(0, 5)}
         </AppText>
       </AppView>
-      <AppView>
-        {/* Common Appointment Info */}
+      <AppView style={[$.flex_1]}>
         <AppText
           style={[$.fw_semibold, $.fs_regular, $.mb_small, $.text_primary5]}>
           {new Date(item.appoinmentdate).toLocaleDateString('en-US', {
@@ -268,7 +273,6 @@ export function AppoinmentScreen() {
           })}
         </AppText>
 
-        {/* Dynamic Info Section */}
         <AppView style={[$.mb_small]}>
           <AppView style={[$.flex_row, $.align_items_center, $.mb_tiny]}>
             <CustomIcon
@@ -276,32 +280,23 @@ export function AppoinmentScreen() {
               color={$.tint_3}
               name={isorganisation ? CustomIcons.Account : CustomIcons.Shop}
             />
-
             <AppView style={[$.flex_column, $.align_items_center]}>
-              <AppText style={[$.ml_small, $.fw_semibold, $.text_tint_1,$.fs_small]}>
+              <AppText
+                style={[$.ml_small, $.fw_semibold, $.text_tint_1, $.fs_small]}>
                 {isorganisation ? item.username : item.organisationname}
               </AppText>
-              <AppText style={[$.ml_small, $.fw_medium, $.text_tint_3,$.fs_small]}>
+              <AppText
+                style={[$.ml_small, $.fw_medium, $.text_tint_3, $.fs_small]}>
                 {isorganisation
                   ? item.mobile || 'No mobile'
                   : item.city || 'No location'}
               </AppText>
             </AppView>
           </AppView>
-
-          {/* {!isorganisation && (
-            <AppView style={[$.flex_row, $.align_items_center, $.mt_tiny]}>
-              <AppText style={[ $.fw_medium, $.text_tint_3,$.fs_small]}>
-                {item.primarytypecode}
-                {item.secondarytypecode ? ` • ${item.secondarytypecode}` : ''}
-              </AppText>
-            </AppView>
-          )} */}
         </AppView>
 
-        {/* Services list (common for both views) */}
         {item.attributes?.servicelist?.length > 0 && (
-          <AppView style={[{paddingVertical: 4}]}>
+          <AppView style={[!isorganisation ? $.mb_big:$.mb_tiny,{paddingVertical: 4}]}>
             <AppView
               style={[
                 $.flex_row,
@@ -353,8 +348,7 @@ export function AppoinmentScreen() {
                     $.fs_small,
                     $.text_tint_ash,
                     {flex: 1, flexShrink: 1},
-                  ]}
-                  >
+                  ]}>
                   {service.servicename}
                 </AppText>
                 <AppText
@@ -371,41 +365,50 @@ export function AppoinmentScreen() {
           </AppView>
         )}
 
-        <AppView style={[$.flex_row, $.align_items_center]}>
-          <AppButton name={'add staff'}></AppButton>
-          <AppButton name={'Status'}></AppButton>
-          <AppButton name={'payment'}></AppButton>
-        </AppView>
+{  isorganisation &&      <AppView style={[$.flex_row, $.align_items_center, $.mt_small]}>
+      {stafflist.length > 0 &&    <AppButton
+            name={'Add Staff'}
+            onPress={() => addStaffSheetRef.current?.open()}
+          />}
+          <AppButton
+            name={'Status'}
+            onPress={() => statusSheetRef.current?.open()}
+            style={[$.mx_small]}
+          />
+          <AppButton
+            name={'Payment'}
+            onPress={() => paymentSheetRef.current?.open()}
+          />
+        </AppView>}
       </AppView>
     </TouchableOpacity>
   );
 
   return (
-    <AppView style={[$.flex_1]}>
-      <AppView
-        style={[
-          $.pr_medium,
-          $.flex_row,
-          $.align_items_center,
-          $.mb_tiny,
-          {justifyContent: 'space-between'},
-        ]}>
+    <AppView style={[$.flex_1, $.bg_tint_11]}>
+      {/* Header Section */}
+      <AppView style={[$.flex_row, $.mb_tiny, $.p_small, $.align_items_center]}>
+        <CustomIcon
+          size={30}
+          color={$.tint_3}
+          name={!isorganisation ? CustomIcons.Account : CustomIcons.Shop}
+        />
         <AppText
           style={[
             $.fs_medium,
-            $.fw_regular,
-            $.p_medium,
-            $.mx_small,
-            $.text_primary5,
+            $.fw_semibold,
+            $.py_small,
+            $.text_primary2,
+            $.flex_1,
           ]}>
-          {isorganisation ? 'Organization' : 'User'} Appointments
+          Appointments
         </AppText>
-
         {selectlocation && selectlocation.organisationlocationid > 0 && (
           <AppSwitch onValueChange={handleToggleView} value={isorganisation} />
         )}
       </AppView>
 
+      {/* Location Selector */}
       {isorganisation && locationlist.length > 1 && (
         <AppSingleSelect
           data={locationlist}
@@ -424,21 +427,183 @@ export function AppoinmentScreen() {
           style={[$.mb_normal]}
         />
       )}
-
-      <FlatList
-        data={isorganisation ? OrganisationApponmentlist : UserApponmentlist}
-        nestedScrollEnabled
-        showsVerticalScrollIndicator={false}
-        keyExtractor={item => item.id.toString()}
-        renderItem={renderAppointmentItem}
-        ListEmptyComponent={
-          <AppView style={[$.p_medium, $.align_items_center]}>
-            <AppText style={[$.text_tint_3, $.fw_medium]}>
-              No appointments found
+      <ScrollView>
+        {/* Loading Indicator */}
+        {isloading && !isRefreshing ? (
+          <AppView
+            style={[$.flex_1, $.justify_content_center, $.align_items_center]}>
+            <ActivityIndicator size="large" color={$.tint_3} />
+            <AppText style={[$.mt_medium, $.text_primary5]}>
+              Loading appointments...
             </AppText>
           </AppView>
-        }
-      />
+        ) : (
+          <FlatList
+            data={
+              isorganisation ? OrganisationApponmentlist : UserApponmentlist
+            }
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+            keyExtractor={item => item.id.toString()}
+            renderItem={renderAppointmentItem}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                colors={[$.tint_3]}
+                tintColor={$.tint_3}
+              />
+            }
+            ListEmptyComponent={
+              <AppView
+                style={[
+                  $.flex_1,
+                  $.justify_content_center,
+                  $.align_items_center,
+                  $.p_large,
+                ]}>
+                <CustomIcon
+                  color={$.tint_5}
+                  name={CustomIcons.Scheduled}
+                  size={$.s_large}
+                />
+                <AppText style={[$.mt_medium, $.text_primary5, $.text_center]}>
+                  {isorganisation
+                    ? 'No appointments for this location'
+                    : 'You have no appointments yet'}
+                </AppText>
+                <TouchableOpacity
+                  style={[
+                    $.mt_medium,
+                    $.p_small,
+                    $.bg_tint_3,
+                    $.border_rounded,
+                  ]}
+                  onPress={handleRefresh}>
+                  <AppText style={[$.text_tint_11, $.fw_semibold]}>
+                    Refresh
+                  </AppText>
+                </TouchableOpacity>
+              </AppView>
+            }
+            contentContainerStyle={[$.flex_1]}
+            style={[$.flex_1]}
+          />
+        )}
+      </ScrollView>
+
+      {/* Bottom Sheets */}
+      <BottomSheetComponent
+        ref={addStaffSheetRef}
+        screenname="Add Staff"
+        Save={() => {
+          // Handle save for staff
+          addStaffSheetRef.current?.close();
+        }}
+        close={() => addStaffSheetRef.current?.close()}>
+        <ScrollView
+          contentContainerStyle={[$.p_medium]}
+          nestedScrollEnabled={true}>
+          <AppText style={[$.fw_semibold, $.mb_medium]}>
+            Available Staff Members
+          </AppText>
+          {stafflist.length > 0 ? (
+            stafflist.map(staff => (
+              <TouchableOpacity
+                key={staff.id}
+                style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
+                onPress={() => {
+                  // Handle staff selection
+                  addStaffSheetRef.current?.close();
+                }}>
+                <AppText style={[$.fw_medium]}>{staff.name}</AppText>
+                <AppText style={[$.text_tint_3, $.fs_small]}>
+                  {staff.mobile}
+                </AppText>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <AppText style={[$.text_tint_3]}>
+              No staff members available
+            </AppText>
+          )}
+        </ScrollView>
+      </BottomSheetComponent>
+
+      <BottomSheetComponent
+        ref={statusSheetRef}
+        screenname="Change Status"
+        Save={() => {
+          // Handle save for status
+          statusSheetRef.current?.close();
+        }}
+        close={() => statusSheetRef.current?.close()}>
+        <ScrollView
+          contentContainerStyle={[$.p_medium]}
+          nestedScrollEnabled={true}>
+          <AppText style={[$.fw_semibold, $.mb_medium]}>
+            Select Appointment Status
+          </AppText>
+          {AppinmentStatuslist.length > 0 ? (
+            AppinmentStatuslist.map(status => (
+              <TouchableOpacity
+                key={status.id}
+                style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
+                onPress={() => {
+                  // Handle status selection
+                  statusSheetRef.current?.close();
+                }}>
+                <AppText style={[$.fw_medium]}>{status.displaytext}</AppText>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <AppText style={[$.text_tint_3]}>
+              No status options available
+            </AppText>
+          )}
+        </ScrollView>
+      </BottomSheetComponent>
+
+      <BottomSheetComponent
+        ref={paymentSheetRef}
+        screenname="Payment Options"
+        Save={() => {
+          // Handle save for payment
+          paymentSheetRef.current?.close();
+        }}
+        close={() => paymentSheetRef.current?.close()}>
+        <ScrollView
+          contentContainerStyle={[$.p_medium]}
+          nestedScrollEnabled={true}>
+          <AppText style={[$.fw_semibold, $.mb_medium]}>
+            Payment Methods
+          </AppText>
+          <TouchableOpacity
+            style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
+            onPress={() => {
+              // Handle cash payment
+              paymentSheetRef.current?.close();
+            }}>
+            <AppText style={[$.fw_medium]}>Cash</AppText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
+            onPress={() => {
+              // Handle credit card payment
+              paymentSheetRef.current?.close();
+            }}>
+            <AppText style={[$.fw_medium]}>Credit Card</AppText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
+            onPress={() => {
+              // Handle online payment
+              paymentSheetRef.current?.close();
+            }}>
+            <AppText style={[$.fw_medium]}>Online Payment</AppText>
+          </TouchableOpacity>
+        </ScrollView>
+      </BottomSheetComponent>
     </AppView>
   );
 }
