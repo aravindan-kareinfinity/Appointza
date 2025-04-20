@@ -1,11 +1,14 @@
 import { ActionReq } from '../models/actionreq.model';
 import { ActionRes } from '../models/actionres.model';
 import {
+    AddStaffReq,
   Appoinment,
   AppoinmentDeleteReq,
   AppoinmentFinal,
   AppoinmentSelectReq,
   BookedAppoinmentRes,
+  UpdatePaymentReq,
+  UpdateStatusReq,
 } from '../models/appoinment.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
 import {environment} from '../utils/environment';
@@ -79,5 +82,38 @@ export class AppoinmentService {
         return resp.item;
     }
 
+
+    async Assignstaff(req: AddStaffReq) {
+        let postdata: ActionReq<AddStaffReq> = new ActionReq<AddStaffReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<boolean>>(
+            this.baseurl + '/Assignstaff',
+            postdata
+        );
+                
+        return resp.item;
+    }
+
+    async UpdateStatus(req: UpdateStatusReq) {
+        let postdata: ActionReq<UpdateStatusReq> = new ActionReq<UpdateStatusReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<boolean>>(
+            this.baseurl + '/UpdateStatus',
+            postdata
+        );
+                
+        return resp.item;
+    }
+
+    async UpdatePayment(req: UpdatePaymentReq) {
+        let postdata: ActionReq<UpdatePaymentReq> = new ActionReq<UpdatePaymentReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<boolean>>(
+            this.baseurl + '/UpdatePayment',
+            postdata
+        );
+                
+        return resp.item;
+    }
 
 }

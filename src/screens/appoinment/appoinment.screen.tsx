@@ -32,6 +32,9 @@ import {ReferenceValueService} from '../../services/referencevalue.service';
 import {
   BookedAppoinmentRes,
   AppoinmentSelectReq,
+  AddStaffReq,
+  UpdateStatusReq,
+  UpdatePaymentReq,
 } from '../../models/appoinment.model';
 import {
   OrganisationLocationStaffReq,
@@ -43,6 +46,8 @@ import {REFERENCETYPE} from '../../models/users.model';
 import {ReferenceValue} from '../../models/referencevalue.model';
 import {HomeTabParamList} from '../../hometab.navigation';
 import {AppStackParamList} from '../../appstack.navigation';
+import { environment } from '../../utils/environment';
+import { AppTextInput } from '../../components/apptextinput.component';
 
 type AppoinmentScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Appoinment'>,
@@ -238,6 +243,71 @@ export function AppoinmentScreen() {
     Setselectlocation(item);
   };
 
+  const Assignstaff=async(staffid:number,staffname:string)=>{
+    try {
+      setIsloading(true);
+      var req = new AddStaffReq()
+      req.appoinmentid=seletecedappinmentid,
+      req.organisationid=selectlocation?.organisationid ?? 0,
+      req.organisationlocationid=selectlocation?.organisationlocationid ?? 0,
+      req.staffid=staffid
+      req.staffname = staffname
+      const response = await appoinmentservices.Assignstaff(req);
+      Alert.alert(environment.baseurl,"staff assigned succesfully")
+      if (response) {
+        loadInitialData();
+      }
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setIsloading(false);
+    }
+  }
+
+  const Updatestatus=async(statusid:number,statuscode:string)=>{
+    try {
+      setIsloading(true);
+      var req = new UpdateStatusReq()
+      req.appoinmentid=seletecedappinmentid
+      req.organisationid=selectlocation?.organisationid ?? 0,
+      req.organisationlocationid=selectlocation?.organisationlocationid ?? 0,
+      req.statusid=statusid
+      req.statuscode= statuscode
+      req.statustype =""
+   
+      const response = await appoinmentservices.UpdateStatus(req);
+      Alert.alert(environment.baseurl,"staff assigned succesfully")
+      if (response) {
+        loadInitialData();
+      }
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setIsloading(false);
+    }
+  }
+
+
+  const Updatepayment = async (paymentData: UpdatePaymentReq) => {
+    try {
+      setIsloading(true);
+      const response = await appoinmentservices.UpdatePayment(paymentData);
+      Alert.alert(environment.baseurl, "Payment updated successfully");
+      if (response) {
+        loadInitialData();
+      }
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setIsloading(false);
+    }
+  }
+  const [selectedPaymentType, setSelectedPaymentType] = useState<string>('Cash');
+const [paymentAmount, setPaymentAmount] = useState<string>('');
+const [paymentName, setPaymentName] = useState<string>('');
+const [paymentCode, setPaymentCode] = useState<string>('');
+  
+  const [seletecedappinmentid,Setselectedappoinmentid] =useState(0)
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
       style={[
@@ -272,6 +342,12 @@ export function AppoinmentScreen() {
             day: 'numeric',
           })}
         </AppText>
+
+        <AppView>
+          <AppText>{item.staffname?? ''}</AppText>
+          <AppText>{item.statuscode?? ''}</AppText>
+          <AppText>{item.ispaid ? 'paid':''}</AppText>
+        </AppView>
 
         <AppView style={[$.mb_small]}>
           <AppView style={[$.flex_row, $.align_items_center, $.mb_tiny]}>
@@ -366,18 +442,23 @@ export function AppoinmentScreen() {
         )}
 
 {  isorganisation &&      <AppView style={[$.flex_row, $.align_items_center, $.mt_small]}>
-      {stafflist.length > 0 &&    <AppButton
-            name={'Add Staff'}
-            onPress={() => addStaffSheetRef.current?.open()}
-          />}
+      {stafflist.length > 0 &&    <TouchableOpacity
+           style={[$.flex_row]}
+            onPress={() =>{ addStaffSheetRef.current?.open() ; Setselectedappoinmentid(item.id)}}
+          ><AppText>Assign</AppText>
+             <CustomIcon
+          size={20}
+          color={$.tint_3}
+          name={ CustomIcons.AddAccount }
+        /></TouchableOpacity>}
           <AppButton
             name={'Status'}
-            onPress={() => statusSheetRef.current?.open()}
+            onPress={() => {Setselectedappoinmentid(item.id); statusSheetRef.current?.open()}}
             style={[$.mx_small]}
           />
           <AppButton
             name={'Payment'}
-            onPress={() => paymentSheetRef.current?.open()}
+            onPress={() =>{ Setselectedappoinmentid(item.id); paymentSheetRef.current?.open()}}
           />
         </AppView>}
       </AppView>
@@ -514,6 +595,7 @@ export function AppoinmentScreen() {
                 style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
                 onPress={() => {
                   // Handle staff selection
+                  Assignstaff(staff.id,staff.name)
                   addStaffSheetRef.current?.close();
                 }}>
                 <AppText style={[$.fw_medium]}>{staff.name}</AppText>
@@ -551,6 +633,7 @@ export function AppoinmentScreen() {
                 style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
                 onPress={() => {
                   // Handle status selection
+                  Updatestatus(status.id,status.identifier)
                   statusSheetRef.current?.close();
                 }}>
                 <AppText style={[$.fw_medium]}>{status.displaytext}</AppText>
@@ -565,45 +648,93 @@ export function AppoinmentScreen() {
       </BottomSheetComponent>
 
       <BottomSheetComponent
-        ref={paymentSheetRef}
-        screenname="Payment Options"
-        Save={() => {
-          // Handle save for payment
-          paymentSheetRef.current?.close();
-        }}
-        close={() => paymentSheetRef.current?.close()}>
-        <ScrollView
-          contentContainerStyle={[$.p_medium]}
-          nestedScrollEnabled={true}>
-          <AppText style={[$.fw_semibold, $.mb_medium]}>
-            Payment Methods
-          </AppText>
-          <TouchableOpacity
-            style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
-            onPress={() => {
-              // Handle cash payment
-              paymentSheetRef.current?.close();
-            }}>
-            <AppText style={[$.fw_medium]}>Cash</AppText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
-            onPress={() => {
-              // Handle credit card payment
-              paymentSheetRef.current?.close();
-            }}>
-            <AppText style={[$.fw_medium]}>Credit Card</AppText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
-            onPress={() => {
-              // Handle online payment
-              paymentSheetRef.current?.close();
-            }}>
-            <AppText style={[$.fw_medium]}>Online Payment</AppText>
-          </TouchableOpacity>
-        </ScrollView>
-      </BottomSheetComponent>
+  ref={paymentSheetRef}
+  screenname="Payment Options"
+  Save={() => {
+    // Handle save for payment
+    paymentSheetRef.current?.close();
+  }}
+  close={() => paymentSheetRef.current?.close()}>
+  <ScrollView
+    contentContainerStyle={[$.p_medium]}
+    nestedScrollEnabled={true}>
+    <AppText style={[$.fw_semibold, $.mb_medium]}>
+      Payment Details
+    </AppText>
+    
+    {/* Payment Type Selection */}
+    <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Type</AppText>
+    <AppView style={[$.flex_row, $.mb_small]}>
+      <TouchableOpacity
+        style={[$.p_small, $.mr_small, $.bg_tint_10, $.border_rounded]}
+        onPress={() => setSelectedPaymentType('Cash')}>
+        <AppText style={[$.fw_medium, selectedPaymentType === 'Cash' && $.text_success]}>Cash</AppText>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[$.p_small, $.mr_small, $.bg_tint_10, $.border_rounded]}
+        onPress={() => setSelectedPaymentType('Card')}>
+        <AppText style={[$.fw_medium, selectedPaymentType === 'Card' && $.text_success]}>Card</AppText>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[$.p_small, $.bg_tint_10, $.border_rounded]}
+        onPress={() => setSelectedPaymentType('Online')}>
+        <AppText style={[$.fw_medium, selectedPaymentType === 'Online' && $.text_success]}>Online</AppText>
+      </TouchableOpacity>
+    </AppView>
+
+    {/* Amount Input */}
+    <AppText style={[$.fw_medium, $.mb_tiny]}>Amount</AppText>
+    <AppTextInput
+      style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
+      placeholder="Enter amount"
+      keyboardtype="numeric"
+      value={paymentAmount}
+      onChangeText={setPaymentAmount}
+    />
+
+    {/* Payment Name (Optional) */}
+    <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Name (Optional)</AppText>
+    <AppTextInput
+      style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
+      placeholder="e.g., Credit Card, UPI, etc."
+      value={paymentName}
+      onChangeText={setPaymentName}
+    />
+
+    {/* Payment Code (Optional) */}
+    <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Code/Reference</AppText>
+    <AppTextInput
+      style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
+      placeholder="Transaction ID or Reference"
+      value={paymentCode}
+      onChangeText={setPaymentCode}
+    />
+
+    {/* Save Button */}
+    <AppButton
+      name="Save Payment"
+      onPress={() => {
+        const paymentReq = new UpdatePaymentReq();
+        paymentReq.appoinmentid = seletecedappinmentid;
+        paymentReq.paymenttype = selectedPaymentType;
+        paymentReq.paymenttypeid = selectedPaymentType === 'Cash' ? 1 : 
+                                  selectedPaymentType === 'Card' ? 2 : 3;
+        paymentReq.amount = Number(paymentAmount) || 0;
+        paymentReq.paymentname = paymentName;
+        paymentReq.paymentcode = paymentCode;
+        paymentReq.statusid = 1; // Assuming 1 is for completed payment
+        paymentReq.customername = ''; // Set if needed
+        paymentReq.customerid = 0; // Set if needed
+        paymentReq.organisationid = selectlocation?.organisationid ?? 0;
+        paymentReq.organisationlocationid = selectlocation?.organisationlocationid ?? 0;
+        
+        Updatepayment(paymentReq);
+        paymentSheetRef.current?.close();
+      }}
+      style={[$.mt_medium]}
+    />
+  </ScrollView>
+</BottomSheetComponent>
     </AppView>
   );
 }

@@ -18,6 +18,9 @@ issuspended: boolean = false
 organisationlocationid: number = 0
 isfactory: boolean = false
 notes: string = ""
+staffid: number = 0;
+staffname: string = "";
+ispaid: boolean = false;
 }
 
 export namespace Appoinment {
@@ -94,3 +97,36 @@ export class BookedAppoinmentRes extends Appoinment {
   // From joined organisationlocation table
   city: string = '';
 }
+
+
+export class AddStaffReq {
+  appoinmentid: number=0;
+  staffname: string='';
+  staffid: number=0;
+  organisationid: number=0;
+  organisationlocationid: number=0;
+}
+export class UpdateStatusReq {
+  appoinmentid: number =0;
+  statuscode: string ='';
+  statustype: string ='';
+  statusid: number =0;
+  organisationid: number =0;
+  organisationlocationid: number =0;
+}
+
+
+export class UpdatePaymentReq {
+  appoinmentid: number=0;
+  paymentname: string = '';
+  paymentcode: string = '';
+  paymenttype: string = '';
+  paymenttypeid: number=0;
+  statusid: number=0;
+  customername: string = '';
+  customerid: number=0;
+  amount: number=0;
+  organisationid: number=0;
+  organisationlocationid: number=0;
+}
+

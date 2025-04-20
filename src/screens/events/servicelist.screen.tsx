@@ -95,6 +95,9 @@ export function ServiceScreen() {
     }
   };
 
+
+
+ 
   // Apply filters based on selected types
   const applyFilters = useCallback(() => {
     let filtered = [...OrganisatonDetailList];
