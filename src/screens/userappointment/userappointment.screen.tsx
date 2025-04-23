@@ -86,6 +86,10 @@ export function UserAppoinmentScreen() {
   const loadInitialData = async () => {
     setIsloading(true);
     try {
+        console.log(
+        "usercontext.value.userid",    usercontext.value.userid
+        );
+        
       if (usercontext.value.userid > 0) {
         await getuserappoinment();
       }
@@ -128,17 +132,6 @@ export function UserAppoinmentScreen() {
 
 
 
-  const formatTime = (timeString: string) => {
-    try {
-      const [hours, minutes] = timeString.split(':');
-      const hour = parseInt(hours, 10);
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const hour12 = hour % 12 || 12;
-      return `${hour12}:${minutes} ${ampm}`;
-    } catch {
-      return timeString;
-    }
-  };
 
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity

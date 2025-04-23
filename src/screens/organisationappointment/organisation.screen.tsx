@@ -527,17 +527,13 @@ export function BussinessAppoinmentScreen() {
     <AppView style={[$.flex_1, $.bg_tint_11]}>
       {/* Header Section */}
       <AppView style={[$.flex_row, $.mb_tiny, $.p_small, $.align_items_center]}>
-        <CustomIcon
-          size={30}
-          color={$.tint_3}
-          name={CustomIcons.Shop}
-        />
+     
         <AppText
           style={[
             $.fs_medium,
             $.fw_semibold,
             $.py_small,
-            $.text_primary1,
+           $.text_primary5,
             $.flex_1,
           ]}>
           Appointments

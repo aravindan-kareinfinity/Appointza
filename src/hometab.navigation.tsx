@@ -7,12 +7,13 @@ import {AccountScreen} from './screens/account/account.screen';
 import {TouchableOpacity} from 'react-native';
 import {ChatScreen} from './screens/chat/chat.screen';
 import {GroupScreen} from './screens/group/group.screen';
-import {AppoinmentScreen} from './screens/appoinment/appoinment.screen';
 import {ServiceAvailableScreen} from './screens/servicesavailable/service.screen';
 import {ServiceScreen} from './screens/events/servicelist.screen';
 import {DashboardScreen} from './screens/dashboard/dashboard.screen';
 import { UserAppoinmentScreen } from './screens/userappointment/userappointment.screen';
 import { BussinessAppoinmentScreen } from './screens/organisationappointment/organisation.screen';
+import { useAppSelector } from './redux/hooks.redux';
+import { selectiscustomer } from './redux/iscustomer.redux';
 
 export type HomeTabParamList = {
   Home: undefined;
@@ -20,13 +21,13 @@ export type HomeTabParamList = {
   Account: undefined;
   // Group: undefined;
   Service: undefined;
-  Appoinment: undefined;
   Dashboard: undefined;
   UserAppoinment:undefined;
   BussinessAppoinment:undefined
 };
 const HomeTab = createBottomTabNavigator<HomeTabParamList>();
 function HomeTabNavigation() {
+    const usercontext = useAppSelector(selectiscustomer);
   return (
     <HomeTab.Navigator
       tabBar={({state, descriptors, navigation}) => {
@@ -105,17 +106,8 @@ function HomeTabNavigation() {
           ),
         }}
       />
-      <HomeTab.Screen
-        name="Appoinment"
-        component={AppoinmentScreen}
-        options={{
-          tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
-          ),
-        }}
-      />
 
-<HomeTab.Screen
+{usercontext.isCustomer  &&  <HomeTab.Screen
         name="UserAppoinment"
         component={UserAppoinmentScreen}
         options={{
@@ -123,9 +115,9 @@ function HomeTabNavigation() {
             <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
           ),
         }}
-      />
+      />}
 
-<HomeTab.Screen
+{!usercontext.isCustomer  && <HomeTab.Screen
         name="BussinessAppoinment"
         component={BussinessAppoinmentScreen}
         options={{
@@ -133,7 +125,7 @@ function HomeTabNavigation() {
             <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
           ),
         }}
-      />
+      />}
       <HomeTab.Screen
         name="Account"
         component={AccountScreen}
