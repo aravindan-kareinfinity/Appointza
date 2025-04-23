@@ -6,6 +6,8 @@ import {
   OrganisationLocationSelectReq,
   OrganisationLocationStaffReq,
   OrganisationLocationStaffRes,
+  OrgLocationReq,
+  OrgLocationStaffResponse,
 } from '../models/organisationlocation.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
 import {environment} from '../utils/environment';
@@ -74,6 +76,17 @@ export class OrganisationLocationService {
         postdata.item = req;
         let resp = await this.http.post<ActionRes<Array<OrganisationLocationStaffRes>>>(
             this.baseurl + '/Selectlocation', 
+            postdata
+        );
+        return resp.item;
+    }
+
+    async SelectlocationDetail(req: OrgLocationReq) {
+        let postdata: ActionReq<OrgLocationReq> =
+            new ActionReq<OrgLocationReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<Array<OrgLocationStaffResponse>>>(
+            this.baseurl + '/SelectlocationDetail', 
             postdata
         );
         return resp.item;

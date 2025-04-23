@@ -53,3 +53,42 @@ export class OrganisationLocationStaffRes {
   name: string='';
   organisationlocationid: number=0;
 }
+
+
+
+// Request model - for the request sent to the method
+export class OrgLocationStaffRequest {
+  businessName: string ='';
+  area: string ='';
+  city: string ='';
+  state: string ='';
+  postalCode: string ='';
+  serviceIds: number[] = []; // A list of service IDs to filter by
+}
+
+export class OrgLocationStaffResponse {
+  BusinessName: string = '';
+  StreetName: string = '';
+  Area: string = '';
+  City: string = '';
+  State: string = '';
+  PostalCode: string = '';
+  Services: Service[] = [];
+  Timings: Timing[] = [];
+}
+
+export class Service {
+  ServiceName: string = '';
+  Price: number = 0;
+  OfferPrice: number = 0;
+  Duration: number = 0; // Duration in minutes
+}
+
+export class Timing {
+  Day: number = 0; // Day of the week (1 = Monday, 2 = Tuesday, etc.)
+  StartTime: string = ''; // Changed from TimeSpan to string for TypeScript
+  EndTime: string = ''; // Changed from TimeSpan to string for TypeScript
+}
+export class OrgLocationReq{
+  orglocid :number =0
+}

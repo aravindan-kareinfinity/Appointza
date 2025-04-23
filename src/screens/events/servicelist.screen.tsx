@@ -18,7 +18,13 @@ import {$} from '../../styles';
 import {AppTextInput} from '../../components/apptextinput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {AppSwitch} from '../../components/appswitch.component';
-import {FlatList, Image, ScrollView, TouchableOpacity, ActivityIndicator} from 'react-native';
+import {
+  FlatList,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import {Line} from 'react-native-svg';
 import {AppAlert} from '../../components/appalert.component';
 import {AppSingleSelect} from '../../components/appsingleselect.component';
@@ -40,6 +46,13 @@ import {
 import {ReferenceValueService} from '../../services/referencevalue.service';
 import {REFERENCETYPE} from '../../models/users.model';
 import {BottomSheetComponent} from '../../components/bottomsheet.component';
+import {OrganisationLocationService} from '../../services/organisationlocation.service';
+import {
+  OrgLocationReq,
+  OrgLocationStaffResponse,
+  Service,
+  Timing,
+} from '../../models/organisationlocation.model';
 
 type ServiceScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Service'>,
@@ -50,6 +63,10 @@ export function ServiceScreen() {
   const [isloading, setIsloading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const Organizationlist = useMemo(() => new OrganisationService(), []);
+  const organisationlocationservice = useMemo(
+    () => new OrganisationLocationService(),
+    [],
+  );
   const [OrganisatonDetailList, setOrganisationDetailList] = useState<
     OrganisationDetail[]
   >([]);
@@ -75,6 +92,7 @@ export function ServiceScreen() {
   const referenceValueService = useMemo(() => new ReferenceValueService(), []);
   const PrimarybottomSheetRef = useRef<any>(null);
   const SecondarybottomSheetRef = useRef<any>(null);
+  const getLocationDetailbottomSheetRef = useRef<any>(null);
 
   // Fetch initial data
   const getInitialData = async () => {
@@ -95,9 +113,95 @@ export function ServiceScreen() {
     }
   };
 
+  const [organisationdetail, Setorganisationdetail] =
+    useState<OrgLocationStaffResponse>(new OrgLocationStaffResponse());
 
+  const getLocationDetail = async (id: number) => {
+    try {
+      setIsloading(true);
 
- 
+      const req = new OrgLocationReq();
+      req.orglocid = id;
+      const res = await organisationlocationservice.SelectlocationDetail(req);
+
+      if (res && res.length > 0) {
+        const locationDetail = new OrgLocationStaffResponse();
+        const responseData = res[0];
+
+        // Map properties with exact case matching
+        locationDetail.BusinessName = responseData.BusinessName || '';
+        locationDetail.StreetName = responseData.StreetName || '';
+        locationDetail.Area = responseData.Area || '';
+        locationDetail.City = responseData.City || '';
+        locationDetail.State = responseData.State || '';
+        locationDetail.PostalCode = responseData.PostalCode || '';
+
+        // Map Services
+        locationDetail.Services =
+          responseData.Services?.map(service => {
+            const s = new Service();
+            s.ServiceName = service.ServiceName || '';
+            s.Price = service.Price || 0;
+            s.OfferPrice = service.OfferPrice || 0;
+            s.Duration = service.Duration || 0;
+            return s;
+          }) || [];
+
+        // Map Timings (converting TimeSpan to string if needed)
+        locationDetail.Timings =
+          responseData.Timings?.map(timing => {
+            const t = new Timing();
+            t.Day = timing.Day || 0;
+            t.StartTime =
+              typeof timing.StartTime === 'string'
+                ? timing.StartTime
+                : String(timing.StartTime) || '';
+            t.EndTime =
+              typeof timing.EndTime === 'string'
+                ? timing.EndTime
+                : timing.EndTime
+                ? String(timing.EndTime)
+                : '';
+            return t;
+          }) || [];
+
+        Setorganisationdetail(locationDetail);
+        getLocationDetailbottomSheetRef.current.open();
+      }
+    } catch (error) {
+      console.error('Error loading location details:', error);
+      AppAlert({message: 'Failed to load location details'});
+    } finally {
+      setIsloading(false);
+    }
+  };
+
+  // Helper functions (add these outside your component)
+  const getDayName = (dayNumber: number): string => {
+    const days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ];
+    return days[dayNumber] || `Day ${dayNumber}`;
+  };
+
+  const formatTime = (timeString: string): string => {
+    try {
+      const [hours, minutes] = timeString.split(':');
+      const hourNum = parseInt(hours, 10);
+      const period = hourNum >= 12 ? 'PM' : 'AM';
+      const displayHour = hourNum % 12 || 12;
+      return `${displayHour}:${minutes} ${period}`;
+    } catch (e) {
+      return timeString; // fallback to original if parsing fails
+    }
+  };
+
   // Apply filters based on selected types
   const applyFilters = useCallback(() => {
     let filtered = [...OrganisatonDetailList];
@@ -190,7 +294,14 @@ export function ServiceScreen() {
     <AppView style={[$.bg_tint_11, $.flex_1]}>
       {/* Header with filter button */}
       <AppView style={[$.flex_row, $.align_items_center, $.p_small]}>
-        <AppText style={[$.fs_medium,$.fw_semibold,$.p_small,$.text_primary2,$.flex_1]}>
+        <AppText
+          style={[
+            $.fs_medium,
+            $.fw_semibold,
+            $.p_small,
+            $.text_primary2,
+            $.flex_1,
+          ]}>
           Services
         </AppText>
 
@@ -208,9 +319,12 @@ export function ServiceScreen() {
 
       {/* Loading indicator when initial data is loading */}
       {isloading && !isRefreshing ? (
-        <AppView style={[$.flex_1, $.justify_content_center, $.align_items_center]}>
+        <AppView
+          style={[$.flex_1, $.justify_content_center, $.align_items_center]}>
           <ActivityIndicator size="large" color={$.tint_3} />
-          <AppText style={[$.mt_medium, $.text_primary5]}>Loading services...</AppText>
+          <AppText style={[$.mt_medium, $.text_primary5]}>
+            Loading services...
+          </AppText>
         </AppView>
       ) : (
         <FlatList
@@ -222,47 +336,61 @@ export function ServiceScreen() {
           onRefresh={getInitialData}
           keyExtractor={(item, index) => index.toString()}
           ListEmptyComponent={
-            <AppView style={[$.flex_1, $.justify_content_center, $.align_items_center, $.p_large]}>
+            <AppView
+              style={[
+                $.flex_1,
+                $.justify_content_center,
+                $.align_items_center,
+                $.p_large,
+              ]}>
               <CustomIcon
                 color={$.tint_5}
                 name={CustomIcons.Search}
                 size={$.s_large}
               />
               <AppText style={[$.mt_medium, $.text_primary5, $.text_center]}>
-                {selectedPrimaryType || selectedSecondaryType 
-                  ? 'No services match your filters' 
+                {selectedPrimaryType || selectedSecondaryType
+                  ? 'No services match your filters'
                   : 'No services available'}
               </AppText>
               {(selectedPrimaryType || selectedSecondaryType) && (
-                <TouchableOpacity 
-                  style={[$.mt_medium, $.p_small, $.bg_tint_3, $.border_rounded]}
-                  onPress={clearFilters}
-                >
-                  <AppText style={[$.text_tint_11, $.fw_semibold]}>Clear Filters</AppText>
+                <TouchableOpacity
+                  style={[
+                    $.mt_medium,
+                    $.p_small,
+                    $.bg_tint_3,
+                    $.border_rounded,
+                  ]}
+                  onPress={clearFilters}>
+                  <AppText style={[$.text_tint_11, $.fw_semibold]}>
+                    Clear Filters
+                  </AppText>
                 </TouchableOpacity>
               )}
             </AppView>
           }
           renderItem={({item, index}) => (
-            <AppView 
+            <AppView
               style={[
-                $.elevation_4, 
-                $.border_rounded, 
+                $.elevation_4,
+                $.border_rounded,
                 $.bg_tint_11,
                 $.mb_medium,
                 $.mx_small,
-                {borderLeftWidth: 4, borderLeftColor: $.tint_3}
-              ]}
-            >
+                {borderLeftWidth: 4, borderLeftColor: $.tint_3},
+              ]}>
               {/* Header Section */}
               <AppView style={[$.p_medium, $.pb_small]}>
-                <AppView style={[$.flex_row, $.align_items_center,]}>
-                  <AppText style={[$.fw_bold, $.fs_big, $.text_primary5,$.flex_1]}>
+                <AppView style={[$.flex_row, $.align_items_center]}>
+                  <AppText
+                    style={[$.fw_bold, $.fs_big, $.text_primary5, $.flex_1]}>
                     {item.organisationname}
                   </AppText>
-                  <TouchableOpacity 
-                    style={[$.p_tiny, $.border_rounded2, $.bg_tint_10]}
-                  >
+                  <TouchableOpacity
+                    onPress={() => {
+                      getLocationDetail(item.organisationlocationid);
+                    }}
+                    style={[$.p_tiny, $.border_rounded2, $.bg_tint_10]}>
                     <CustomIcon
                       color={$.tint_3}
                       name={CustomIcons.Information}
@@ -270,66 +398,49 @@ export function ServiceScreen() {
                     />
                   </TouchableOpacity>
                 </AppView>
-                
+
                 {/* Address with Location Icon */}
                 <AppView style={[$.flex_row, $.align_items_center, $.mt_small]}>
-                  <AppText
-                    style={[
-                      $.text_tint_ash,
-                      $.fs_small,
-                      $.flex_1,
-                    ]}
-                  >
-                    {item.organisationlocationname}, {item.organisationlocationaddressline1},{' '}
-                    {item.organisationlocationcity}, {item.organisationlocationstate},{' '}
+                  <AppText style={[$.text_tint_ash, $.fs_small, $.flex_1]}>
+                    {item.organisationlocationname},{' '}
+                    {item.organisationlocationaddressline1},{' '}
+                    {item.organisationlocationcity},{' '}
+                    {item.organisationlocationstate},{' '}
                     {item.organisationlocationpincode}
                   </AppText>
                 </AppView>
               </AppView>
-              
+
               {/* Footer Section with Tags and Button */}
-              <AppView 
+              <AppView
                 style={[
-                  $.flex_row, 
+                  $.flex_row,
                   $.align_items_center,
                   $.p_medium,
                   $.pt_small,
                   $.border_top,
-                  {borderTopColor: $.tint_10}
-                ]}
-              >
+                  {borderTopColor: $.tint_10},
+                ]}>
                 {/* Tags */}
                 <AppView style={[$.flex_row, $.flex_wrap_wrap, $.flex_1]}>
                   {item.organisationprimarytypecode && (
                     <AppView
-                      style={[
-                        $.bg_tint_9,
-                        $.px_small,
-                        $.py_tiny,
-                        $.mr_small,
-                      ]}
-                    >
+                      style={[$.bg_tint_9, $.px_small, $.py_tiny, $.mr_small]}>
                       <AppText style={[$.fw_medium, $.fs_small, $.text_tint_2]}>
                         {item.organisationprimarytypecode}
                       </AppText>
                     </AppView>
                   )}
-                  
+
                   {item.organisationsecondarytypecode && (
-                    <AppView
-                      style={[
-                        $.bg_tint_10,
-                        $.px_small,
-                        $.py_tiny,
-                      ]}
-                    >
+                    <AppView style={[$.bg_tint_10, $.px_small, $.py_tiny]}>
                       <AppText style={[$.fw_medium, $.fs_small, $.text_tint_1]}>
                         {item.organisationsecondarytypecode}
                       </AppText>
                     </AppView>
                   )}
                 </AppView>
-                
+
                 {/* Book Appointment Button */}
                 <TouchableOpacity
                   style={[
@@ -345,8 +456,7 @@ export function ServiceScreen() {
                       organisationid: item.organisationid,
                       organisationlocationid: item.organisationlocationid,
                     });
-                  }}
-                >
+                  }}>
                   <CustomIcon
                     color={$.tint_11}
                     name={CustomIcons.Scheduled}
@@ -371,7 +481,12 @@ export function ServiceScreen() {
         close={() => PrimarybottomSheetRef.current?.close()}>
         <AppView style={[$.pb_medium]}>
           {isloading ? (
-            <AppView style={[$.p_medium, $.align_items_center, $.justify_content_center]}>
+            <AppView
+              style={[
+                $.p_medium,
+                $.align_items_center,
+                $.justify_content_center,
+              ]}>
               <ActivityIndicator size="small" color={$.tint_3} />
             </AppView>
           ) : (
@@ -427,7 +542,12 @@ export function ServiceScreen() {
         close={() => SecondarybottomSheetRef.current?.close()}>
         <AppView style={[$.pb_medium]}>
           {isloading ? (
-            <AppView style={[$.p_medium, $.align_items_center, $.justify_content_center]}>
+            <AppView
+              style={[
+                $.p_medium,
+                $.align_items_center,
+                $.justify_content_center,
+              ]}>
               <ActivityIndicator size="small" color={$.tint_3} />
             </AppView>
           ) : (
@@ -474,6 +594,88 @@ export function ServiceScreen() {
             />
           )}
         </AppView>
+      </BottomSheetComponent>
+
+      <BottomSheetComponent
+        ref={getLocationDetailbottomSheetRef}
+        screenname={'Business Details'}
+        Save={() => {}}
+        showbutton={false}
+        close={() => getLocationDetailbottomSheetRef.current?.close()}>
+        <ScrollView contentContainerStyle={{padding: 16}}>
+          {/* Business Info */}
+          <AppText style={{fontSize: 18, fontWeight: 'bold', marginBottom: 8}}>
+            {organisationdetail.BusinessName || 'Business Name Not Available'}
+          </AppText>
+          <AppText>
+            {organisationdetail.StreetName &&
+              `${organisationdetail.StreetName}, `}
+            {organisationdetail.Area}
+          </AppText>
+          <AppText>
+            {organisationdetail.City && `${organisationdetail.City}, `}
+            {organisationdetail.State && `${organisationdetail.State}`}
+            {organisationdetail.PostalCode &&
+              ` - ${organisationdetail.PostalCode}`}
+          </AppText>
+
+          {/* Divider */}
+          <AppView
+            style={{height: 1, backgroundColor: '#ccc', marginVertical: 12}}
+          />
+
+          {/* Services */}
+          <AppText style={{fontSize: 16, fontWeight: '600', marginBottom: 8}}>
+            Services Offered
+          </AppText>
+          {organisationdetail.Services.length > 0 ? (
+            organisationdetail.Services.map((service, index) => (
+              <AppView
+                key={index}
+                style={{
+                  marginBottom: 12,
+                  padding: 10,
+                  backgroundColor: '#f9f9f9',
+                  borderRadius: 8,
+                }}>
+                <AppText style={{fontWeight: '500'}}>
+                  {service.ServiceName || 'Unnamed Service'}
+                </AppText>
+                <AppText>Price: ₹{service.Price || 0}</AppText>
+                {service.OfferPrice > 0 && (
+                  <AppText style={{color: 'green'}}>
+                    Offer: ₹{service.OfferPrice}
+                  </AppText>
+                )}
+                <AppText>Duration: {service.Duration || 0} mins</AppText>
+              </AppView>
+            ))
+          ) : (
+            <AppText>No services listed.</AppText>
+          )}
+
+          {/* Divider */}
+          <AppView
+            style={{height: 1, backgroundColor: '#ccc', marginVertical: 12}}
+          />
+
+          {/* Timings */}
+          <AppText style={{fontSize: 16, fontWeight: '600', marginBottom: 8}}>
+            Business Timings
+          </AppText>
+          {organisationdetail.Timings.length > 0 ? (
+            organisationdetail.Timings.map((timing, index) => (
+              <AppView key={index} style={{marginBottom: 8}}>
+                <AppText>
+                  {getDayName(timing.Day)}: {formatTime(timing.StartTime)} -{' '}
+                  {formatTime(timing.EndTime)}
+                </AppText>
+              </AppView>
+            ))
+          ) : (
+            <AppText>No timings available.</AppText>
+          )}
+        </ScrollView>
       </BottomSheetComponent>
     </AppView>
   );

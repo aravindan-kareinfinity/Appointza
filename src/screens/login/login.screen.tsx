@@ -113,14 +113,14 @@ export function LoginScreen() {
           <AppButton
             name="Login"
             style={[$.bg_tint_10, $.mb_small]}
-            textstyle={[$.text_tint_1, $.fs_compact, $.fw_medium]}
+            textStyle={[$.text_tint_1, $.fs_compact, $.fw_medium]}
             onPress={login}
           />
         )}
         <AppButton
           name={isotpsent ? 'Resend OTP' : 'Get OTP'}
           style={[$.bg_tint_10, $.mb_small]}
-          textstyle={[$.text_tint_1, $.fs_compact, $.fw_medium]}
+          textStyle={[$.text_tint_1, $.fs_compact, $.fw_medium]}
           onPress={getOtp}
         />
       </AppView>
