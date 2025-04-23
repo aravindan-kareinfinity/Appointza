@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {persistReducer, persistStore} from 'redux-persist';
 import {usercontextreducers} from './usercontext.redux';
 import { themeReducer } from './theme.redux';
+import { iscustomerreducer } from './iscustomer.redux';
 
 const persistConfig = {
   key: 'root',
@@ -15,6 +16,7 @@ const rootReducer = combineReducers({
   counter: counterreducer,
   usercontext: usercontextreducers,
   theme: themeReducer,
+  iscustomer: iscustomerreducer
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

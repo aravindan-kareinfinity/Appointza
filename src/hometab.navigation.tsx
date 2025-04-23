@@ -11,6 +11,8 @@ import {AppoinmentScreen} from './screens/appoinment/appoinment.screen';
 import {ServiceAvailableScreen} from './screens/servicesavailable/service.screen';
 import {ServiceScreen} from './screens/events/servicelist.screen';
 import {DashboardScreen} from './screens/dashboard/dashboard.screen';
+import { UserAppoinmentScreen } from './screens/userappointment/userappointment.screen';
+import { BussinessAppoinmentScreen } from './screens/organisationappointment/organisation.screen';
 
 export type HomeTabParamList = {
   Home: undefined;
@@ -20,6 +22,8 @@ export type HomeTabParamList = {
   Service: undefined;
   Appoinment: undefined;
   Dashboard: undefined;
+  UserAppoinment:undefined;
+  BussinessAppoinment:undefined
 };
 const HomeTab = createBottomTabNavigator<HomeTabParamList>();
 function HomeTabNavigation() {
@@ -104,6 +108,26 @@ function HomeTabNavigation() {
       <HomeTab.Screen
         name="Appoinment"
         component={AppoinmentScreen}
+        options={{
+          tabBarIcon: ({focused}) => (
+            <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
+          ),
+        }}
+      />
+
+<HomeTab.Screen
+        name="UserAppoinment"
+        component={UserAppoinmentScreen}
+        options={{
+          tabBarIcon: ({focused}) => (
+            <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
+          ),
+        }}
+      />
+
+<HomeTab.Screen
+        name="BussinessAppoinment"
+        component={BussinessAppoinmentScreen}
         options={{
           tabBarIcon: ({focused}) => (
             <TabBarIcon focused={focused} icon={CustomIcons.Clock} />

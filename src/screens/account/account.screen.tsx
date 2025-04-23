@@ -29,11 +29,23 @@ import {
   ReactNode,
   ReactPortal,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import {DefaultColor, ThemeType} from '../../styles/default-color.style';
 import {themeActions} from '../../redux/theme.redux';
 import {store} from '../../redux/store.redux';
+import {
+  iscustomeractions,
+  selectiscustomer,
+} from '../../redux/iscustomer.redux';
+import {useSelector} from 'react-redux';
+import {
+  OrganisationLocationStaffReq,
+  OrganisationLocationStaffRes,
+} from '../../models/organisationlocation.model';
+import {OrganisationLocationService} from '../../services/organisationlocation.service';
+import {AppAlert} from '../../components/appalert.component';
 
 type AccountScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Account'>,
@@ -167,13 +179,41 @@ export function AccountScreen() {
     </TouchableOpacity>
   );
 
-  const [selectedOption, setSelectedOption] = useState<'customer' | 'business'>(
-    'customer',
+  const isCustomer = useSelector(selectiscustomer).isCustomer;
+
+  const organisationLocationService = useMemo(
+    () => new OrganisationLocationService(),
+    [],
   );
 
-  const toggleLoginOption = () => {
-    setSelectedOption(prev => (prev === 'customer' ? 'business' : 'customer'));
+  const dispatch = useAppDispatch();
+  const [selectlocation, Setselectlocation] =
+    useState<OrganisationLocationStaffRes | null>(null);
+      useEffect(() => {
+        getstafflocation() 
+      }, []);
+    
+
+  const getstafflocation = async () => {
+    try {
+      const req = new OrganisationLocationStaffReq();
+      req.userid = usercontext.value.userid;
+      const res = await organisationLocationService.Selectlocation(req);
+
+      if (res && res.length > 0) {
+        Setselectlocation(res[0]);
+      } else {
+        Setselectlocation(null);
+      }
+    } catch (error: any) {
+      handleError(error);
+    }
   };
+  const handleError = (error: any) => {
+    const message = error?.response?.data?.message || 'An error occurred';
+    AppAlert({message});
+  };
+
   return (
     <ScrollView style={[$.flex_1, $.bg_tint_11]}>
       {/* Profile Header */}
@@ -236,13 +276,20 @@ export function AccountScreen() {
           </AppView>
         )}
 
-        <AppView style={[$.align_items_center,]}>
-          <TouchableOpacity onPress={toggleLoginOption} style={[]}>
-            <AppText style={[$.text_primary5, $.fs_small, $.fw_bold]}>
-              Login as {selectedOption === 'customer' ? 'Customer' : 'Business'}
-            </AppText>
-          </TouchableOpacity>
-        </AppView>
+        {selectlocation && selectlocation.organisationlocationid > 0 && (
+          <AppView style={[$.align_items_center]}>
+            <TouchableOpacity
+              onPress={() => {
+                dispatch(iscustomeractions.setIsCustomer(!isCustomer));
+              }}
+              style={[]}>
+              <AppText style={[$.text_primary5, $.fs_small, $.fw_bold]}>
+                Login as {isCustomer ? 'Customer' : 'Business'}
+              </AppText>
+            </TouchableOpacity>
+          </AppView>
+        )}
+
         {!isLoggedIn && (
           <AppView style={[$.py_large, $.align_items_center]}>
             <CustomIcon

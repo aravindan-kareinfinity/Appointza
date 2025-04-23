@@ -262,6 +262,7 @@ export class DefaultColor {
   warn: string = this.colors.warn;
   tint_primary_5 :string = this.colors.primary5;
   tint_ash :string =this.colors.tint_ash
+  primary2:string=this.colors.primary2
 
   /* Text Styles */
   text_tint_1: StyleProp<TextStyle> = { color: this.tint__1 };
