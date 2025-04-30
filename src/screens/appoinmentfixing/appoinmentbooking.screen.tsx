@@ -56,7 +56,7 @@ type AppoinmentFixingScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'AppoinmentFixing'>,
   BottomTabScreenProps<HomeTabParamList>
 >;
-export function AppoinmentFixingScreen() {
+export function AppoinmentBookingScreen() {
   const navigation = useNavigation<AppoinmentFixingScreenProp['navigation']>();
   const [organisationservices, setOrganisationservices] = useState<
     OrganisationServices[]

@@ -701,6 +701,7 @@ export function BussinessAppoinmentScreen() {
         Save={() => {
           statusSheetRef.current?.close();
         }}
+        showbutton={false}
         close={() => statusSheetRef.current?.close()}>
         <ScrollView
           contentContainerStyle={[$.p_medium]}
@@ -745,6 +746,22 @@ export function BussinessAppoinmentScreen() {
         ref={paymentSheetRef}
         screenname="Payment Options"
         Save={() => {
+          const paymentReq = new UpdatePaymentReq();
+          paymentReq.appoinmentid = seletecedappinmentid;
+          paymentReq.paymenttype = selectedPaymentType;
+          paymentReq.paymenttypeid = selectedPaymentType === 'Cash' ? 1 : 
+                                    selectedPaymentType === 'Card' ? 2 : 3;
+          paymentReq.amount = Number(paymentAmount) || 0;
+          paymentReq.paymentname = paymentName;
+          paymentReq.paymentcode = paymentCode;
+          paymentReq.statusid = 1; // Assuming 1 is for completed payment
+          paymentReq.customername = ''; // Set if needed
+          paymentReq.customerid = 0; // Set if needed
+          paymentReq.organisationid = selectlocation?.organisationid ?? 0;
+          paymentReq.organisationlocationid = selectlocation?.organisationlocationid ?? 0;
+          
+          Updatepayment(paymentReq);
+          paymentSheetRef.current?.close();
           paymentSheetRef.current?.close();
         }}
         close={() => paymentSheetRef.current?.close()}>
@@ -803,29 +820,7 @@ export function BussinessAppoinmentScreen() {
             onChangeText={setPaymentCode}
           />
 
-          {/* Save Button */}
-          <AppButton
-            name="Save Payment"
-            onPress={() => {
-              const paymentReq = new UpdatePaymentReq();
-              paymentReq.appoinmentid = seletecedappinmentid;
-              paymentReq.paymenttype = selectedPaymentType;
-              paymentReq.paymenttypeid = selectedPaymentType === 'Cash' ? 1 : 
-                                        selectedPaymentType === 'Card' ? 2 : 3;
-              paymentReq.amount = Number(paymentAmount) || 0;
-              paymentReq.paymentname = paymentName;
-              paymentReq.paymentcode = paymentCode;
-              paymentReq.statusid = 1; // Assuming 1 is for completed payment
-              paymentReq.customername = ''; // Set if needed
-              paymentReq.customerid = 0; // Set if needed
-              paymentReq.organisationid = selectlocation?.organisationid ?? 0;
-              paymentReq.organisationlocationid = selectlocation?.organisationlocationid ?? 0;
-              
-              Updatepayment(paymentReq);
-              paymentSheetRef.current?.close();
-            }}
-            style={[$.mt_medium]}
-          />
+         
         </ScrollView>
       </BottomSheetComponent>
     </AppView>

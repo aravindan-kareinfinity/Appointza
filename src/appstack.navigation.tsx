@@ -21,7 +21,7 @@ import { selectTheme } from './redux/theme.redux';
 import { DefaultColor } from './styles/default-color.style';
 import { ServiceAvailableScreen } from './screens/servicesavailable/service.screen';
 import { TimingScreen } from './screens/timing/timing.screen';
-import { AppoinmentFixingScreen } from './screens/appoinmentfixing/appoinmentfixing.screen';
+import { AppoinmentBookingScreen } from './screens/appoinmentfixing/appoinmentbooking.screen';
 
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
@@ -159,7 +159,7 @@ function AppStackNavigation() {
         />
         <AppStack.Screen
           name="AppoinmentFixing"
-          component={AppoinmentFixingScreen}
+          component={AppoinmentBookingScreen}
           options={{
             headerShown: false,
           }}

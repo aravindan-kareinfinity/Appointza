@@ -1,6 +1,7 @@
 import { ActionReq } from '../models/actionreq.model';
 import { ActionRes } from '../models/actionres.model';
 import {
+    AppointmentPaymentsummary,
   OrganisationLocation,
   OrganisationLocationDeleteReq,
   OrganisationLocationSelectReq,
@@ -87,6 +88,18 @@ export class OrganisationLocationService {
         postdata.item = req;
         let resp = await this.http.post<ActionRes<Array<OrgLocationStaffResponse>>>(
             this.baseurl + '/SelectlocationDetail', 
+            postdata
+        );
+        return resp.item;
+    }
+
+
+    async SelectAppointmentPaymentsummary(req: OrgLocationReq) {
+        let postdata: ActionReq<OrgLocationReq> =
+            new ActionReq<OrgLocationReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<AppointmentPaymentsummary >>(
+            this.baseurl + '/SelectAppointmentPaymentsummary', 
             postdata
         );
         return resp.item;

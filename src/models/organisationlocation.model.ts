@@ -92,3 +92,15 @@ export class Timing {
 export class OrgLocationReq{
   orglocid :number =0
 }
+
+export class PaymentSummary {
+  paymentmodetype: string='';
+  totalamount: number=0;
+}
+
+export class AppointmentPaymentsummary {
+  totalappointments: number=0;
+  confirmedcount: number=0;
+  completedcount: number=0;
+  paymentsummary: PaymentSummary[]=[];
+}
