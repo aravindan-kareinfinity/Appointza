@@ -1,38 +1,56 @@
 import React, { forwardRef } from "react";
-import { View, Button, Platform, Text } from "react-native";
+import { View, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 type DatePickerComponentProps = {
   date: Date;
   show: boolean;
-  mode: "date" | "time" | "datetime"; // Restrict mode to valid values
+  mode: "date" | "time" | "datetime";
   setShow: (value: boolean) => void;
   setDate: (date: Date) => void;
+  daysBefore?: number; // Number of days before current date to allow selection
+  disablePrevious?: boolean; // New prop to control previous date allowance
 };
 
 export const DatePickerComponent = forwardRef<any, DatePickerComponentProps>(
-  ({ date, show, setShow, setDate, mode }, ref) => {
-    // Function to handle date change
+  ({ date, show, setShow, setDate, mode, daysBefore, disablePrevious = false }, ref) => {
+    const currentDate = new Date();
+    
+    // Calculate minimum date (today if disablePrevious is true, otherwise undefined)
+    const minDate = disablePrevious ? new Date(currentDate) : undefined;
+    if (minDate) {
+      minDate.setHours(0, 0, 0, 0); // Start of day
+    }
+    
+    // Calculate maximum date (today + daysBefore)
+    const maxDate = daysBefore !== undefined 
+      ? new Date(currentDate.getTime() + daysBefore * 24 * 60 * 60 * 1000)
+      : undefined;
+
     const onChange = (event: any, selectedDate?: Date) => {
-      setShow(false); // Hide picker after selection (Android)
+      setShow(false);
       if (selectedDate) {
-        setDate(selectedDate);
+        // Ensure selected date is within allowed range
+        if (disablePrevious && selectedDate < minDate!) {
+          setDate(minDate!);
+        } else if (maxDate && selectedDate > maxDate) {
+          setDate(maxDate);
+        } else {
+          setDate(selectedDate);
+        }
       }
     };
-
-    // Show `00:00` if no time is set
-    const formattedTime = date
-      ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) 
-      : "00:00";
 
     return (
       <View>
         {show && (
           <DateTimePicker
-            value={date ?? new Date(1970, 0, 1, 0, 0, 0)} // Default to 00:00 if date is null
-            mode={mode} 
+            value={date ?? new Date()}
+            mode={mode}
             display={Platform.OS === "ios" ? "spinner" : "default"}
             onChange={onChange}
+            minimumDate={disablePrevious ? minDate : undefined}
+            maximumDate={maxDate}
           />
         )}
       </View>

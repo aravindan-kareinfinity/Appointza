@@ -73,7 +73,7 @@ export class AppoinmentSelectReq {
   organisationid: number = 0
   organisationlocationid: number = 0
   userid:number =0
-
+  appointmentdate ?:Date ;
 }
 
 export class AppoinmentDeleteReq {

@@ -48,6 +48,7 @@ import {HomeTabParamList} from '../../hometab.navigation';
 import {AppStackParamList} from '../../appstack.navigation';
 import { environment } from '../../utils/environment';
 import { AppTextInput } from '../../components/apptextinput.component';
+import { DatePickerComponent } from '../../components/Datetimepicker.component';
 
 type BussinessAppoinmentScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'BussinessAppoinment'>,
@@ -95,7 +96,8 @@ export function BussinessAppoinmentScreen() {
       getstafflist();
     }
   }, [selectlocation]);
-
+    const [showdatepicker, setshowdatepicker] = useState(false);
+  const [seleteddate, setselectedate] =  useState<Date | null>(null);
   const loadInitialData = async () => {
     setIsloading(true);
     try {
@@ -148,6 +150,11 @@ export function BussinessAppoinmentScreen() {
       const req = new AppoinmentSelectReq();
       req.organisationlocationid = locid;
       req.organisationid = orgid;
+      if(seleteddate){
+        req.appointmentdate  = seleteddate;
+      }
+      console.log("resssssssssss",req);
+      
       const res = await appoinmentservices.SelectBookedAppoinment(req);
       setOrganisationAppoinmentList(res || []);
     } catch (error: any) {
@@ -523,6 +530,17 @@ export function BussinessAppoinmentScreen() {
       </AppView>
     </TouchableOpacity>
   );
+
+
+    useEffect(() => {
+      if (selectlocation) {
+        getorganisationappoinment(
+          selectlocation.organisationid,
+          selectlocation.organisationlocationid,
+        );
+        getstafflist();
+      }
+    }, [seleteddate]);
   return (
     <AppView style={[$.flex_1, $.bg_tint_11]}>
       {/* Header Section */}
@@ -538,6 +556,25 @@ export function BussinessAppoinmentScreen() {
           ]}>
           Appointments
         </AppText>
+         <TouchableOpacity
+                  onPress={() => setshowdatepicker(true)}
+                  style={[
+                    $.border,
+                    $.border_rounded,
+                    $.mr_small,
+                    $.align_items_center,
+                    $.justify_content_center,
+                    $.bg_tint_10,
+                    $.border_tint_7,
+                  ]}>
+                  {/* <CustomIcon
+                            name={CustomIcons.SingleTick}
+                            color={$.tint_2}
+                            size={$.s_compact}></CustomIcon> */}
+                  <AppText style={{fontSize: 14, fontWeight: 'bold', color: '#333'}}>
+                    {seleteddate ? seleteddate.toDateString() : 'All Dates'}
+                  </AppText>
+                </TouchableOpacity>
       </AppView>
 
       {/* Location Selector */}
@@ -690,6 +727,19 @@ export function BussinessAppoinmentScreen() {
           )}
         </ScrollView>
       </BottomSheetComponent>
+
+      
+       
+<DatePickerComponent
+  date={seleteddate || new Date()}
+  show={showdatepicker}
+  mode="date"
+  setShow={setshowdatepicker}
+  setDate={(date) => {
+    // Set to null when "clearing" the date
+    setselectedate(date); 
+  }}
+/>
 
       <BottomSheetComponent
         ref={paymentSheetRef}

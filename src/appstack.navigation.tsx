@@ -16,7 +16,6 @@ import {OrganisationScreen} from './screens/organisation/organisation.screen';
 import {ProfileScreen} from './screens/profile/profile.screen';
 import {SignUpScreen} from './screens/signup/signup.screen';
 import React, {createRef} from 'react';
-import {AppoinmentScreen} from './screens/appoinment/appoinment.screen';
 import { useAppSelector } from './redux/hooks.redux';
 import { selectTheme } from './redux/theme.redux';
 import { DefaultColor } from './styles/default-color.style';

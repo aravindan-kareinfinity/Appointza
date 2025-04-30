@@ -11,9 +11,9 @@ import {ServiceAvailableScreen} from './screens/servicesavailable/service.screen
 import {ServiceScreen} from './screens/events/servicelist.screen';
 import {DashboardScreen} from './screens/dashboard/dashboard.screen';
 import { UserAppoinmentScreen } from './screens/userappointment/userappointment.screen';
-import { BussinessAppoinmentScreen } from './screens/organisationappointment/organisation.screen';
 import { useAppSelector } from './redux/hooks.redux';
 import { selectiscustomer } from './redux/iscustomer.redux';
+import { BussinessAppoinmentScreen } from './screens/bussinessappoinment/bussinessappoinment.screen';
 
 export type HomeTabParamList = {
   Home: undefined;
