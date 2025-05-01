@@ -2,6 +2,7 @@ import {navigate} from '../appstack.navigation';
 import {ActionReq} from '../models/actionreq.model';
 import {ActionRes} from '../models/actionres.model';
 import {
+  Organisationdeletereq,
   Users,
   UsersAcceptConnectionRequestReq,
   UsersAddColourSetToCartReq,
@@ -197,6 +198,27 @@ export class UsersService {
     postdata.item = req;
     let resp = await this.http.post<ActionRes<boolean>>(
       this.baseurl + '/updateorderstatus',
+      postdata,
+    );
+
+    return resp.item!;
+  }
+
+  async DeleteOrganisationPermananet(req: Organisationdeletereq) {
+    let postdata: ActionReq<Organisationdeletereq> = new ActionReq<Organisationdeletereq>();
+    postdata.item = req;
+    let resp = await this.http.post<ActionRes<boolean>>(
+      this.baseurl + '/DeleteOrganisationPermananet',
+      postdata,
+    );
+
+    return resp.item!;
+  }
+  async Deleteuserpermanent(req: Organisationdeletereq) {
+    let postdata: ActionReq<Organisationdeletereq> = new ActionReq<Organisationdeletereq>();
+    postdata.item = req;
+    let resp = await this.http.post<ActionRes<boolean>>(
+      this.baseurl + '/Deleteuserpermanent',
       postdata,
     );
 

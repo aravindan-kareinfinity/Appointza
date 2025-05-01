@@ -8,14 +8,10 @@ import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {
-  Button,
   FlatList,
-  GestureResponderEvent,
   Image,
-  Platform,
   ScrollView,
   TouchableOpacity,
-  useColorScheme,
 } from 'react-native';
 import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
 import {
@@ -23,16 +19,11 @@ import {
   usercontextactions,
 } from '../../redux/usercontext.redux';
 import {
-  JSXElementConstructor,
-  Key,
-  ReactElement,
-  ReactNode,
-  ReactPortal,
   useEffect,
   useMemo,
   useState,
 } from 'react';
-import {DefaultColor, ThemeType} from '../../styles/default-color.style';
+import {DefaultColor} from '../../styles/default-color.style';
 import {themeActions} from '../../redux/theme.redux';
 import {store} from '../../redux/store.redux';
 import {
@@ -56,6 +47,8 @@ export function AccountScreen() {
 
   const colors = DefaultColor.instance.colors;
   const usercontext = useAppSelector(selectusercontext);
+  const isCustomer = useSelector(selectiscustomer).isCustomer;
+  const dispatch = useAppDispatch();
 
   const gotoSignUp = (value: boolean) => {
     navigation.navigate('SignUp', {isorganization: value});
@@ -78,7 +71,7 @@ export function AccountScreen() {
 
   const menuItems: MenuItem[] = [
     // Business items
-    ...(hasBusiness
+    ...(hasBusiness && !isCustomer
       ? [
           {
             icon: CustomIcons.Shop,
@@ -179,20 +172,19 @@ export function AccountScreen() {
     </TouchableOpacity>
   );
 
-  const isCustomer = useSelector(selectiscustomer).isCustomer;
-
   const organisationLocationService = useMemo(
     () => new OrganisationLocationService(),
     [],
   );
 
-  const dispatch = useAppDispatch();
   const [selectlocation, Setselectlocation] =
     useState<OrganisationLocationStaffRes | null>(null);
-      useEffect(() => {
-        getstafflocation() 
-      }, []);
     
+  useEffect(() => {
+    if (isLoggedIn) {
+      getstafflocation();
+    }
+  }, [isLoggedIn]);
 
   const getstafflocation = async () => {
     try {
@@ -209,9 +201,14 @@ export function AccountScreen() {
       handleError(error);
     }
   };
+
   const handleError = (error: any) => {
     const message = error?.response?.data?.message || 'An error occurred';
     AppAlert({message});
+  };
+
+  const toggleCustomerBusiness = () => {
+    dispatch(iscustomeractions.setIsCustomer(!isCustomer));
   };
 
   return (
@@ -219,75 +216,74 @@ export function AccountScreen() {
       {/* Profile Header */}
       <AppView style={[$.pt_medium, $.px_normal, $.pb_medium]}>
         {isLoggedIn && (
-          <AppView style={[$.flex_row, $.align_items_center, $.mb_medium]}>
-            <AppView style={[$.mr_medium]}>
-              <Image
-                style={{
-                  borderRadius: 30,
-                  width: 60,
-                  height: 60,
-                  borderWidth: 2,
-                  borderColor: $.tint_10,
-                }}
-                source={{
-                  uri: 'https://s3-alpha-sig.figma.com/img/6a98/e81b/28b333039b432776eb354412dfc36db6?Expires=1736121600&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=RM4xqC9wBX~AFmwoHy9bjm4RGSkMyAwhum3dWECBjW83kdSUAcFWix1EBG8iPS4CByrsDBs9z3Z0mo8stq-4d0SR4ifUZxsk4jL2dbTlwzzzD2ZVe1XEN1p05yGxz~LJj6ogrwtH36B1DN6ZsSCxCxxPmaQ-DhKfDnceXQhweJEM3s8vt6hzpOC9dXx5cwp5DJmAdEK~tTVXxUQuYbqZX9SnQoqx27RVftTc9c~WtCA4rxHoRPtAZuINO2-ptdRUhGLpt1fjc~vWmoWrUFiUQx2SEPm4y2WLM1lCQYfTguig6nomt0DwcgIG6q8gVAdEnboMTbyh5tlDRXMv3s46VA__',
-                }}
-              />
-              <TouchableOpacity
-                onPress={() => navigation.navigate('Profile')}
-                style={[
-                  $.bg_tint_5,
-                  $.p_tiny,
-                  $.align_items_center,
-                  $.justify_content_center,
-                  {
-                    position: 'absolute',
-                    bottom: 0,
-                    right: 0,
-                    borderRadius: 15,
-                    width: 24,
-                    height: 24,
-                  },
-                ]}>
-                <CustomIcon
-                  color={$.tint_11}
-                  name={CustomIcons.Camera2}
-                  size={14}
+          <>
+            <AppView style={[$.flex_row, $.align_items_center, $.mb_medium]}>
+              <AppView style={[$.mr_medium]}>
+                <Image
+                  style={{
+                    borderRadius: 30,
+                    width: 60,
+                    height: 60,
+                    borderWidth: 2,
+                    borderColor: $.tint_10,
+                  }}
+                  source={{
+                    uri: 'https://s3-alpha-sig.figma.com/img/6a98/e81b/28b333039b432776eb354412dfc36db6?Expires=1736121600&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=RM4xqC9wBX~AFmwoHy9bjm4RGSkMyAwhum3dWECBjW83kdSUAcFWix1EBG8iPS4CByrsDBs9z3Z0mo8stq-4d0SR4ifUZxsk4jL2dbTlwzzzD2ZVe1XEN1p05yGxz~LJj6ogrwtH36B1DN6ZsSCxCxxPmaQ-DhKfDnceXQhweJEM3s8vt6hzpOC9dXx5cwp5DJmAdEK~tTVXxUQuYbqZX9SnQoqx27RVftTc9c~WtCA4rxHoRPtAZuINO2-ptdRUhGLpt1fjc~vWmoWrUFiUQx2SEPm4y2WLM1lCQYfTguig6nomt0DwcgIG6q8gVAdEnboMTbyh5tlDRXMv3s46VA__',
+                  }}
                 />
-              </TouchableOpacity>
-            </AppView>
-
-            <AppView style={[$.flex_1]}>
-              <AppText style={[$.fs_big, $.fw_bold, $.text_primary5]}>
-                {usercontext.value.username}
-              </AppText>
-              {usercontext.value.organisationname.length > 0 && (
-                <AppText
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Profile')}
                   style={[
-                    $.fs_compact,
-                    $.text_primary5,
-                    $.mt_tiny,
-                    $.fw_regular,
+                    $.bg_tint_5,
+                    $.p_tiny,
+                    $.align_items_center,
+                    $.justify_content_center,
+                    {
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      borderRadius: 15,
+                      width: 24,
+                      height: 24,
+                    },
                   ]}>
-                  {usercontext.value.organisationname}
-                </AppText>
-              )}
-            </AppView>
-          </AppView>
-        )}
+                  <CustomIcon
+                    color={$.tint_11}
+                    name={CustomIcons.Camera2}
+                    size={14}
+                  />
+                </TouchableOpacity>
+              </AppView>
 
-        {selectlocation && selectlocation.organisationlocationid > 0 && (
-          <AppView style={[$.align_items_center]}>
-            <TouchableOpacity
-              onPress={() => {
-                dispatch(iscustomeractions.setIsCustomer(!isCustomer));
-              }}
-              style={[]}>
-              <AppText style={[$.text_primary5, $.fs_small, $.fw_bold]}>
-                Login as {isCustomer ? 'Customer' : 'Business'}
-              </AppText>
-            </TouchableOpacity>
-          </AppView>
+              <AppView style={[$.flex_1]}>
+                <AppText style={[$.fs_big, $.fw_bold, $.text_primary5]}>
+                  {usercontext.value.username}
+                </AppText>
+                {usercontext.value.organisationname.length > 0 && (
+                  <AppText
+                    style={[
+                      $.fs_compact,
+                      $.text_primary5,
+                      $.mt_tiny,
+                      $.fw_regular,
+                    ]}>
+                    {usercontext.value.organisationname}
+                  </AppText>
+                )}
+              </AppView>
+            </AppView>
+
+            {/* Only show toggle if user has a business */}
+            {hasBusiness && (
+              <AppView style={[$.align_items_center]}>
+                <TouchableOpacity onPress={toggleCustomerBusiness}>
+                  <AppText style={[$.text_primary5, $.fs_small, $.fw_bold]}>
+                    Login as {isCustomer ? 'Customer' : 'Business'}
+                  </AppText>
+                </TouchableOpacity>
+              </AppView>
+            )}
+          </>
         )}
 
         {!isLoggedIn && (

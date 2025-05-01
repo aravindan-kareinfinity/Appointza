@@ -30,10 +30,12 @@ type AppSingleSelectProps<T> = {
   required?: boolean;
   issubmitted?: boolean;
   isloading?: boolean;
+  isreadonly?: boolean;
+  onCreate?: (text: string) => void;
 };
 export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
   const [openModal, setOpenModal] = useState(false);
-  
+
   const [filtereddata, setFiltereddata] = useState<T[]>();
   const [searchtext, setSearchtext] = useState('');
   const delayedsearchmethod = useMemo(() => createDelayedMethod(), []);
@@ -57,19 +59,26 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
     }
   }, [props]);
   const toggleModel = () => {
-    setIstouched(true);           
+    setIstouched(true);
     setOpenModal(!openModal);
   };
   const onDone = (item: T) => {
     props.onSelect(item);
     toggleModel();
   };
+  const onCreate = (text: string) => {
+    if (props.onCreate) {
+      props.onCreate(text);
+    }
+    toggleModel();
+  };
 
   const onSearch = (text: string) => {
+    setSearchtext(text);
     let filtereddata = props.data.filter(e =>
       props.searchKeyExtractor(e).toLowerCase().includes(text.toLowerCase()),
     );
-    setFiltereddata(filtereddata);
+    setFiltereddata([...filtereddata]);
   };
   const isvalid = () => {
     if (!props.required) {
@@ -84,17 +93,22 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
   return (
     <TouchableOpacity
       style={[
-        $.bg_tint_11,
-        $.p_compact,$.mx_compact,
-        $.border,$.border_rounded,
+        $.border,
+        $.border_tint_9,
+        $.p_compact,
         props.style,
-        (istouched || props.issubmitted) && !isvalid() && [$.border, $.border_danger],
+        (istouched || props.issubmitted) &&
+          !isvalid() && [$.border, $.border_danger],
+        props.isreadonly && $.bg_tint_10,
       ]}
+      disabled={props.isreadonly}
       onPress={toggleModel}>
       <AppView style={[$.flex_row]}>
         <AppView style={[$.flex_1]}>
           {props.title.length > 0 && (
-            <AppText style={[$.fs_compact]}>{props.title}</AppText>
+            <AppText style={[$.fs_small, $.fw_regular, $.text_tint_5]}>
+              {props.title}
+            </AppText>
           )}
 
           {selecteditem &&
@@ -102,7 +116,7 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
             props.renderItemLabel(selecteditem)}
         </AppView>
 
-        {props.onClear && (
+        {!props.isreadonly && props.onClear && (
           <TouchableOpacity
             onPress={props.onClear}
             style={[$.align_items_center, $.justify_content_center]}
@@ -130,7 +144,7 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
           style={[$.w_100, $.h_100, {backgroundColor: '#000000aa'}]}>
           <AppView
             style={[
-              $.bg_tint_11,
+              $.bg_tint_10,
               $.flex_1,
               $.mt_colossal,
               $.border,
@@ -161,17 +175,25 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
             <FlatList
               data={filtereddata}
               style={[$.pt_compact]}
-              renderItem={({item}) => {
-                return (
+              renderItem={({item}) => (
+                <TouchableOpacity
+                  style={[$.p_compact]}
+                  onPress={() => onDone(item)}>
+                  <AppText>{props.renderItemLabel(item)}</AppText>
+                </TouchableOpacity>
+              )}
+              ListFooterComponent={() =>
+                searchtext.trim() !== '' && (
                   <TouchableOpacity
-                    style={[$.p_compact]}
-                    onPress={() => {
-                      onDone(item);
-                    }}>
-                    {props.renderItemLabel(item)}
+                    style={[$.flex_row, $.px_compact]}
+                    onPress={() => onCreate?.(searchtext)}>
+                    <AppText style={[$.fw_bold, $.flex_1]}>
+                      {searchtext}
+                    </AppText>
+                    <AppText>New</AppText>
                   </TouchableOpacity>
-                );
-              }}
+                )
+              }
             />
           </AppView>
         </TouchableOpacity>

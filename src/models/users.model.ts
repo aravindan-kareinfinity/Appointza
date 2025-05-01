@@ -184,3 +184,12 @@ export enum REFERENCETYPE {
 ORGANISATIONSECONDARYTYPE  = 2,
 APPOINTMENTSTATUS  = 3
 }
+
+export class Organisationdeletereq
+{
+    organisationid : number =0
+
+    userid : number =0
+
+    otp:string = ""
+}

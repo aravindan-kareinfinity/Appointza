@@ -9,11 +9,12 @@ import {ChatScreen} from './screens/chat/chat.screen';
 import {GroupScreen} from './screens/group/group.screen';
 import {ServiceAvailableScreen} from './screens/servicesavailable/service.screen';
 import {ServiceScreen} from './screens/events/servicelist.screen';
-import {DashboardScreen} from './screens/dashboard/dashboard.screen';
-import { UserAppoinmentScreen } from './screens/userappointment/userappointment.screen';
-import { useAppSelector } from './redux/hooks.redux';
-import { selectiscustomer } from './redux/iscustomer.redux';
-import { BussinessAppoinmentScreen } from './screens/bussinessappoinment/bussinessappoinment.screen';
+import {BussinessDashboardScreen} from './screens/bussinessdashboard/bussinessdashboard.screen';
+import {UserAppoinmentScreen} from './screens/userappointment/userappointment.screen';
+import {useAppSelector} from './redux/hooks.redux';
+import {selectiscustomer} from './redux/iscustomer.redux';
+import {BussinessAppoinmentScreen} from './screens/bussinessappoinment/bussinessappoinment.screen';
+import { UserDashboardScreen } from './screens/userdashboard/userdashboard.screen';
 
 export type HomeTabParamList = {
   Home: undefined;
@@ -21,13 +22,14 @@ export type HomeTabParamList = {
   Account: undefined;
   // Group: undefined;
   Service: undefined;
-  Dashboard: undefined;
-  UserAppoinment:undefined;
-  BussinessAppoinment:undefined
+  UserDashboard: undefined;
+  BussinessDashboard: undefined;
+  UserAppoinment: undefined;
+  BussinessAppoinment: undefined;
 };
 const HomeTab = createBottomTabNavigator<HomeTabParamList>();
 function HomeTabNavigation() {
-    const usercontext = useAppSelector(selectiscustomer);
+  const usercontext = useAppSelector(selectiscustomer);
   return (
     <HomeTab.Navigator
       tabBar={({state, descriptors, navigation}) => {
@@ -74,7 +76,7 @@ function HomeTabNavigation() {
           </AppView>
         );
       }}
-      initialRouteName="Service"
+      initialRouteName= {usercontext.isCustomer ? "Service" :"BussinessAppoinment"}
       screenOptions={{
         headerShown: false,
       }}>
@@ -87,17 +89,28 @@ function HomeTabNavigation() {
           ),
         }}
       /> */}
-
-<HomeTab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
+ {usercontext.isCustomer && 
+      <HomeTab.Screen
+        name="UserDashboard"
+        component={UserDashboardScreen}
         options={{
           tabBarIcon: ({focused}) => (
             <TabBarIcon focused={focused} icon={CustomIcons.Diagram} />
           ),
         }}
-      />
+      />}
+ {!usercontext.isCustomer && 
       <HomeTab.Screen
+        name="BussinessDashboard"
+        component={BussinessDashboardScreen}
+        options={{
+          tabBarIcon: ({focused}) => (
+            <TabBarIcon focused={focused} icon={CustomIcons.Diagram} />
+          ),
+        }}
+      />}
+
+{usercontext.isCustomer &&  <HomeTab.Screen
         name="Service"
         component={ServiceScreen}
         options={{
@@ -106,26 +119,31 @@ function HomeTabNavigation() {
           ),
         }}
       />
+}
 
-{usercontext.isCustomer  &&  <HomeTab.Screen
-        name="UserAppoinment"
-        component={UserAppoinmentScreen}
-        options={{
-          tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
-          ),
-        }}
-      />}
+      {usercontext.isCustomer && (
+        <HomeTab.Screen
+          name="UserAppoinment"
+          component={UserAppoinmentScreen}
+          options={{
+            tabBarIcon: ({focused}) => (
+              <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
+            ),
+          }}
+        />
+      )}
 
-{!usercontext.isCustomer  && <HomeTab.Screen
-        name="BussinessAppoinment"
-        component={BussinessAppoinmentScreen}
-        options={{
-          tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
-          ),
-        }}
-      />}
+      {!usercontext.isCustomer && (
+        <HomeTab.Screen
+          name="BussinessAppoinment"
+          component={BussinessAppoinmentScreen}
+          options={{
+            tabBarIcon: ({focused}) => (
+              <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
+            ),
+          }}
+        />
+      )}
       <HomeTab.Screen
         name="Account"
         component={AccountScreen}
@@ -135,8 +153,6 @@ function HomeTabNavigation() {
           ),
         }}
       />
-
-  
     </HomeTab.Navigator>
   );
 }
