@@ -79,7 +79,9 @@ export function SignUpScreen(props: SignUpScreenProp) {
     try {
       var req= new ReferenceTypeSelectReq();
       req.referencetypeid = REFERENCETYPE.ORGANISATIONPRIMARYTYPE;
-      const response = await referenceValueService.select(new ReferenceTypeSelectReq());
+      console.log("req",req);
+      
+      const response = await referenceValueService.select(req);
       if (response) {
         setPrimaryBusinessTypes(response);
       }
@@ -131,7 +133,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
       latitude: location.latitude,
       longitude: location.longitude,
       googlelocation: location.address,
-      locationname: location.address,
+  
       locationcity: location.city || '',
       locationstate: location.state || '',
       locationcountry: location.country || '',
@@ -315,9 +317,17 @@ export function SignUpScreen(props: SignUpScreenProp) {
         style={[$.mb_normal, $.p_small, $.bg_tint_10, $.border_rounded]}
       >
         <AppText style={[$.text_tint_3]}>
-          {signUpModel.locationname || 'Select Location on Map'}
+          {signUpModel.googlelocation || 'Select Location on Map'}
         </AppText>
       </TouchableOpacity>
+
+  {/* Location Details (auto-filled from map selection) */}
+  <AppTextInput
+        placeholder="Location Name "
+        value={signUpModel.locationname}
+        onChangeText={text => setSignUpModel(prev => ({ ...prev, locationname: text }))}
+        style={[$.mb_normal]}
+      />
 
       {/* Location Details (auto-filled from map selection) */}
       <AppTextInput

@@ -25,6 +25,7 @@ import {
   OrganisationServices,
   OrganisationServicesSelectReq,
 } from '../../models/organisationservices.model';
+import {AppButton} from '../../components/appbutton.component';
 
 type ServiceAvailableScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'ServiceAvailable'>,
@@ -35,19 +36,26 @@ export function ServiceAvailableScreen() {
   const navigation = useNavigation<ServiceAvailableScreenProp['navigation']>();
   const [isloading, setIsloading] = useState(false);
   const usercontext = useAppSelector(selectusercontext);
-  const servicesAvailableservice = useMemo(() => new OrganisationServicesService(), []);
+  const servicesAvailableservice = useMemo(
+    () => new OrganisationServicesService(),
+    [],
+  );
   const bottomSheetRef = useRef<any>(null);
 
   // State management
-  const [service, setService] = useState<OrganisationServices>(new OrganisationServices());
+  const [service, setService] = useState<OrganisationServices>(
+    new OrganisationServices(),
+  );
   const [serviceList, setServiceList] = useState<OrganisationServices[]>([]);
-  const [selectedComboServices, setSelectedComboServices] = useState<OrganisationServices[]>([]);
+  const [selectedComboServices, setSelectedComboServices] = useState<
+    OrganisationServices[]
+  >([]);
 
   // Fetch data when screen is focused
   useFocusEffect(
     useCallback(() => {
       fetchServices();
-    }, [])
+    }, []),
   );
 
   const fetchServices = async () => {
@@ -69,21 +77,26 @@ export function ServiceAvailableScreen() {
     AppAlert({message});
   };
 
-  const openServiceForm = (item?: OrganisationServices, isCombo: boolean = false) => {
-    const newService = item 
-      ? {...item} 
-      : new OrganisationServices();
-    
+  const openServiceForm = (
+    item?: OrganisationServices,
+    isCombo: boolean = false,
+  ) => {
+    const newService = item ? {...item} : new OrganisationServices();
+
     if (isCombo) {
       newService.Iscombo = true;
       newService.servicesids.combolist = [];
     }
 
     setService(newService);
-    setSelectedComboServices(isCombo && item ? 
-      serviceList.filter(s => item.servicesids.combolist?.some(c => c.id === s.id)) : 
-      []);
-    
+    setSelectedComboServices(
+      isCombo && item
+        ? serviceList.filter(s =>
+            item.servicesids.combolist?.some(c => c.id === s.id),
+          )
+        : [],
+    );
+
     bottomSheetRef.current?.open();
   };
 
@@ -128,9 +141,12 @@ export function ServiceAvailableScreen() {
 
     if (serviceToSave.Iscombo) {
       // Calculate combo price as sum of selected services
-      const totalPrice = selectedComboServices.reduce((sum, s) => sum + s.prize, 0);
+      const totalPrice = selectedComboServices.reduce(
+        (sum, s) => sum + s.prize,
+        0,
+      );
       serviceToSave.prize = totalPrice;
-      
+
       // Set default offer price if not provided
       if (!serviceToSave.offerprize || serviceToSave.offerprize <= 0) {
         serviceToSave.offerprize = totalPrice;
@@ -139,7 +155,7 @@ export function ServiceAvailableScreen() {
       // Update combo list
       serviceToSave.servicesids.combolist = selectedComboServices.map(s => ({
         id: s.id,
-        servicename: s.Servicename
+        servicename: s.Servicename,
       }));
     }
 
@@ -148,18 +164,26 @@ export function ServiceAvailableScreen() {
 
   const handleComboSelection = (items: OrganisationServices[]) => {
     setSelectedComboServices(items);
-    
+
     // Calculate total price for the combo
     const totalPrice = items.reduce((sum, item) => sum + item.prize, 0);
     setService(prev => ({
       ...prev,
       prize: totalPrice,
-      offerprize: totalPrice // Set offer price same as total by default
+      offerprize: totalPrice, // Set offer price same as total by default
     }));
   };
 
   const renderServiceItem = ({item}: {item: OrganisationServices}) => (
-    <AppView style={[$.mx_normal, $.mb_small, $.elevation_4, $.border_rounded, $.p_tiny, $.flex_row]}>
+    <AppView
+      style={[
+        $.mx_normal,
+        $.mb_small,
+        $.elevation_4,
+        $.border_rounded,
+        $.p_tiny,
+        $.flex_row,
+      ]}>
       <TouchableOpacity
         onPress={() => openServiceForm(item, item.Iscombo)}
         style={[$.p_small, $.flex_1]}>
@@ -171,7 +195,11 @@ export function ServiceAvailableScreen() {
           {item.timetaken} min session
         </AppText>
         <AppText style={[$.fs_small, $.flex_1, $.text_tint_ash]}>
-          <AppText style={[$.flex_1, {textDecorationLine: 'line-through', color: 'gray'}]}>
+          <AppText
+            style={[
+              $.flex_1,
+              {textDecorationLine: 'line-through', color: 'gray'},
+            ]}>
             ₹{item.prize}
           </AppText>
           <AppText> ₹{item.offerprize}</AppText>
@@ -201,7 +229,8 @@ export function ServiceAvailableScreen() {
   return (
     <AppView style={[$.pt_normal, $.flex_1]}>
       {/* Header */}
-      <AppView style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_medium]}>
+      <AppView
+        style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_medium]}>
         <AppView style={[$.flex_row, $.flex_1, $.align_items_center]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <CustomIcon
@@ -210,11 +239,12 @@ export function ServiceAvailableScreen() {
               color={$.tint_primary_5}
             />
           </TouchableOpacity>
-          <AppText style={[$.ml_compact, $.p_small, $.text_primary5, $.fw_medium]}>
+          <AppText
+            style={[$.ml_compact, $.p_small, $.text_primary5, $.fw_medium]}>
             Service Management
           </AppText>
         </AppView>
-        
+
         {/* Add Service Button */}
         <TouchableOpacity onPress={() => openServiceForm(undefined, false)}>
           <CustomIcon
@@ -235,7 +265,7 @@ export function ServiceAvailableScreen() {
             $.mx_normal,
             $.mb_small,
             $.p_small,
-            $.align_items_center
+            $.align_items_center,
           ]}>
           <AppText style={[$.text_primary5, $.fw_semibold]}>
             Create New Combo
@@ -253,9 +283,21 @@ export function ServiceAvailableScreen() {
             <AppText style={[$.text_tint_3, $.fw_medium]}>
               No services available. Add your first service!
             </AppText>
+
+            <TouchableOpacity
+              style={[$.mt_medium, $.p_small, $.bg_tint_3, $.border_rounded]}
+              onPress={()=>{openServiceForm(undefined, true)}}>
+              <AppText style={[$.text_tint_11, $.fw_semibold]}>Add Service</AppText>
+            </TouchableOpacity>
           </AppView>
         }
       />
+
+      <AppButton
+        onPress={() => {
+          navigation.navigate('Timing');
+        }}
+        name={'Save'}></AppButton>
 
       {/* Bottom Sheet for Service/Combo Form */}
       <BottomSheetComponent
@@ -263,7 +305,6 @@ export function ServiceAvailableScreen() {
         screenname={service.Iscombo ? 'Combo Details' : 'Service Details'}
         Save={handleSaveService}
         close={() => bottomSheetRef.current?.close()}>
-        
         {service.Iscombo && (
           <AppMultiSelect
             data={serviceList.filter(s => !s.Iscombo)} // Only allow selecting individual services for combos
@@ -272,7 +313,13 @@ export function ServiceAvailableScreen() {
             required={true}
             renderItemLabel={item => (
               <AppView style={[$.flex_row, $.mr_compact, $.align_items_center]}>
-                <AppText style={[$.ml_compact, $.fs_compact, $.fw_semibold, $.text_primary5]}>
+                <AppText
+                  style={[
+                    $.ml_compact,
+                    $.fs_compact,
+                    $.fw_semibold,
+                    $.text_primary5,
+                  ]}>
                   {item.Servicename} (₹{item.prize})
                 </AppText>
               </AppView>
@@ -281,12 +328,16 @@ export function ServiceAvailableScreen() {
             onSelect={handleComboSelection}
             title="Select Services for Combo"
             style={[$.mb_normal]}
-       
           />
         )}
 
         <AppTextInput
-          style={[$.bg_tint_11, $.border_bottom, $.border_primary5, $.mb_compact]}
+          style={[
+            $.bg_tint_11,
+            $.border_bottom,
+            $.border_primary5,
+            $.mb_compact,
+          ]}
           placeholder={service.Iscombo ? 'Combo Name' : 'Service Name'}
           value={service.Servicename}
           onChangeText={text => setService({...service, Servicename: text})}
@@ -294,37 +345,58 @@ export function ServiceAvailableScreen() {
 
         {!service.Iscombo && (
           <AppTextInput
-            style={[$.bg_tint_11, $.border_bottom, $.border_primary5, $.mb_compact]}
+            style={[
+              $.bg_tint_11,
+              $.border_bottom,
+              $.border_primary5,
+              $.mb_compact,
+            ]}
             placeholder="Price (₹)"
             keyboardtype="numeric"
             value={service.prize.toString()}
-            onChangeText={text => setService({
-              ...service, 
-              prize: parseInt(text) || 0
-            })}
+            onChangeText={text =>
+              setService({
+                ...service,
+                prize: parseInt(text) || 0,
+              })
+            }
           />
         )}
 
         <AppTextInput
-          style={[$.bg_tint_11, $.border_bottom, $.border_primary5, $.mb_compact]}
+          style={[
+            $.bg_tint_11,
+            $.border_bottom,
+            $.border_primary5,
+            $.mb_compact,
+          ]}
           placeholder="Offer Price (₹)"
           keyboardtype="numeric"
           value={service.offerprize.toString()}
-          onChangeText={text => setService({
-            ...service, 
-            offerprize: parseInt(text) || 0
-          })}
+          onChangeText={text =>
+            setService({
+              ...service,
+              offerprize: parseInt(text) || 0,
+            })
+          }
         />
 
         <AppTextInput
-          style={[$.bg_tint_11, $.border_bottom, $.border_primary5, $.mb_compact]}
+          style={[
+            $.bg_tint_11,
+            $.border_bottom,
+            $.border_primary5,
+            $.mb_compact,
+          ]}
           placeholder="Duration (minutes)"
           keyboardtype="numeric"
           value={service.timetaken.toString()}
-          onChangeText={text => setService({
-            ...service, 
-            timetaken: parseInt(text) || 0
-          })}
+          onChangeText={text =>
+            setService({
+              ...service,
+              timetaken: parseInt(text) || 0,
+            })
+          }
         />
       </BottomSheetComponent>
     </AppView>

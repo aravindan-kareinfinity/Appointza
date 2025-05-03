@@ -452,6 +452,8 @@ export function ServiceScreen() {
                     $.align_items_center,
                   ]}
                   onPress={() => {
+                    console.log( item.organisationid, item.organisationlocationid);
+                    
                     navigation.navigate('AppoinmentFixing', {
                       organisationid: item.organisationid,
                       organisationlocationid: item.organisationlocationid,

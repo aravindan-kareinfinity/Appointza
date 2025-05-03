@@ -197,10 +197,22 @@ export function AppoinmentBookingScreen() {
     return new Date(dateInput); // Returns a Date object
   }
 
+  const sendToApi = (date: Date) => {
+    const utcDate = new Date(Date.UTC(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      0, 0, 0
+    ));
+    
+    return utcDate 
+  };
+  
   const save = async () => {
     try {
       var a = new AppoinmentFinal();
-      a.appoinmentdate = seleteddate;
+    
+      a.appoinmentdate = sendToApi(seleteddate);
 
       a.userid = usercontext.value.userid;
       a.organisationlocationid = route.params.organisationlocationid;
@@ -218,7 +230,7 @@ export function AppoinmentBookingScreen() {
 
       // a.fromtime = convertToUTCFormat(seletedTiming.fromtime)
       a.attributes.servicelist = selectedService;
-      console.log('seletedTiming', a);
+      console.log('seleteddate', seleteddate);
       var res = await organisationservicetiming.Bookappoinment(a);
       console.log('Appointment saved:', res);
       setSelectedService([])
