@@ -230,17 +230,17 @@ export function ServiceAvailableScreen() {
     <AppView style={[$.pt_normal, $.flex_1]}>
       {/* Header */}
       <AppView
-        style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_medium]}>
-        <AppView style={[$.flex_row, $.flex_1, $.align_items_center]}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+        style={[$.px_regular, $.flex_row, $.mb_medium]}>
+        <AppView style={[$.flex_row, $.flex_1, ]}>
+          {/* <TouchableOpacity onPress={() => navigation.goBack()}>
             <CustomIcon
               name={CustomIcons.LeftArrow}
               size={$.s_regular}
               color={$.tint_primary_5}
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <AppText
-            style={[$.ml_compact, $.p_small, $.text_primary5, $.fw_medium]}>
+            style={[$.ml_compact,  $.text_primary5, $.fw_medium]}>
             Service Management
           </AppText>
         </AppView>
@@ -286,18 +286,24 @@ export function ServiceAvailableScreen() {
 
             <TouchableOpacity
               style={[$.mt_medium, $.p_small, $.bg_tint_3, $.border_rounded]}
-              onPress={()=>{openServiceForm(undefined, true)}}>
-              <AppText style={[$.text_tint_11, $.fw_semibold]}>Add Service</AppText>
+              onPress={() => {
+                openServiceForm(undefined, false);
+              }}>
+              <AppText style={[$.text_tint_11, $.fw_semibold]}>
+                Add Service
+              </AppText>
             </TouchableOpacity>
           </AppView>
         }
       />
 
-      <AppButton
+      <TouchableOpacity
+        style={[$.mt_medium, $.p_small, $.bg_tint_3, $.border_rounded,$.m_regular,$.text_center,$.align_items_center]}
         onPress={() => {
           navigation.navigate('Timing');
-        }}
-        name={'Save'}></AppButton>
+        }}>
+        <AppText style={[$.text_tint_11, $.fw_semibold]}>Save</AppText>
+      </TouchableOpacity>
 
       {/* Bottom Sheet for Service/Combo Form */}
       <BottomSheetComponent

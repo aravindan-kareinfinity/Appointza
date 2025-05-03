@@ -37,6 +37,7 @@ import {
 } from '../../models/organisationlocation.model';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
 import {AppAlert} from '../../components/appalert.component';
+import { UsersContext } from '../../models/users.model';
 
 type AccountScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Account'>,
@@ -55,7 +56,9 @@ export function AccountScreen() {
   };
 
   const logout = () => {
-    store.dispatch(usercontextactions.clear());
+    dispatch(usercontextactions.clear());
+    dispatch(usercontextactions.set(new UsersContext()))
+    dispatch(iscustomeractions.setIsCustomer(true))
   };
 
   const isLoggedIn = usercontext && usercontext.value.userid > 0;

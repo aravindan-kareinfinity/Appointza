@@ -83,6 +83,10 @@ export function UserDashboardScreen() {
   const loadInitialData = async () => {
     setIsloading(true);
     try {
+      console.log(
+        "usercontext.value.userid ",usercontext.value.userid 
+      );
+      
       if (usercontext.value.userid > 0) {
         await getuserappoinment();
       }
