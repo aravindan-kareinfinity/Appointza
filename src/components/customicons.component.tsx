@@ -104,6 +104,7 @@ export enum CustomIcons {
   PauseCircle,
   AccountBox,
   Location,
+  Refresh,
 }
 type Props = {
   size: number;

@@ -48,9 +48,8 @@ import {REFERENCETYPE} from '../../models/users.model';
 import {ReferenceValue} from '../../models/referencevalue.model';
 import {HomeTabParamList} from '../../hometab.navigation';
 import {AppStackParamList} from '../../appstack.navigation';
-import { environment } from '../../utils/environment';
-
-import { AppTextInput } from '../../components/apptextinput.component';
+import {environment} from '../../utils/environment';
+import {AppTextInput} from '../../components/apptextinput.component';
 
 type UserAppoinmentScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'UserAppoinment'>,
@@ -58,23 +57,29 @@ type UserAppoinmentScreenProp = CompositeScreenProps<
 >;
 
 const statusColors: Record<string, string> = {
-  'CONFIRMED': '#4CAF50',
-  'PENDING': '#FFC107',
-  'CANCELLED': '#F44336',
-  'COMPLETED': '#2196F3',
+  CONFIRMED: '#4CAF50',
+  PENDING: '#FFC107',
+  CANCELLED: '#F44336',
+  COMPLETED: '#2196F3',
 };
 
 export function UserAppoinmentScreen() {
   const navigation = useNavigation<UserAppoinmentScreenProp['navigation']>();
   const [isloading, setIsloading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
+  const [selectedAppointment, setSelectedAppointment] = useState<BookedAppoinmentRes | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+ 
   // Data states
   const [UserApponmentlist, setUserAppoinmentList] = useState<BookedAppoinmentRes[]>([]);
+
+  // Refs
+  const cancelSheetRef = useRef<any>(null);
 
   // Services
   const usercontext = useAppSelector(selectusercontext);
   const appoinmentservices = useMemo(() => new AppoinmentService(), []);
+  const referenceService = useMemo(() => new ReferenceValueService(), []);
 
   // Load data when screen focuses
   useFocusEffect(
@@ -86,10 +91,6 @@ export function UserAppoinmentScreen() {
   const loadInitialData = async () => {
     setIsloading(true);
     try {
-        console.log(
-        "usercontext.value.userid",    usercontext.value.userid
-        );
-        
       if (usercontext.value.userid > 0) {
         await getuserappoinment();
       }
@@ -100,15 +101,49 @@ export function UserAppoinmentScreen() {
     }
   };
 
+
   const getuserappoinment = async () => {
     try {
       setIsloading(true);
       const req = new AppoinmentSelectReq();
       req.userid = usercontext.value.userid;
-    
+
       const res = await appoinmentservices.SelectBookedAppoinment(req);
       setUserAppoinmentList(res || []);
     } catch (error: any) {
+      handleError(error);
+    } finally {
+      setIsloading(false);
+    }
+  };
+
+  const handleCancelAppointment = async () => {
+    if (!selectedAppointment || !cancelReason) {
+      AppAlert({ message: 'Please select a cancellation reason' });
+      return;
+    }
+
+    try {
+      setIsloading(true);
+      const req = new UpdateStatusReq();
+      req.appoinmentid = selectedAppointment.id;
+      req.statuscode = 'CANCELLED';
+      // req.cancelreason = cancelReason;
+      
+      await appoinmentservices.UpdateStatus(req);
+      
+      // Refresh the appointments list
+      await getuserappoinment();
+      
+      // Close the bottom sheet
+      cancelSheetRef.current?.close();
+      
+      // Reset states
+      setSelectedAppointment(null);
+      setCancelReason('');
+      
+      AppAlert({ message: 'Appointment cancelled successfully' });
+    } catch (error) {
       handleError(error);
     } finally {
       setIsloading(false);
@@ -123,16 +158,15 @@ export function UserAppoinmentScreen() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await getuserappoinment();
+      if (usercontext.value.userid > 0) {
+        await getuserappoinment();
+      }
     } catch (error) {
       handleError(error);
     } finally {
       setIsRefreshing(false);
     }
   };
-
-
-
 
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
@@ -143,57 +177,46 @@ export function UserAppoinmentScreen() {
         },
       ]}
       onPress={() => {}}>
-      
       {/* Header with date and status */}
       <View style={styles.cardHeader}>
         <AppText style={styles.dateText}>
-        {new Date(item.appoinmentdate).toLocaleDateString('en-US', {
+          {new Date(item.appoinmentdate).toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',
             day: 'numeric',
           })}
         </AppText>
-        <View style={[
-          styles.statusBadge,
-          { backgroundColor: statusColors[item.statuscode] || $.tint_3 }
-        ]}>
+        <View
+          style={[
+            styles.statusBadge,
+            {backgroundColor: statusColors[item.statuscode] || $.tint_3},
+          ]}>
           <AppText style={styles.statusText}>
             {item.statuscode || 'PENDING'}
           </AppText>
         </View>
       </View>
-      
+
       {/* Time slot */}
       <View style={styles.timeContainer}>
-        <CustomIcon
-          size={20}
-          color={$.tint_3}
-          name={CustomIcons.Clock}
-        />
+        <CustomIcon size={20} color={$.tint_3} name={CustomIcons.Clock} />
         <AppText style={styles.timeText}>
-        {item.fromtime.toString().substring(0, 5)}-  {item.totime.toString().substring(0, 5)}
+          {item.fromtime.toString().substring(0, 5)}-{' '}
+          {item.totime.toString().substring(0, 5)}
         </AppText>
       </View>
-      
+
       {/* Staff and location */}
       <View style={styles.infoContainer}>
         <View style={styles.infoRow}>
-          <CustomIcon
-            size={20}
-            color={$.tint_3}
-            name={CustomIcons.Account}
-          />
+          <CustomIcon size={20} color={$.tint_3} name={CustomIcons.Account} />
           <AppText style={styles.infoText}>
             {item.staffname || 'Not assigned'}
           </AppText>
         </View>
-        
+
         <View style={styles.infoRow}>
-          <CustomIcon
-            size={20}
-            color={$.tint_3}
-            name={CustomIcons.Shop}
-          />
+          <CustomIcon size={20} color={$.tint_3} name={CustomIcons.Shop} />
           <View style={styles.locationTextContainer}>
             <AppText style={styles.organisationText}>
               {item.organisationname}
@@ -204,15 +227,15 @@ export function UserAppoinmentScreen() {
           </View>
         </View>
       </View>
-      
+
       {/* Services list */}
       {item.attributes?.servicelist?.length > 0 && (
         <View style={styles.servicesContainer}>
           <AppText style={styles.servicesTitle}>Services</AppText>
-          
+
           {item.attributes.servicelist.map((service, index) => (
             <View key={index} style={styles.serviceItem}>
-              <AppText style={styles.serviceName} >
+              <AppText style={styles.serviceName}>
                 {service.servicename}
               </AppText>
               <AppText style={styles.servicePrice}>
@@ -220,28 +243,43 @@ export function UserAppoinmentScreen() {
               </AppText>
             </View>
           ))}
-          
+
           <View style={styles.totalContainer}>
             <AppText style={styles.totalText}>Total</AppText>
             <AppText style={styles.totalAmount}>
-              ₹{item.attributes.servicelist.reduce(
+              ₹
+              {item.attributes.servicelist.reduce(
                 (total, service) => total + (Number(service.serviceprice) || 0),
-                0
+                0,
               )}
             </AppText>
           </View>
         </View>
       )}
-      
-      {/* Payment status */}
-      <View style={[
-        styles.paymentBadge,
-        item.ispaid ? styles.paidBadge : styles.unpaidBadge
-      ]}>
-        <AppText style={styles.paymentText}>
-          {item.ispaid ? 'PAID' : 'PENDING PAYMENT'}
-        </AppText>
-      </View>
+
+      <AppView style={[$.flex_row, $.justify_content_center]}>
+        {item.statuscode !== 'CANCELLED' && item.statuscode !== 'COMPLETED' && (
+          <TouchableOpacity
+            style={[styles.cancelButton, $.bg_danger]}
+            onPress={() => {
+              setSelectedAppointment(item);
+              cancelSheetRef.current?.open();
+            }}>
+            <AppText style={styles.cancelButtonText}>Cancel</AppText>
+          </TouchableOpacity>
+        )}
+
+        {/* Payment status */}
+        <View
+          style={[
+            styles.paymentBadge,
+            item.ispaid ? styles.paidBadge : styles.unpaidBadge,
+          ]}>
+          <AppText style={styles.paymentText}>
+            {item.ispaid ? 'PAID' : 'PENDING PAYMENT'}
+          </AppText>
+        </View>
+      </AppView>
     </TouchableOpacity>
   );
 
@@ -251,14 +289,10 @@ export function UserAppoinmentScreen() {
       <View style={styles.header}>
         <AppText style={styles.headerTitle}>My Appointments</AppText>
         <TouchableOpacity onPress={handleRefresh}>
-          <CustomIcon
-            name={CustomIcons.Clock}
-            size={24}
-            color={$.tint_3}
-          />
+          <CustomIcon name={CustomIcons.Refresh} size={24} color={$.tint_3} />
         </TouchableOpacity>
       </View>
-      
+
       {/* Content */}
       {isloading && !isRefreshing ? (
         <View style={styles.loadingContainer}>
@@ -300,6 +334,56 @@ export function UserAppoinmentScreen() {
           contentContainerStyle={styles.listContentContainer}
         />
       )}
+
+      {/* Cancellation Bottom Sheet */}
+      <BottomSheetComponent
+        ref={cancelSheetRef}
+        screenname="Cancel Appointment"
+        Save={handleCancelAppointment}
+        close={() => {
+          cancelSheetRef.current?.close();
+          setCancelReason('');
+        }}
+        showbutton={true}
+        // saveButtonDisabled={!cancelReason}
+        >
+        <ScrollView contentContainerStyle={[$.p_medium]} nestedScrollEnabled={true}>
+          <AppText style={[$.text_danger, $.mb_medium, $.text_center, ]}>
+            Cancel Appointment
+          </AppText>
+          
+          <AppText style={[{ color: '#666' }, $.mb_small]}>
+            <AppText style={[]}>Date: </AppText>
+            {selectedAppointment && new Date(selectedAppointment.appoinmentdate).toLocaleDateString()}
+          </AppText>
+          
+          <AppText style={[ $.mb_medium]}>
+            <AppText style={[]}>Time: </AppText>
+            {selectedAppointment?.fromtime.toString().substring(0, 5)} - {selectedAppointment?.totime.toString().substring(0, 5)}
+          </AppText>
+          
+          {/* <AppSingleSelect
+            label="Reason for cancellation"
+            placeholder="Select a reason"
+            value={cancelReason}
+            onChange={setCancelReason}
+            options={reasonsList.map(reason => ({
+              label: reason.valuename,
+              value: reason.valuename,
+            }))}
+          /> */}
+          
+          <AppTextInput
+            // label="Additional notes (optional)"
+            placeholder="Enter any additional details"
+            value={cancelReason}
+            onChangeText={setCancelReason}
+            // multiline
+            // numberOfLines={3}
+            style={[$.mb_medium]}
+          />
+        </ScrollView>
+      </BottomSheetComponent>
     </AppView>
   );
 }
@@ -342,7 +426,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
@@ -455,11 +539,9 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   paymentBadge: {
-    alignSelf: 'flex-end',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 12,
-    marginTop: 8,
   },
   paidBadge: {
     backgroundColor: '#4CAF50',
@@ -468,6 +550,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#F44336',
   },
   paymentText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'white',
+  },
+  cancelButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  cancelButtonText: {
     fontSize: 12,
     fontWeight: '600',
     color: 'white',

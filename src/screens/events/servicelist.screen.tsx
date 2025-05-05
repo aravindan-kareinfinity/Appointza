@@ -245,8 +245,11 @@ export function ServiceScreen() {
       const req = new ReferenceValueSelectReq();
       req.parentid = primaryId;
       req.referencetypeid = REFERENCETYPE.ORGANISATIONSECONDARYTYPE;
+      console.log("req",req);
+      
       const response = await referenceValueService.select(req);
       if (response) {
+        console.log("response",response);
         setSecondaryBusinessTypes(response);
         SecondarybottomSheetRef.current?.open();
       }

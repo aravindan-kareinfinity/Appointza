@@ -182,7 +182,8 @@ export class UserUpdateOrderStatusReq {
 export enum REFERENCETYPE {
   ORGANISATIONPRIMARYTYPE  = 1,
 ORGANISATIONSECONDARYTYPE  = 2,
-APPOINTMENTSTATUS  = 3
+APPOINTMENTSTATUS  = 3,
+CANCELLATION_REASON
 }
 
 export class Organisationdeletereq
