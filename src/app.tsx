@@ -3,14 +3,16 @@ import {AppStackNavigation} from './appstack.navigation';
 import {Provider} from 'react-redux';
 import {persistor, store} from './redux/store.redux';
 import {PersistGate} from 'redux-persist/integration/react';
+import { ThemeProvider } from './components/theme-provider';
+import './styles/global.css.js';
+
 function App() {
-  
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-      
-        <AppStackNavigation></AppStackNavigation>
-
+        <ThemeProvider>
+          <AppStackNavigation />
+        </ThemeProvider>
       </PersistGate>
     </Provider>
   );

@@ -1,15 +1,26 @@
 import {ReactNode} from 'react';
 import {View, StyleProp, ViewStyle} from 'react-native';
 import { $ } from '../styles';
+import { styled, StyledComponent } from 'nativewind';
+
+const StyledView: StyledComponent<typeof View> = styled(View);
+
 type AppViewProps = {
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
   key?: string | number;
+  className?: string;
 };
-export const AppView = (props: AppViewProps) => {
+
+export const AppView = ({ style, children, key, className }: AppViewProps) => {
+  const combinedStyle = [$.bg_tint_11, style];
   return (
-    <View key={props.key} style={[$.bg_tint_11,props.style]}>
-      {props.children}
-    </View>
+    <StyledView 
+      className={className} 
+      key={key} 
+      style={combinedStyle}
+    >
+      {children}
+    </StyledView>
   );
 };
