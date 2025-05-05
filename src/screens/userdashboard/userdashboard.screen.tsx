@@ -16,6 +16,7 @@ import {
   useNavigation,
 } from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {AppButton} from '../../components/appbutton.component';
@@ -57,6 +58,10 @@ const statusColors: Record<string, string> = {
   'COMPLETED': '#2196F3',
 };
 
+type UserDashboardScreenProp = {
+  navigation: NativeStackNavigationProp<AppStackParamList>;
+};
+
 export function UserDashboardScreen() {
   const [isloading, setIsloading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -73,6 +78,7 @@ export function UserDashboardScreen() {
 
   const usercontext = useAppSelector(selectusercontext);
   const appoinmentservices = useMemo(() => new AppoinmentService(), []);
+  const navigation = useNavigation<UserDashboardScreenProp['navigation']>();
 
   useFocusEffect(
     useCallback(() => {
@@ -166,6 +172,10 @@ export function UserDashboardScreen() {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const handleAppointmentPress = (appointmentId: number) => {
+    navigation.navigate('AppointmentTimeline', { appointmentid: appointmentId });
   };
 
   const renderStatsCard = (icon: CustomIcons, title: string, value: string | number, color: string) => (
@@ -288,10 +298,13 @@ export function UserDashboardScreen() {
             
             {UserApponmentlist.length > 0 ? (
               <FlatList
-              data={[...UserApponmentlist].sort((a, b) => new Date(b.createdon).getTime() - new Date(a.createdon).getTime())}
+                data={[...UserApponmentlist].sort((a, b) => new Date(b.createdon).getTime() - new Date(a.createdon).getTime())}
                 keyExtractor={item => item.id.toString()}
                 renderItem={({item}) => (
-                  <View style={styles.activityItem}>
+                  <TouchableOpacity 
+                    style={styles.activityItem}
+                    onPress={() => handleAppointmentPress(item.id)}
+                  >
                     <View style={styles.activityIcon}>
                       <CustomIcon
                         name={
@@ -309,7 +322,8 @@ export function UserDashboardScreen() {
                         }
                       />
                     </View>
-                    <View style={styles.activityDetails}>
+                    
+                    <View style={styles.activityContent}>
                       <AppText style={styles.activityTitle}>
                         {item.organisationname}
                       </AppText>
@@ -328,7 +342,7 @@ export function UserDashboardScreen() {
                     ]}>
                       {item.statuscode}
                     </AppText>
-                  </View>
+                  </TouchableOpacity>
                 )}
               />
             ) : (
@@ -492,7 +506,7 @@ const styles = StyleSheet.create({
   activityIcon: {
     marginRight: 12,
   },
-  activityDetails: {
+  activityContent: {
     flex: 1,
   },
   activityTitle: {

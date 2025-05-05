@@ -39,6 +39,7 @@ export namespace Timeline {
 
 export class TimelineSelectReq {
   id: number = 0;
+  appointmentid: number = 0;
 }
 
 export class TimelineDeleteReq {

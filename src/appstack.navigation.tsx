@@ -22,6 +22,7 @@ import { DefaultColor } from './styles/default-color.style';
 import { ServiceAvailableScreen } from './screens/servicesavailable/service.screen';
 import { TimingScreen } from './screens/timing/timing.screen';
 import { AppoinmentBookingScreen } from './screens/appoinmentfixing/appoinmentbooking.screen';
+import { AppointmentTimelineScreen } from './screens/appointmentimeline/appointmenttimeline.screen';
 
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
@@ -44,6 +45,7 @@ export type AppStackParamList = {
   ServiceAvailable:undefined
   Timing:undefined
   AppoinmentFixing:{organisationid:number,organisationlocationid:number}
+  AppointmentTimeline: {appointmentid:number};
 };
 const colors = DefaultColor.instance.colors;
 const AppTheme = {
@@ -164,7 +166,13 @@ function AppStackNavigation() {
             headerShown: false,
           }}
         />
-
+        <AppStack.Screen
+          name="AppointmentTimeline"
+          component={AppointmentTimelineScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
     
   
        
