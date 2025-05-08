@@ -147,6 +147,21 @@ export function BussinessDashboardScreen() {
     }
   };
 
+  const getIconForType = (type: string) => {
+    switch (type) {
+      case 'appointment':
+        return CustomIcons.Dashboard;
+      case 'service':
+        return CustomIcons.ServiceList;
+      case 'qr':
+        return CustomIcons.QRCode;
+      case 'global':
+        return CustomIcons.Global;
+      default:
+        return CustomIcons.Dashboard;
+    }
+  };
+
   const renderStatCard = (
     title: string,
     value: number,
@@ -218,19 +233,19 @@ export function BussinessDashboardScreen() {
               {renderStatCard(
                 'Total',
                 paymentSummary.totalappointments,
-                CustomIcons.Scheduled,
+                CustomIcons.Dashboard,
                 $.primary2,
               )}
               {renderStatCard(
                 'Confirmed',
                 paymentSummary.confirmedcount,
-                CustomIcons.Tick,
+                CustomIcons.StatusIndicator,
                 '#4CAF50',
               )}
               {renderStatCard(
                 'Completed',
                 paymentSummary.completedcount,
-                CustomIcons.Completed,
+                CustomIcons.OnlinePayment,
                 '#2196F3',
               )}
               {renderStatCard(
@@ -239,8 +254,8 @@ export function BussinessDashboardScreen() {
                   (sum, item) => sum + item.totalamount,
                   0,
                 ),
-                CustomIcons.Bell,
-                '#FF9800',
+                CustomIcons.TimeCard,
+                '#FFC107',
               )}
             </View>
 

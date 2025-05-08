@@ -277,6 +277,19 @@ export function BussinessAppoinmentScreen() {
   
   const [seletecedappinmentid, Setselectedappoinmentid] = useState(0)
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return '#2196F3';
+      case 'CANCELLED':
+        return '#F44336';
+      case 'CONFIRMED':
+        return '#4CAF50';
+      default:
+        return '#FFC107';
+    }
+  };
+
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
       style={[
@@ -352,9 +365,14 @@ export function BussinessAppoinmentScreen() {
           {paddingHorizontal: 8}
         ]}>
           <CustomIcon
-            size={14}
-            color={$.tint_3}
-            name={CustomIcons.Clock}
+            name={
+              item.statuscode === 'COMPLETED' ? CustomIcons.OnlinePayment :
+              item.statuscode === 'CANCELLED' ? CustomIcons.CashPayment :
+              item.statuscode === 'CONFIRMED' ? CustomIcons.StatusIndicator :
+              CustomIcons.TimeCard
+            }
+            size={20}
+            color={getStatusColor(item.statuscode)}
           />
           <AppText style={[$.ml_tiny, $.fw_medium, $.fs_small, $.text_tint_2]}>
             {item.statuscode || 'No status'}

@@ -104,7 +104,22 @@ export enum CustomIcons {
   PauseCircle,
   AccountBox,
   Location,
-  Refresh,
+  Refresh, // Add these new icons at the end of the CustomIcons enum
+  Appointment,
+  AppointmentCalendar,
+  BusinessProfile,
+  ServiceList,
+  LocationPin,
+  TimeSlot,
+  Notification,
+  UserProfile,
+  Dashboard,
+  StatusIndicator,
+  TimeCard,
+  CashPayment,
+  OnlinePayment,
+  GroupAppointment,
+  Payment,
 }
 type Props = {
   size: number;
@@ -138,6 +153,427 @@ export const CustomIcon = (props: Props) => {
             stroke={props.color}
             strokeWidth={stroke}
             strokeLinecap="round"
+          />
+        </Svg>
+      );
+
+    case CustomIcons.Dashboard:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M6.66667 20H13.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M6.66667 10H13.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M6.66667 30H13.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M16.6667 6.66667H33.3333C34.8061 6.66667 36 7.86058 36 9.33333V13.3333C36 14.8061 34.8061 16 33.3333 16H16.6667C15.1939 16 14 14.8061 14 13.3333V9.33333C14 7.86058 15.1939 6.66667 16.6667 6.66667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M16.6667 24H33.3333C34.8061 24 36 25.1939 36 26.6667V30.6667C36 32.1394 34.8061 33.3333 33.3333 33.3333H16.6667C15.1939 33.3333 14 32.1394 14 30.6667V26.6667C14 25.1939 15.1939 24 16.6667 24Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+
+    case CustomIcons.StatusIndicator:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Circle
+            cx="20"
+            cy="20"
+            r="16"
+            stroke={props.color}
+            strokeWidth={stroke}
+          />
+          <Circle cx="20" cy="20" r="8" fill={props.color} />
+        </Svg>
+      );
+
+    case CustomIcons.TimeCard:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M33.3333 6.66667H6.66667C5.19391 6.66667 4 7.86058 4 9.33333V30.6667C4 32.1394 5.19391 33.3333 6.66667 33.3333H33.3333C34.8061 33.3333 36 32.1394 36 30.6667V9.33333C36 7.86058 34.8061 6.66667 33.3333 6.66667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M4 13.3333H36"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20 20L26.6667 23.3333L20 26.6667V20Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M13.3333 20H20"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+
+    case CustomIcons.CashPayment:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M33.3333 6.66667H6.66667C5.19391 6.66667 4 7.86058 4 9.33333V30.6667C4 32.1394 5.19391 33.3333 6.66667 33.3333H33.3333C34.8061 33.3333 36 32.1394 36 30.6667V9.33333C36 7.86058 34.8061 6.66667 33.3333 6.66667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20 26.6667C23.6819 26.6667 26.6667 23.6819 26.6667 20C26.6667 16.3181 23.6819 13.3333 20 13.3333C16.3181 13.3333 13.3333 16.3181 13.3333 20C13.3333 23.6819 16.3181 26.6667 20 26.6667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20 16.6667V23.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M16.6667 20H23.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+
+    case CustomIcons.OnlinePayment:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M33.3333 6.66667H6.66667C5.19391 6.66667 4 7.86058 4 9.33333V30.6667C4 32.1394 5.19391 33.3333 6.66667 33.3333H33.3333C34.8061 33.3333 36 32.1394 36 30.6667V9.33333C36 7.86058 34.8061 6.66667 33.3333 6.66667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M4 13.3333H36"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M13.3333 26.6667H26.6667"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20 20L26.6667 23.3333L20 26.6667V20Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+    case CustomIcons.Appointment:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M33.3333 6.66667H6.66667C5.19391 6.66667 4 7.86058 4 9.33333V33.3333C4 34.8061 5.19391 36 6.66667 36H33.3333C34.8061 36 36 34.8061 36 33.3333V9.33333C36 7.86058 34.8061 6.66667 33.3333 6.66667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M26.6667 4V9.33333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M13.3333 4V9.33333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M4 16H36"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M13.3333 24H26.6667"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M13.3333 30H20"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+
+    case CustomIcons.BusinessProfile:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M20 20C23.6819 20 26.6667 17.0152 26.6667 13.3333C26.6667 9.65144 23.6819 6.66667 20 6.66667C16.3181 6.66667 13.3333 9.65144 13.3333 13.3333C13.3333 17.0152 16.3181 20 20 20Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M33.3333 33.3333C33.3333 27.1117 27.3333 22 20 22C12.6667 22 6.66667 27.1117 6.66667 33.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20 20V33.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+
+    case CustomIcons.ServiceList:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M33.3333 6.66667H6.66667C5.19391 6.66667 4 7.86058 4 9.33333V33.3333C4 34.8061 5.19391 36 6.66667 36H33.3333C34.8061 36 36 34.8061 36 33.3333V9.33333C36 7.86058 34.8061 6.66667 33.3333 6.66667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M13.3333 16.6667H26.6667"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M13.3333 23.3333H26.6667"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M13.3333 30H20"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+
+    case CustomIcons.LocationPin:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M20 21.6667C22.3012 21.6667 24.1667 19.8012 24.1667 17.5C24.1667 15.1988 22.3012 13.3333 20 13.3333C17.6988 13.3333 15.8333 15.1988 15.8333 17.5C15.8333 19.8012 17.6988 21.6667 20 21.6667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20 33.3333C26.6667 26.6667 33.3333 21.6667 33.3333 17.5C33.3333 13.3333 30 10 20 10C10 10 6.66667 13.3333 6.66667 17.5C6.66667 21.6667 13.3333 26.6667 20 33.3333Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+
+    case CustomIcons.TimeSlot:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M20 36.6667C29.2047 36.6667 36.6667 29.2047 36.6667 20C36.6667 10.7953 29.2047 3.33333 20 3.33333C10.7953 3.33333 3.33333 10.7953 3.33333 20C3.33333 29.2047 10.7953 36.6667 20 36.6667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20 10V20L26.6667 23.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+
+    case CustomIcons.GroupAppointment:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M13.3333 16.6667C15.1743 16.6667 16.6667 15.1743 16.6667 13.3333C16.6667 11.4924 15.1743 10 13.3333 10C11.4924 10 10 11.4924 10 13.3333C10 15.1743 11.4924 16.6667 13.3333 16.6667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M26.6667 16.6667C28.5076 16.6667 30 15.1743 30 13.3333C30 11.4924 28.5076 10 26.6667 10C24.8257 10 23.3333 11.4924 23.3333 13.3333C23.3333 15.1743 24.8257 16.6667 26.6667 16.6667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20 30C22.7614 30 25 27.7614 25 25C25 22.2386 22.7614 20 20 20C17.2386 20 15 22.2386 15 25C15 27.7614 17.2386 30 20 30Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M10 30C10 26.6863 11.3431 23.3333 13.3333 23.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M30 30C30 26.6863 28.6569 23.3333 26.6667 23.3333"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+
+    case CustomIcons.Payment:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 40 40"
+          fill="none">
+          <Path
+            d="M33.3333 6.66667H6.66667C5.19391 6.66667 4 7.86058 4 9.33333V30.6667C4 32.1394 5.19391 33.3333 6.66667 33.3333H33.3333C34.8061 33.3333 36 32.1394 36 30.6667V9.33333C36 7.86058 34.8061 6.66667 33.3333 6.66667Z"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M4 13.3333H36"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M13.3333 26.6667H20"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
         </Svg>
       );

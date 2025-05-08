@@ -243,11 +243,11 @@ export function UserDashboardScreen() {
         >
           {/* Stats Overview */}
           <View style={styles.statsContainer}>
-            {renderStatsCard(CustomIcons.Scheduled, 'Total Appointments', totalAppointments, $.primary2)}
-            {renderStatsCard(CustomIcons.Tick, 'Confirmed', confirmedCount, '#4CAF50')}
-            {renderStatsCard(CustomIcons.Clock, 'Pending', pendingCount, '#FFC107')}
-            {renderStatsCard(CustomIcons.Cancel, 'Cancelled', cancelledCount, '#F44336')}
-            {renderStatsCard(CustomIcons.Completed, 'Completed', completedCount, '#2196F3')}
+            {renderStatsCard(CustomIcons.Dashboard, 'Total Appointments', totalAppointments, $.primary2)}
+            {renderStatsCard(CustomIcons.StatusIndicator, 'Confirmed', confirmedCount, '#4CAF50')}
+            {renderStatsCard(CustomIcons.TimeCard, 'Pending', pendingCount, '#FFC107')}
+            {renderStatsCard(CustomIcons.CashPayment, 'Cancelled', cancelledCount, '#F44336')}
+            {renderStatsCard(CustomIcons.OnlinePayment, 'Completed', completedCount, '#2196F3')}
            
           </View>
           
@@ -308,10 +308,10 @@ export function UserDashboardScreen() {
                     <View style={styles.activityIcon}>
                       <CustomIcon
                         name={
-                          item.statuscode === 'COMPLETED' ? CustomIcons.Completed :
-                          item.statuscode === 'CANCELLED' ? CustomIcons.Cancel :
-                          item.statuscode === 'CONFIRMED' ? CustomIcons.Tick :
-                          CustomIcons.Clock
+                          item.statuscode === 'COMPLETED' ? CustomIcons.OnlinePayment :
+                          item.statuscode === 'CANCELLED' ? CustomIcons.CashPayment :
+                          item.statuscode === 'CONFIRMED' ? CustomIcons.StatusIndicator :
+                          CustomIcons.TimeCard
                         }
                         size={20}
                         color={

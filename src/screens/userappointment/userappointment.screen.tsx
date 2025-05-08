@@ -168,12 +168,25 @@ export function UserAppoinmentScreen() {
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return '#2196F3';
+      case 'CANCELLED':
+        return '#F44336';
+      case 'CONFIRMED':
+        return '#4CAF50';
+      default:
+        return '#FFC107';
+    }
+  };
+
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
       style={[
         styles.appointmentCard,
         {
-          borderLeftColor: statusColors[item.statuscode] || $.tint_3,
+          borderLeftColor: getStatusColor(item.statuscode) || $.tint_3,
         },
       ]}
       onPress={() => {}}>
@@ -189,7 +202,7 @@ export function UserAppoinmentScreen() {
         <View
           style={[
             styles.statusBadge,
-            {backgroundColor: statusColors[item.statuscode] || $.tint_3},
+            {backgroundColor: getStatusColor(item.statuscode) || $.tint_3},
           ]}>
           <AppText style={styles.statusText}>
             {item.statuscode || 'PENDING'}
@@ -199,7 +212,16 @@ export function UserAppoinmentScreen() {
 
       {/* Time slot */}
       <View style={styles.timeContainer}>
-        <CustomIcon size={20} color={$.tint_3} name={CustomIcons.Clock} />
+        <CustomIcon
+          name={
+            item.statuscode === 'COMPLETED' ? CustomIcons.OnlinePayment :
+            item.statuscode === 'CANCELLED' ? CustomIcons.CashPayment :
+            item.statuscode === 'CONFIRMED' ? CustomIcons.StatusIndicator :
+            CustomIcons.TimeCard
+          }
+          size={20}
+          color={getStatusColor(item.statuscode)}
+        />
         <AppText style={styles.timeText}>
           {item.fromtime.toString().substring(0, 5)}-{' '}
           {item.totime.toString().substring(0, 5)}

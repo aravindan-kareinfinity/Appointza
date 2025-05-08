@@ -83,6 +83,8 @@ export function AppoinmentBookingScreen() {
   const [selectedService, setSelectedService] = useState<SelectedSerivice[]>(
     [],
   );
+  const [organisationDetails, setOrganisationDetails] = useState<Organisation | null>(null);
+  const [locationDetails, setLocationDetails] = useState<OrganisationLocation | null>(null);
 
   const handleServiceSelection = (req: OrganisationServices) => {
     const item = new SelectedSerivice();
@@ -134,6 +136,30 @@ export function AppoinmentBookingScreen() {
   }, [seleteddate]);
 
   useEffect(() => {}, [organisationlocationTiming]);
+
+  useEffect(() => {
+    fetchOrganisationDetails();
+  }, []);
+
+  const fetchOrganisationDetails = async () => {
+    try {
+      const orgReq = new OrganisationSelectReq();
+      orgReq.id = route.params.organisationid;
+      const orgRes = await new OrganisationService().select(orgReq);
+      if (orgRes && orgRes.length > 0) {
+        setOrganisationDetails(orgRes[0]);
+      }
+
+      const locReq = new OrganisationLocationSelectReq();
+      locReq.id = route.params.organisationlocationid;
+      const locRes = await new OrganisationLocationService().select(locReq);
+      if (locRes && locRes.length > 0) {
+        setLocationDetails(locRes[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching organization details:', error);
+    }
+  };
 
   const gettiming = async () => {
     try {
@@ -243,149 +269,186 @@ export function AppoinmentBookingScreen() {
   };
 
   return (
-    <AppView style={[$.pt_normal, $.flex_1]}>
-      <AppView style={[$.flex_row, $.align_items_center]}>
-        <AppText
-          style={[
-            $.fs_compact,
-            $.fw_bold,
-            $.flex_1,
-            $.px_small,
-            $.text_primary5,
-          ]}>
-          Appoinment{' '}
+    <AppView style={[$.flex_1, $.bg_tint_11]}>
+      {/* Organization Details Section */}
+      <AppView style={[$.px_normal, $.pt_normal, $.pb_compact]}>
+        <AppText style={[$.fs_normal, $.fw_bold, $.text_primary5]}>
+          {organisationDetails?.name || 'Loading...'}
+        </AppText>
+        <AppView style={[$.flex_row, $.align_items_center, $.mt_small]}>
+          <CustomIcon
+            name={CustomIcons.LocationPin}
+            color={$.tint_2}
+            size={$.s_small}
+          />
+          <AppText style={[$.fs_small, $.text_tint_ash, $.ml_small, { flex: 1 }]}>
+            {locationDetails ? 
+              `${locationDetails.addressline1}, ${locationDetails.addressline2}, ${locationDetails.city}, ${locationDetails.state} - ${locationDetails.pincode}` 
+              : 'Loading address...'}
+          </AppText>
+        </AppView>
+        <AppView style={[$.flex_row, $.align_items_center, $.mt_small]}>
+          <CustomIcon
+            name={CustomIcons.ServiceList}
+            color={$.tint_2}
+            size={$.s_small}
+          />
+          <AppText style={[$.fs_small, $.text_tint_ash, $.ml_small]}>
+            {organisationservices.length} Services Available
+          </AppText>
+        </AppView>
+      </AppView>
+
+      <AppView style={[$.border_bottom, $.border_tint_7, $.mb_normal]} />
+
+      {/* Services Preview Section */}
+      <AppView style={[$.px_normal, $.pb_compact]}>
+        <AppText style={[$.fs_small, $.fw_medium, $.text_primary5, $.mb_small]}>
+          Available Services
+        </AppText>
+        <AppView style={{ position: 'relative' }}>
+          <FlatList
+            data={organisationservices}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item, index) => index.toString()}
+            contentContainerStyle={{
+              paddingRight: 20
+            }}
+            renderItem={({item}) => (
+              <AppView 
+                style={[
+                  $.bg_tint_10,
+                  $.border_rounded,
+                  $.px_small,
+                  $.py_small,
+                  $.mr_small,
+                  { minWidth: 150 }
+                ]}
+              >
+                <AppText 
+                  style={[$.fs_small, $.text_primary5, { flexShrink: 1 }]} 
+                >
+                  {item.Servicename}
+                </AppText>
+                <AppText style={[$.fs_small, $.text_tint_2, $.mt_tiny]}>
+                  ₹{item.offerprize}
+                </AppText>
+              </AppView>
+            )}
+          />
+          <AppView 
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 40,
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              pointerEvents: 'none'
+            }}
+          >
+            <CustomIcon
+              name={CustomIcons.RightArrow}
+              color={$.tint_2}
+              size={$.s_small}
+            />
+          </AppView>
+        </AppView>
+      </AppView>
+
+      <AppView style={[$.border_bottom, $.border_tint_7, $.mb_normal]} />
+
+      {/* Date Selection Section */}
+      <AppView style={[$.px_normal, $.flex_row, $.align_items_center, { justifyContent: 'space-between' }]}>
+        <AppText style={[$.fs_small, $.fw_medium, $.text_primary5]}>
+          Select Date
         </AppText>
         <TouchableOpacity
           onPress={() => setshowdatepicker(true)}
           style={[
+            $.flex_row,
+            $.align_items_center,
             $.border,
             $.border_rounded,
-            $.mr_small,
-            $.align_items_center,
-            $.justify_content_center,
+            $.px_compact,
+            $.py_tiny,
             $.bg_tint_10,
             $.border_tint_7,
           ]}>
-          {/* <CustomIcon
-                    name={CustomIcons.SingleTick}
-                    color={$.tint_2}
-                    size={$.s_compact}></CustomIcon> */}
-          <AppText style={{fontSize: 14, fontWeight: 'bold', color: '#333'}}>
-            {seleteddate.toDateString()}
+          <CustomIcon
+            name={CustomIcons.Clock}
+            color={$.tint_2}
+            size={$.s_small}
+          />
+          <AppText style={[$.fs_small, $.fw_medium, $.text_primary5, $.ml_small]}>
+            {seleteddate.toLocaleDateString('en-US', { 
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric'
+            })}
           </AppText>
         </TouchableOpacity>
       </AppView>
 
-      <AppText style={[$.fs_compact, $.fw_bold, $.px_small, $.text_primary5]}>
-        {seleteddate.toDateString()}
-      </AppText>
+      <AppView style={[ $.border_tint_7]} />
 
-      <BottomSheetComponent
-        ref={bottomSheetRef}
-        screenname="Available Service"
-        Save={save}
-        close={closeBottomSheet}>
-        <AppView>
-          <AppText>
-            {seletedTiming.fromtime} -{seletedTiming.totime}
-          </AppText>
-        </AppView>
-
-        <FlatList
-          data={organisationservices}
-          nestedScrollEnabled={true}
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({item}) => {
-            const isSelected = selectedService.some(
-              service => service.id === item.id,
-            );
-
-            return (
-              <AppView style={[$.flex_row]}>
-                <TouchableOpacity
-                  onPress={() => handleServiceSelection(item)}
-                  style={[$.p_small, $.flex_1]}>
-                  <AppText style={[$.text_primary5, $.fs_compact, $.fw_bold]}>
-                    {item.Servicename}
-                  </AppText>
-                  <AppText style={[$.fs_small, $.text_tint_ash]}>
-                    {item.timetaken} min session
-                  </AppText>
-                  <AppText style={[$.fs_small, $.flex_1, $.text_tint_ash]}>
-                    <AppText
-                      style={[
-                        $.flex_1,
-                        {textDecorationLine: 'line-through', color: 'gray'},
-                      ]}>
-                      ₹{item.prize}
-                    </AppText>
-                    <AppText>₹{item.offerprize}</AppText>
-                  </AppText>
-                </TouchableOpacity>
-
-                {isSelected && (
-                  <CustomIcon
-                    name={CustomIcons.SingleTick}
-                    color={$.tint_2}
-                    size={$.s_compact}></CustomIcon>
-                )}
-              </AppView>
-            );
-          }}
-        />
-      </BottomSheetComponent>
-
-      {organisationlocationTiming && organisationlocationTiming.length > 0 && (
-        <AppView style={[$.py_compact]}>
+      {/* Time Slots Section */}
+      <AppView style={[$.px_normal, { flex: 1 }]}>
+        <AppText style={[$.fs_small, $.fw_medium, $.text_primary5, $.mb_small]}>
+          Available Time Slots
+        </AppText>
+        {organisationlocationTiming && organisationlocationTiming.length > 0 ? (
           <FlatList
             data={organisationlocationTiming}
             nestedScrollEnabled
-            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
             keyExtractor={(item, index) => index.toString()}
+            numColumns={3}
+            columnWrapperStyle={{ 
+              justifyContent: 'space-between',
+              paddingHorizontal: 5,
+              marginBottom: 10
+            }}
+            contentContainerStyle={{
+              paddingBottom: 60
+            }}
+            style={{ flex: 1 }}
             renderItem={({item}) => (
               <TouchableOpacity
                 style={[
-                  $.flex_1,
                   $.p_small,
                   $.bg_tint_11,
                   $.border_rounded,
-                  $.m_small,
                   $.border,
-                  $.flex_row,
                   $.align_items_center,
-                  item.statuscode === 'Booked' ? $.bg_danger : $.bg_tint_9,
+                  { 
+                    width: '30%',
+                    marginHorizontal: 5,
+                    opacity: item.statuscode === 'Booked' ? 0.6 : 1
+                  }
                 ]}
+                disabled={item.statuscode === 'Booked'}
                 onPress={() => {
                   var a = {...item};
                   a.totime = item.fromtime;
-
                   setSelectedtiming(a);
-                  console.log('item', item.totime);
-
                   bottomSheetRef.current?.open();
                 }}>
-                {/* Time Display */}
-                <AppText style={[$.fw_medium, $.mr_big, $.text_primary5]}>
-                  {item.fromtime} - {item.totime}
-                </AppText>
-
-                {/* Status Display */}
-                <AppText
-                  style={[
-                    $.text_tint_2,
-                    $.text_right,
-                    item.statuscode === 'Booked'
-                      ? $.text_primary5
-                      : $.text_tint_6,
-                  ]}>
-                  {item?.statuscode ? `${item.statuscode}` : 'N/A'}
+                <AppText style={[$.fw_medium, $.text_primary5, { textAlign: 'center' }]}>
+                  {item.fromtime.split(':').slice(0, 2).join(':')}
                 </AppText>
               </TouchableOpacity>
             )}
           />
-        </AppView>
-      )}
+        ) : (
+          <AppText style={[$.fs_small, $.text_tint_ash, $.text_center, $.py_normal]}>
+            No time slots available for this date
+          </AppText>
+        )}
+      </AppView>
 
       <DatePickerComponent
         date={seleteddate}
