@@ -69,12 +69,20 @@ export function UserAppoinmentScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<BookedAppoinmentRes | null>(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [selectedPaymentType, setSelectedPaymentType] = useState('Cash');
+  const [paymentName, setPaymentName] = useState('');
+  const [paymentCode, setPaymentCode] = useState('');
  
   // Data states
   const [UserApponmentlist, setUserAppoinmentList] = useState<BookedAppoinmentRes[]>([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<BookedAppoinmentRes[]>([]);
+  const [previousAppointments, setPreviousAppointments] = useState<BookedAppoinmentRes[]>([]);
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'previous'>('upcoming');
 
   // Refs
   const cancelSheetRef = useRef<any>(null);
+  const paymentSheetRef = useRef<any>(null);
 
   // Services
   const usercontext = useAppSelector(selectusercontext);
@@ -110,6 +118,21 @@ export function UserAppoinmentScreen() {
 
       const res = await appoinmentservices.SelectBookedAppoinment(req);
       setUserAppoinmentList(res || []);
+      
+      // Separate appointments into upcoming and previous
+      const now = new Date();
+      const upcoming = res?.filter(appointment => {
+        const appointmentDate = new Date(appointment.appoinmentdate);
+        return appointmentDate >= now;
+      }) || [];
+      
+      const previous = res?.filter(appointment => {
+        const appointmentDate = new Date(appointment.appoinmentdate);
+        return appointmentDate < now;
+      }) || [];
+
+      setUpcomingAppointments(upcoming);
+      setPreviousAppointments(previous);
     } catch (error: any) {
       handleError(error);
     } finally {
@@ -143,6 +166,51 @@ export function UserAppoinmentScreen() {
       setCancelReason('');
       
       AppAlert({ message: 'Appointment cancelled successfully' });
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setIsloading(false);
+    }
+  };
+
+  const handlePayment = async () => {
+    if (!selectedAppointment || !paymentAmount) {
+      AppAlert({ message: 'Please fill in all required fields' });
+      return;
+    }
+
+    try {
+      setIsloading(true);
+      const req = new UpdatePaymentReq();
+      req.appoinmentid = selectedAppointment.id;
+      req.paymenttype = selectedPaymentType;
+      req.paymenttypeid = selectedPaymentType === 'Cash' ? 1 : 
+                         selectedPaymentType === 'Card' ? 2 : 3;
+      req.amount = Number(paymentAmount) || 0;
+      req.paymentname = paymentName;
+      req.paymentcode = paymentCode;
+      req.statusid = 1; // Assuming 1 is for completed payment
+      req.customername = selectedAppointment.username || '';
+      req.customerid = selectedAppointment.userid || 0;
+      req.organisationid = selectedAppointment.organizationid || 0;
+      req.organisationlocationid = selectedAppointment.organisationlocationid || 0;
+      
+      await appoinmentservices.UpdatePayment(req);
+      
+      // Refresh the appointments list
+      await getuserappoinment();
+      
+      // Close the bottom sheet
+      paymentSheetRef.current?.close();
+      
+      // Reset states
+      setSelectedAppointment(null);
+      setPaymentAmount('');
+      setSelectedPaymentType('Cash');
+      setPaymentName('');
+      setPaymentCode('');
+      
+      AppAlert({ message: 'Payment updated successfully' });
     } catch (error) {
       handleError(error);
     } finally {
@@ -279,7 +347,7 @@ export function UserAppoinmentScreen() {
         </View>
       )}
 
-      <AppView style={[$.flex_row, $.justify_content_center]}>
+      <View style={styles.actionContainer}>
         {item.statuscode !== 'CANCELLED' && item.statuscode !== 'COMPLETED' && (
           <TouchableOpacity
             style={[styles.cancelButton, $.bg_danger]}
@@ -291,17 +359,31 @@ export function UserAppoinmentScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Payment status */}
-        <View
-          style={[
-            styles.paymentBadge,
-            item.ispaid ? styles.paidBadge : styles.unpaidBadge,
-          ]}>
-          <AppText style={styles.paymentText}>
-            {item.ispaid ? 'PAID' : 'PENDING PAYMENT'}
-          </AppText>
-        </View>
-      </AppView>
+        {!item.ispaid && item.statuscode !== 'CANCELLED' && (
+          <TouchableOpacity
+            style={[styles.payButton, $.bg_success]}
+            onPress={() => {
+              setSelectedAppointment(item);
+              setPaymentAmount(item.attributes?.servicelist?.reduce(
+                (total, service) => total + (Number(service.serviceprice) || 0),
+                0,
+              ).toString() || '');
+              paymentSheetRef.current?.open();
+            }}>
+            <AppText style={styles.payButtonText}>Pay Now</AppText>
+          </TouchableOpacity>
+        )}
+
+        {item.ispaid && (
+          <View
+            style={[
+              styles.paymentBadge,
+              styles.paidBadge,
+            ]}>
+            <AppText style={styles.paymentText}>PAID</AppText>
+          </View>
+        )}
+      </View>
     </TouchableOpacity>
   );
 
@@ -315,6 +397,38 @@ export function UserAppoinmentScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Tab Buttons */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeTab === 'upcoming' && styles.activeTabButton,
+          ]}
+          onPress={() => setActiveTab('upcoming')}>
+          <AppText
+            style={[
+              styles.tabButtonText,
+              activeTab === 'upcoming' && styles.activeTabButtonText,
+            ]}>
+            Upcoming
+          </AppText>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeTab === 'previous' && styles.activeTabButton,
+          ]}
+          onPress={() => setActiveTab('previous')}>
+          <AppText
+            style={[
+              styles.tabButtonText,
+              activeTab === 'previous' && styles.activeTabButtonText,
+            ]}>
+            Previous
+          </AppText>
+        </TouchableOpacity>
+      </View>
+
       {/* Content */}
       {isloading && !isRefreshing ? (
         <View style={styles.loadingContainer}>
@@ -323,7 +437,7 @@ export function UserAppoinmentScreen() {
         </View>
       ) : (
         <FlatList
-          data={UserApponmentlist}
+          data={activeTab === 'upcoming' ? upcomingAppointments : previousAppointments}
           nestedScrollEnabled
           showsVerticalScrollIndicator={false}
           keyExtractor={item => item.id.toString()}
@@ -344,7 +458,9 @@ export function UserAppoinmentScreen() {
                 size={48}
               />
               <AppText style={styles.emptyText}>
-                You have no appointments yet
+                {activeTab === 'upcoming'
+                  ? 'You have no upcoming appointments'
+                  : 'You have no previous appointments'}
               </AppText>
               <TouchableOpacity
                 style={styles.refreshButton}
@@ -356,6 +472,76 @@ export function UserAppoinmentScreen() {
           contentContainerStyle={styles.listContentContainer}
         />
       )}
+
+      {/* Payment Bottom Sheet */}
+      <BottomSheetComponent
+        ref={paymentSheetRef}
+        screenname="Payment Options"
+        Save={handlePayment}
+        close={() => {
+          paymentSheetRef.current?.close();
+          setPaymentAmount('');
+          setSelectedPaymentType('Cash');
+          setPaymentName('');
+          setPaymentCode('');
+        }}
+        showbutton={true}>
+        <ScrollView
+          contentContainerStyle={[$.p_medium]}
+          nestedScrollEnabled={true}>
+          <AppText style={[$.fw_semibold, $.mb_medium]}>
+            Payment Details
+          </AppText>
+          
+          {/* Payment Type Selection */}
+          <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Type</AppText>
+          <AppView style={[$.flex_row, $.mb_small]}>
+            <TouchableOpacity
+              style={[$.p_small, $.mr_small, $.bg_tint_10, $.border_rounded]}
+              onPress={() => setSelectedPaymentType('Cash')}>
+              <AppText style={[$.fw_medium, selectedPaymentType === 'Cash' && $.text_success]}>Cash</AppText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[$.p_small, $.mr_small, $.bg_tint_10, $.border_rounded]}
+              onPress={() => setSelectedPaymentType('Card')}>
+              <AppText style={[$.fw_medium, selectedPaymentType === 'Card' && $.text_success]}>Card</AppText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[$.p_small, $.bg_tint_10, $.border_rounded]}
+              onPress={() => setSelectedPaymentType('Online')}>
+              <AppText style={[$.fw_medium, selectedPaymentType === 'Online' && $.text_success]}>Online</AppText>
+            </TouchableOpacity>
+          </AppView>
+
+          {/* Amount Input */}
+          <AppText style={[$.fw_medium, $.mb_tiny]}>Amount</AppText>
+          <AppTextInput
+            style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
+            placeholder="Enter amount"
+            keyboardtype="numeric"
+            value={paymentAmount}
+            onChangeText={setPaymentAmount}
+          />
+
+          {/* Payment Name (Optional) */}
+          <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Name (Optional)</AppText>
+          <AppTextInput
+            style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
+            placeholder="e.g., Credit Card, UPI, etc."
+            value={paymentName}
+            onChangeText={setPaymentName}
+          />
+
+          {/* Payment Code (Optional) */}
+          <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Code/Reference</AppText>
+          <AppTextInput
+            style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
+            placeholder="Transaction ID or Reference"
+            value={paymentCode}
+            onChangeText={setPaymentCode}
+          />
+        </ScrollView>
+      </BottomSheetComponent>
 
       {/* Cancellation Bottom Sheet */}
       <BottomSheetComponent
@@ -443,101 +629,101 @@ const styles = StyleSheet.create({
   },
   appointmentCard: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 12,
+    marginVertical: 6,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    borderLeftWidth: 6,
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+    borderLeftWidth: 4,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#333',
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: 'white',
   },
   timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   timeText: {
-    marginLeft: 8,
-    fontSize: 14,
+    marginLeft: 6,
+    fontSize: 13,
     color: '#666',
   },
   infoContainer: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   infoText: {
-    marginLeft: 8,
-    fontSize: 14,
+    marginLeft: 6,
+    fontSize: 13,
     color: '#444',
   },
   locationTextContainer: {
-    marginLeft: 8,
+    marginLeft: 6,
   },
   organisationText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: '#444',
   },
   locationText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#777',
   },
   servicesContainer: {
-    borderTopWidth: 1,
+    borderTopWidth: 0.5,
     borderTopColor: '#eee',
-    paddingTop: 12,
-    marginBottom: 12,
+    paddingTop: 8,
+    marginBottom: 8,
   },
   servicesTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   serviceItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
+    paddingVertical: 4,
+    borderBottomWidth: 0.5,
     borderBottomColor: '#f5f5f5',
   },
   serviceName: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#555',
     flex: 1,
     marginRight: 8,
   },
   servicePrice: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
     color: '#333',
   },
@@ -545,25 +731,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 0.5,
     borderTopColor: '#ddd',
   },
   totalText: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '600',
     color: '#333',
   },
   totalAmount: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#333',
   },
+  actionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: '#eee',
+  },
   paymentBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   paidBadge: {
     backgroundColor: '#4CAF50',
@@ -572,17 +767,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#F44336',
   },
   paymentText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: 'white',
   },
   cancelButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   cancelButtonText: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'white',
+  },
+  payButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  payButtonText: {
+    fontSize: 11,
     fontWeight: '600',
     color: 'white',
   },
@@ -608,5 +813,32 @@ const styles = StyleSheet.create({
   refreshButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+  },
+  activeTabButton: {
+    backgroundColor: $.tint_3,
+  },
+  tabButtonText: {
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  activeTabButtonText: {
+    color: 'white',
   },
 });

@@ -24,6 +24,8 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
+  View,
 } from 'react-native';
 import {Line} from 'react-native-svg';
 import {AppAlert} from '../../components/appalert.component';
@@ -93,6 +95,7 @@ export function ServiceScreen() {
   const PrimarybottomSheetRef = useRef<any>(null);
   const SecondarybottomSheetRef = useRef<any>(null);
   const getLocationDetailbottomSheetRef = useRef<any>(null);
+  const [showBusinessDetails, setShowBusinessDetails] = useState(false);
 
   // Fetch initial data
   const getInitialData = async () => {
@@ -119,7 +122,6 @@ export function ServiceScreen() {
   const getLocationDetail = async (id: number) => {
     try {
       setIsloading(true);
-
       const req = new OrgLocationReq();
       req.orglocid = id;
       const res = await organisationlocationservice.SelectlocationDetail(req);
@@ -147,7 +149,7 @@ export function ServiceScreen() {
             return s;
           }) || [];
 
-        // Map Timings (converting TimeSpan to string if needed)
+        // Map Timings
         locationDetail.Timings =
           responseData.Timings?.map(timing => {
             const t = new Timing();
@@ -166,7 +168,7 @@ export function ServiceScreen() {
           }) || [];
 
         Setorganisationdetail(locationDetail);
-        getLocationDetailbottomSheetRef.current.open();
+        setShowBusinessDetails(true);
       }
     } catch (error) {
       console.error('Error loading location details:', error);
@@ -296,12 +298,11 @@ export function ServiceScreen() {
   return (
     <AppView style={[$.bg_tint_11, $.flex_1]}>
       {/* Header with filter button */}
-      <AppView style={[$.flex_row, $.align_items_center, $.p_small]}>
+      <AppView style={[$.flex_row, $.align_items_center, $.p_normal, { backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.1)' }]}>
         <AppText
           style={[
             $.fs_medium,
             $.fw_semibold,
-            $.p_small,
             $.text_primary2,
             $.flex_1,
           ]}>
@@ -311,12 +312,32 @@ export function ServiceScreen() {
         <TouchableOpacity
           onPress={() => {
             PrimarybottomSheetRef.current.open();
-          }}>
+          }}
+          style={[
+            $.flex_row,
+            $.align_items_center,
+            $.border,
+            $.border_rounded,
+            $.px_small,
+            $.py_tiny,
+            $.border_tint_7,
+            { 
+              backgroundColor: 'white',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 2,
+              elevation: 2
+            }
+          ]}>
           <CustomIcon
             color={$.tint_primary_5}
             name={CustomIcons.Filter}
-            size={$.s_medium}
+            size={$.s_small}
           />
+          <AppText style={[$.ml_tiny, $.fs_small, $.text_primary5]}>
+            Filter
+          </AppText>
         </TouchableOpacity>
       </AppView>
 
@@ -333,7 +354,7 @@ export function ServiceScreen() {
         <FlatList
           data={filteredOrganisations}
           nestedScrollEnabled={true}
-          contentContainerStyle={{paddingBottom: 100}}
+          contentContainerStyle={{paddingBottom: 100, paddingTop: 16}}
           showsHorizontalScrollIndicator={false}
           refreshing={isRefreshing}
           onRefresh={getInitialData}
@@ -375,36 +396,58 @@ export function ServiceScreen() {
           renderItem={({item, index}) => (
             <AppView
               style={[
-                $.elevation_4,
-                $.border_rounded,
-                $.bg_tint_11,
                 $.mb_medium,
                 $.mx_small,
-                {borderLeftWidth: 4, borderLeftColor: $.tint_3},
+                {
+                  backgroundColor: 'white',
+                  borderRadius: 12,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 8,
+                  elevation: 4,
+                  borderLeftWidth: 4,
+                  borderLeftColor: $.tint_3,
+                },
               ]}>
               {/* Header Section */}
-              <AppView style={[$.p_medium, $.pb_small]}>
+              <AppView style={[$.p_medium]}>
                 <AppView style={[$.flex_row, $.align_items_center]}>
                   <AppText
-                    style={[$.fw_bold, $.fs_big, $.text_primary5, $.flex_1]}>
+                    style={[$.fw_bold, $.fs_normal, $.text_primary5, $.flex_1]}>
                     {item.organisationname}
                   </AppText>
                   <TouchableOpacity
                     onPress={() => {
                       getLocationDetail(item.organisationlocationid);
                     }}
-                    style={[$.p_tiny, $.border_rounded2, $.bg_tint_10]}>
+                    style={[
+                      $.p_tiny,
+                      $.border_rounded2,
+                      {
+                        backgroundColor: 'rgba(0,0,0,0.05)',
+                        width: 32,
+                        height: 32,
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }
+                    ]}>
                     <CustomIcon
                       color={$.tint_3}
                       name={CustomIcons.Information}
-                      size={$.s_medium}
+                      size={$.s_small}
                     />
                   </TouchableOpacity>
                 </AppView>
 
                 {/* Address with Location Icon */}
                 <AppView style={[$.flex_row, $.align_items_center, $.mt_small]}>
-                  <AppText style={[$.text_tint_ash, $.fs_small, $.flex_1]}>
+                  <CustomIcon
+                    name={CustomIcons.LocationPin}
+                    color={$.tint_2}
+                    size={$.s_small}
+                  />
+                  <AppText style={[$.text_tint_ash, $.fs_small, $.ml_small, $.flex_1]}>
                     {item.organisationlocationname},{' '}
                     {item.organisationlocationaddressline1},{' '}
                     {item.organisationlocationcity},{' '}
@@ -422,13 +465,26 @@ export function ServiceScreen() {
                   $.p_medium,
                   $.pt_small,
                   $.border_top,
-                  {borderTopColor: $.tint_10},
+                  {
+                    borderTopColor: 'rgba(0,0,0,0.1)',
+                    backgroundColor: 'rgba(0,0,0,0.02)',
+                    borderBottomLeftRadius: 12,
+                    borderBottomRightRadius: 12
+                  },
                 ]}>
                 {/* Tags */}
                 <AppView style={[$.flex_row, $.flex_wrap_wrap, $.flex_1]}>
                   {item.organisationprimarytypecode && (
                     <AppView
-                      style={[$.bg_tint_9, $.px_small, $.py_tiny, $.mr_small]}>
+                      style={[
+                        $.px_small,
+                        $.py_tiny,
+                        $.mr_small,
+                        $.border_rounded,
+                        {
+                          backgroundColor: 'rgba(0,0,0,0.05)'
+                        }
+                      ]}>
                       <AppText style={[$.fw_medium, $.fs_small, $.text_tint_2]}>
                         {item.organisationprimarytypecode}
                       </AppText>
@@ -436,7 +492,15 @@ export function ServiceScreen() {
                   )}
 
                   {item.organisationsecondarytypecode && (
-                    <AppView style={[$.bg_tint_10, $.px_small, $.py_tiny]}>
+                    <AppView
+                      style={[
+                        $.px_small,
+                        $.py_tiny,
+                        $.border_rounded,
+                        {
+                          backgroundColor: 'rgba(0,0,0,0.03)'
+                        }
+                      ]}>
                       <AppText style={[$.fw_medium, $.fs_small, $.text_tint_1]}>
                         {item.organisationsecondarytypecode}
                       </AppText>
@@ -447,16 +511,21 @@ export function ServiceScreen() {
                 {/* Book Appointment Button */}
                 <TouchableOpacity
                   style={[
-                    $.elevation_2,
                     $.border_rounded,
-                    $.bg_tint_3,
-                    $.p_small,
+                    $.px_small,
+                    $.py_tiny,
                     $.flex_row,
                     $.align_items_center,
+                    {
+                      backgroundColor: $.tint_3,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      elevation: 2
+                    }
                   ]}
                   onPress={() => {
-                    console.log( item.organisationid, item.organisationlocationid);
-                    
                     navigation.navigate('AppoinmentFixing', {
                       organisationid: item.organisationid,
                       organisationlocationid: item.organisationlocationid,
@@ -467,7 +536,7 @@ export function ServiceScreen() {
                     name={CustomIcons.Scheduled}
                     size={$.s_small}
                   />
-                  <AppText style={[$.fw_medium, $.fs_small, $.text_tint_11]}>
+                  <AppText style={[$.fw_medium, $.fs_small, $.text_tint_11, $.ml_small]}>
                     Book Now
                   </AppText>
                 </TouchableOpacity>
@@ -516,11 +585,16 @@ export function ServiceScreen() {
                     $.px_small,
                     $.py_small,
                     {
-                      backgroundColor: '#f8f9fa',
-                      borderColor: '#dee2e6',
+                      backgroundColor: 'white',
+                      borderColor: 'rgba(0,0,0,0.1)',
                       minWidth: 120,
                       alignItems: 'center',
                       justifyContent: 'center',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 2,
+                      elevation: 1
                     },
                   ]}>
                   <AppText
@@ -578,11 +652,16 @@ export function ServiceScreen() {
                     $.px_small,
                     $.py_small,
                     {
-                      backgroundColor: '#f8f9fa',
-                      borderColor: '#dee2e6',
+                      backgroundColor: 'white',
+                      borderColor: 'rgba(0,0,0,0.1)',
                       minWidth: 120,
                       alignItems: 'center',
                       justifyContent: 'center',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 2,
+                      elevation: 1
                     },
                   ]}>
                   <AppText
@@ -601,87 +680,182 @@ export function ServiceScreen() {
         </AppView>
       </BottomSheetComponent>
 
-      <BottomSheetComponent
-        ref={getLocationDetailbottomSheetRef}
-        screenname={'Business Details'}
-        Save={() => {}}
-        showbutton={false}
-        close={() => getLocationDetailbottomSheetRef.current?.close()}>
-        <ScrollView contentContainerStyle={{padding: 16}}>
-          {/* Business Info */}
-          <AppText style={{fontSize: 18, fontWeight: 'bold', marginBottom: 8}}>
-            {organisationdetail.BusinessName || 'Business Name Not Available'}
-          </AppText>
-          <AppText>
-            {organisationdetail.StreetName &&
-              `${organisationdetail.StreetName}, `}
-            {organisationdetail.Area}
-          </AppText>
-          <AppText>
-            {organisationdetail.City && `${organisationdetail.City}, `}
-            {organisationdetail.State && `${organisationdetail.State}`}
-            {organisationdetail.PostalCode &&
-              ` - ${organisationdetail.PostalCode}`}
-          </AppText>
+      {/* Business Details Modal */}
+      <Modal
+        visible={showBusinessDetails}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowBusinessDetails(false)}>
+        <View style={{ 
+          flex: 1, 
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20
+        }}>
+          <View style={{ 
+            width: '90%',
+            maxHeight: '80%',
+            backgroundColor: 'white',
+            borderRadius: 16,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 8,
+            elevation: 5
+          }}>
+            {/* Header */}
+            <AppView style={[
+              $.flex_row, 
+              $.align_items_center, 
+              $.p_medium, 
+              { 
+                borderBottomWidth: 1, 
+                borderBottomColor: 'rgba(0,0,0,0.1)',
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                backgroundColor: 'rgba(0,0,0,0.02)'
+              }
+            ]}>
+              <AppText style={[$.fs_medium, $.fw_semibold, $.flex_1]}>
+                Business Details
+              </AppText>
+              <TouchableOpacity
+                onPress={() => setShowBusinessDetails(false)}
+                style={[
+                  $.p_tiny,
+                  $.border_rounded,
+                  { backgroundColor: 'rgba(0,0,0,0.05)' }
+                ]}>
+                <CustomIcon
+                  name={CustomIcons.Close}
+                  color={$.tint_2}
+                  size={$.s_small}
+                />
+              </TouchableOpacity>
+            </AppView>
 
-          {/* Divider */}
-          <AppView
-            style={{height: 1, backgroundColor: '#ccc', marginVertical: 12}}
-          />
-
-          {/* Services */}
-          <AppText style={{fontSize: 16, fontWeight: '600', marginBottom: 8}}>
-            Services Offered
-          </AppText>
-          {organisationdetail.Services.length > 0 ? (
-            organisationdetail.Services.map((service, index) => (
-              <AppView
-                key={index}
-                style={{
-                  marginBottom: 12,
-                  padding: 10,
-                  backgroundColor: '#f9f9f9',
-                  borderRadius: 8,
-                }}>
-                <AppText style={{fontWeight: '500'}}>
-                  {service.ServiceName || 'Unnamed Service'}
-                </AppText>
-                <AppText>Price: ₹{service.Price || 0}</AppText>
-                {service.OfferPrice > 0 && (
-                  <AppText style={{color: 'green'}}>
-                    Offer: ₹{service.OfferPrice}
+            {/* Content */}
+            <ScrollView 
+              contentContainerStyle={{padding: 16}}
+              showsVerticalScrollIndicator={false}>
+              {/* Business Info */}
+              <AppText style={[$.fs_normal, $.fw_bold, $.mb_small, $.text_primary5]}>
+                {organisationdetail.BusinessName || 'Business Name Not Available'}
+              </AppText>
+              
+              {/* Address Section */}
+              <AppView style={[$.mb_small, $.p_small, $.border_rounded, { backgroundColor: 'rgba(0,0,0,0.02)' }]}>
+                <AppView style={[$.flex_row, $.align_items_center, $.mb_tiny]}>
+                  <CustomIcon
+                    name={CustomIcons.LocationPin}
+                    color={$.tint_2}
+                    size={$.s_small}
+                  />
+                  <AppText style={[$.ml_small, $.text_tint_ash, $.fw_medium, $.fs_small]}>
+                    Address
                   </AppText>
-                )}
-                <AppText>Duration: {service.Duration || 0} mins</AppText>
-              </AppView>
-            ))
-          ) : (
-            <AppText>No services listed.</AppText>
-          )}
-
-          {/* Divider */}
-          <AppView
-            style={{height: 1, backgroundColor: '#ccc', marginVertical: 12}}
-          />
-
-          {/* Timings */}
-          <AppText style={{fontSize: 16, fontWeight: '600', marginBottom: 8}}>
-            Business Timings
-          </AppText>
-          {organisationdetail.Timings.length > 0 ? (
-            organisationdetail.Timings.map((timing, index) => (
-              <AppView key={index} style={{marginBottom: 8}}>
-                <AppText>
-                  {getDayName(timing.Day)}: {formatTime(timing.StartTime)} -{' '}
-                  {formatTime(timing.EndTime)}
+                </AppView>
+                <AppText style={[$.text_tint_ash, $.ml_small, $.fs_small]}>
+                  {organisationdetail.StreetName &&
+                    `${organisationdetail.StreetName}, `}
+                  {organisationdetail.Area}
+                </AppText>
+                <AppText style={[$.text_tint_ash, $.ml_small, $.mt_tiny, $.fs_small]}>
+                  {organisationdetail.City && `${organisationdetail.City}, `}
+                  {organisationdetail.State && `${organisationdetail.State}`}
+                  {organisationdetail.PostalCode &&
+                    ` - ${organisationdetail.PostalCode}`}
                 </AppText>
               </AppView>
-            ))
-          ) : (
-            <AppText>No timings available.</AppText>
-          )}
-        </ScrollView>
-      </BottomSheetComponent>
+
+              {/* Services Section */}
+              <AppText style={[$.fs_small, $.fw_semibold, $.mb_small, $.text_primary5]}>
+                Services Offered
+              </AppText>
+              {organisationdetail.Services.length > 0 ? (
+                organisationdetail.Services.map((service, index) => (
+                  <AppView
+                    key={index}
+                    style={[
+                      $.mb_small,
+                      $.p_small,
+                      $.border_rounded,
+                      {
+                        backgroundColor: 'white',
+                        borderWidth: 1,
+                        borderColor: 'rgba(0,0,0,0.1)',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 1
+                      }
+                    ]}>
+                    <AppText style={[$.fw_medium, $.text_primary5, $.fs_small]}>
+                      {service.ServiceName || 'Unnamed Service'}
+                    </AppText>
+                    <AppView style={[$.flex_row, $.align_items_center, $.mt_tiny]}>
+                      <AppText style={[$.text_tint_ash, $.fs_small]}>
+                        Price: ₹{service.Price || 0}
+                      </AppText>
+                      {service.OfferPrice > 0 && (
+                        <AppText style={[$.ml_small, { color: 'green' }, $.fs_small]}>
+                          Offer: ₹{service.OfferPrice}
+                        </AppText>
+                      )}
+                    </AppView>
+                    <AppText style={[$.text_tint_ash, $.mt_tiny, $.fs_small]}>
+                      Duration: {service.Duration || 0} mins
+                    </AppText>
+                  </AppView>
+                ))
+              ) : (
+                <AppText style={[$.text_tint_ash, $.p_small, $.border_rounded, $.fs_small, { backgroundColor: 'rgba(0,0,0,0.02)' }]}>
+                  No services listed.
+                </AppText>
+              )}
+
+              {/* Timings Section */}
+              <AppText style={[$.fs_small, $.fw_semibold, $.mb_small, $.mt_small, $.text_primary5]}>
+                Business Timings
+              </AppText>
+              {organisationdetail.Timings.length > 0 ? (
+                organisationdetail.Timings.map((timing, index) => (
+                  <AppView 
+                    key={index} 
+                    style={[
+                      $.mb_small,
+                      $.p_small,
+                      $.border_rounded,
+                      {
+                        backgroundColor: 'white',
+                        borderWidth: 1,
+                        borderColor: 'rgba(0,0,0,0.1)',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 1
+                      }
+                    ]}>
+                    <AppText style={[$.fw_medium, $.text_primary5, $.fs_small]}>
+                      {getDayName(timing.Day)}
+                    </AppText>
+                    <AppText style={[$.text_tint_ash, $.mt_tiny, $.fs_small]}>
+                      {formatTime(timing.StartTime)} - {formatTime(timing.EndTime)}
+                    </AppText>
+                  </AppView>
+                ))
+              ) : (
+                <AppText style={[$.text_tint_ash, $.p_small, $.border_rounded, $.fs_small, { backgroundColor: 'rgba(0,0,0,0.02)' }]}>
+                  No timings available.
+                </AppText>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </AppView>
   );
 }
