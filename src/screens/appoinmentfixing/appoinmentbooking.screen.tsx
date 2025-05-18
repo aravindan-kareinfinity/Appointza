@@ -450,6 +450,62 @@ export function AppoinmentBookingScreen() {
         )}
       </AppView>
 
+      <BottomSheetComponent
+        ref={bottomSheetRef}
+        screenname="Available Service"
+        Save={save}
+        close={closeBottomSheet}>
+        <AppView>
+          <AppText>
+            {seletedTiming.fromtime} -{seletedTiming.totime}
+          </AppText>
+        </AppView>
+
+        <FlatList
+          data={organisationservices}
+          nestedScrollEnabled={true}
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({item}) => {
+            const isSelected = selectedService.some(
+              service => service.id === item.id,
+            );
+
+            return (
+              <AppView style={[$.flex_row]}>
+                <TouchableOpacity
+                  onPress={() => handleServiceSelection(item)}
+                  style={[$.p_small, $.flex_1]}>
+                  <AppText style={[$.text_primary5, $.fs_compact, $.fw_bold]}>
+                    {item.Servicename}
+                  </AppText>
+                  <AppText style={[$.fs_small, $.text_tint_ash]}>
+                    {item.timetaken} min session
+                  </AppText>
+                  <AppText style={[$.fs_small, $.flex_1, $.text_tint_ash]}>
+                    <AppText
+                      style={[
+                        $.flex_1,
+                        {textDecorationLine: 'line-through', color: 'gray'},
+                      ]}>
+                      ₹{item.prize}
+                    </AppText>
+                    <AppText>₹{item.offerprize}</AppText>
+                  </AppText>
+                </TouchableOpacity>
+
+                {isSelected && (
+                  <CustomIcon
+                    name={CustomIcons.SingleTick}
+                    color={$.tint_2}
+                    size={$.s_compact}></CustomIcon>
+                )}
+              </AppView>
+            );
+          }}
+        />
+      </BottomSheetComponent>
+
       <DatePickerComponent
         date={seleteddate}
         show={showdatepicker}
