@@ -22,6 +22,7 @@ import {
   ScrollView,
   Touchable,
   TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { CustomIcon, CustomIcons } from '../../components/customicons.component';
@@ -107,6 +108,8 @@ export function SignUpScreen(props: SignUpScreenProp) {
   const pickAndUploadImage = async () => {
     try {
       const images = await imagepickerutil.launchImageLibrary();
+      console.log(images);
+
       const files = await filesService.upload(images);
       if (files.length > 0) {
         setSignUpModel(prev => ({
@@ -249,7 +252,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
       </TouchableOpacity>
 
       {isOrganization && (
-        <>
+        <View>
           <AppSingleSelect
             data={primaryBusinessTypes}
             keyExtractor={item => item.id.toString()}
@@ -268,6 +271,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
                 secondarytype: 0,
                 secondarytypecode: '',
               }));
+              
               fetchReferenceValues(item.id);
             }}
             title="Business Type"
@@ -308,7 +312,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
             onChangeText={text => setSignUpModel(prev => ({ ...prev, organisationgstnumber: text }))}
             style={[$.mb_normal]}
           />
-        </>
+        </View>
       )}
 
       {/* Location Picker */}

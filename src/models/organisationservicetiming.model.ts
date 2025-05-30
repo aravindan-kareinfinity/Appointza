@@ -64,6 +64,48 @@ export class OrganisationServiceTimingDeleteReq {
   organizationlocationid:number = 0;
 }
 
+export class Leavereq {
+  organisationlocationid: number = 0;
+  organisationid: number = 0;
+  appointmentdate: Date = new Date();
+  
+  // Store as strings in "HH:mm" format
+  start_time: string = "";
+  end_time: string = "";
+
+  isforce: boolean = false;
+  isfullday: boolean = false;
+  
+  // Helper method to convert time string to Date
+  getStartTimeAsDate(): Date | null {
+    if (!this.start_time) return null;
+    const [hours, minutes] = this.start_time.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  }
+
+  // Helper method to convert time string to Date
+  getEndTimeAsDate(): Date | null {
+    if (!this.end_time) return null;
+    const [hours, minutes] = this.end_time.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  }
+
+  // Helper method to set time from Date object
+  setStartTimeFromDate(date: Date): void {
+    this.start_time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  }
+
+  // Helper method to set time from Date object
+  setEndTimeFromDate(date: Date): void {
+    this.end_time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  }
+}
+
+
 export enum Weeks {
   Monday = 1,
   Tuesday = 2,

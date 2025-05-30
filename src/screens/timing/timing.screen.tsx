@@ -8,7 +8,7 @@ import {
 } from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AppStackParamList} from '../../appstack.navigation';
-import {useMemo, useState} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {
@@ -31,6 +31,7 @@ import React from 'react';
 import {OrganisationSelectReq} from '../../models/organisation.model';
 import {OrganisationService} from '../../services/organisation.service';
 import {
+  Leavereq,
   OrganisationServiceTiming,
   OrganisationServiceTimingDeleteReq,
   OrganisationServiceTimingFinal,
@@ -44,6 +45,8 @@ import {environment} from '../../utils/environment';
 import {AppTextInput} from '../../components/apptextinput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {AppButton} from '../../components/appbutton.component';
+import {AppSwitch} from '../../components/appswitch.component';
+import { BottomSheetComponent } from '../../components/bottomsheet.component';
 
 type TimingScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Timing'>,
@@ -59,6 +62,16 @@ export function TimingScreen() {
     useState<OrganisationLocation>(new OrganisationLocation());
   const [modalVisible, setModalVisible] = useState(false);
   const [isloading, setIsloading] = useState(false);
+
+  // Leave Management States
+  const [selectedLeaveDate, setSelectedLeaveDate] = useState<Date | null>(null);
+  const [leaveRequest, setLeaveRequest] = useState<Leavereq>(new Leavereq());
+  const [showDatePickerForLeave, setShowDatePickerForLeave] = useState(false);
+  const [showTimePickerForLeave, setShowTimePickerForLeave] = useState({
+    show: false,
+    field: 'start_time' as 'start_time' | 'end_time'
+  });
+
   const organisationservice = useMemo(() => new OrganisationService(), []);
   const timingservice = useMemo(() => new OrganisationServiceTiming(), []);
   const organisationlocationservice = useMemo(
@@ -69,7 +82,6 @@ export function TimingScreen() {
     () => new OrganisationServiceTimingService(),
     [],
   );
-
   const [counter, setCounter] = useState(0);
   const [openbefore, setopenbefore] = useState(0);
 
@@ -250,8 +262,7 @@ export function TimingScreen() {
             req.day_of_week = parseInt(dayId);
             req.counter = counter;
             req.openbefore = openbefore;
-console.log( req.organisationid,
-  req.organisationlocationid);
+            console.log(req.organisationid, req.organisationlocationid);
 
             promises.push(organisationservicetimingservice.save(req));
           }
@@ -279,10 +290,105 @@ console.log( req.organisationid,
     setShowPicker({localid: null, dayId: null, field: 'start_time'});
   };
 
+  const LeaveRef = useRef<any>(null);
+
+  
+  // Handle Leave Submit
+  const handleLeaveSubmit = async () => {
+    try {
+      if (!leaveRequest.appointmentdate) {
+        Alert.alert('Error', 'Please select a date');
+        return;
+      }
+
+      if (!leaveRequest.isfullday && (!leaveRequest.start_time || !leaveRequest.end_time)) {
+        Alert.alert('Error', 'Please select start and end time for half day leave');
+        return;
+      }
+
+      // Prepare leave request data
+      const leaveReq = new Leavereq();
+      Object.assign(leaveReq, leaveRequest);
+      
+      // Call API to save leave
+      const response = await organisationservicetimingservice.BookLeave(leaveReq);
+      
+      if (response) {
+        Alert.alert('Success', 'Leave booked successfully');
+        LeaveRef.current?.close();
+        // Reset leave form
+        setLeaveRequest(new Leavereq());
+        setSelectedLeaveDate(null);
+      } else {
+        Alert.alert('Error', 'Failed to book leave');
+      }
+    } catch (error) {
+      console.error('Error booking leave:', error);
+      Alert.alert('Error', 'Failed to book leave');
+    }
+  };
+
+  // Handle date selection for leave
+  const handleLeaveDateSelect = (date: Date) => {
+    setSelectedLeaveDate(date);
+    const newLeaveRequest = new Leavereq();
+    Object.assign(newLeaveRequest, leaveRequest);
+    newLeaveRequest.appointmentdate = date;
+    setLeaveRequest(newLeaveRequest);
+    setShowDatePickerForLeave(false);
+  };
+
+  // Handle time selection for leave (half day)
+  const handleLeaveTimeSelect = (date: Date) => {
+    const newLeaveRequest = new Leavereq();
+    Object.assign(newLeaveRequest, leaveRequest);
+    
+    if (showTimePickerForLeave.field === 'start_time') {
+      newLeaveRequest.start_time = date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+    } else {
+      newLeaveRequest.end_time = date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+    }
+    
+    setLeaveRequest(newLeaveRequest);
+    setShowTimePickerForLeave({show: false, field: 'start_time'});
+  };
+
+  // Handle location selection for leave
+  const handleLocationSelect = (item: OrganisationLocation) => {
+    const newLeaveRequest = new Leavereq();
+    Object.assign(newLeaveRequest, leaveRequest);
+    newLeaveRequest.organisationid = item.organisationid;
+    newLeaveRequest.organisationlocationid = item.id;
+    setLeaveRequest(newLeaveRequest);
+    LeaveRef.current?.open();
+  };
+
+  // Handle full day toggle
+  const handleFullDayToggle = (value: boolean) => {
+    const newLeaveRequest = new Leavereq();
+    Object.assign(newLeaveRequest, leaveRequest);
+    newLeaveRequest.isfullday = value;
+    if (value) {
+      newLeaveRequest.start_time = '';
+      newLeaveRequest.end_time = '';
+    }
+    setLeaveRequest(newLeaveRequest);
+  };
+
   return (
     <ScrollView>
       <AppView style={[$.pt_medium, $.px_normal]}>
-        <AppView style={[$.mb_medium,$.flex_1]}>
+        <AppView style={[$.mb_medium, $.flex_1]}>
           <AppText style={[$.fs_compact, $.fw_bold, $.text_primary5]}>
             Location
           </AppText>
@@ -293,47 +399,176 @@ console.log( req.organisationid,
             showsHorizontalScrollIndicator={false}
             keyExtractor={(item, index) => index.toString()}
             renderItem={({item}) => (
-              <AppView style={[$.py_small, $.border_bottom, $.border_tint_10]}>
-                <AppText
-                  style={[
-                    $.text_tint_2,
-                    $.fw_medium,
-                    $.fs_compact,
-                    $.text_primary5,
-                  ]}>
-                  {item.name}
-                </AppText>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    gettimingdata(item.id);
-                    setSelectedOrganisationlocation(item);
-                    setModalVisible(true);
-                  }}
-                  style={[$.mt_extrasmall, $.flex_row, $.align_items_center]}>
-                  <CustomIcon size={20} color={''} name={CustomIcons.Clock} />
-
-                  <AppText style={[$.fw_bold, $.fs_compact, $.ml_extrasmall]}>
-                    Edit Business Hours
+              <AppView style={[$.flex_row,$.py_small, $.border_bottom, $.border_tint_10]}>
+                <AppView style={[ ]}>
+                  <AppText
+                    style={[
+                      $.text_tint_2,
+                      $.fw_medium,
+                      $.fs_compact,
+                      $.text_primary5,
+                    ]}>
+                    {item.name}
                   </AppText>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      gettimingdata(item.id);
+                      setSelectedOrganisationlocation(item);
+                      setModalVisible(true);
+                    }}
+                    style={[$.mt_extrasmall, $.flex_row, ]}>
+                    <CustomIcon size={20} color={''} name={CustomIcons.Clock} />
+
+                    <AppText style={[$.fw_bold, $.fs_compact, $.ml_extrasmall]}>
+                      Edit Business Hours
+                    </AppText>
+                  </TouchableOpacity>
+                </AppView>
+                <TouchableOpacity
+                  onPress={() => handleLocationSelect(item)}>
+                  <AppText>Book Leave</AppText>
                 </TouchableOpacity>
               </AppView>
             )}
           />
         </AppView>
 
+        {/* Leave Management Bottom Sheet */}
+        <BottomSheetComponent
+          ref={LeaveRef}
+          screenname="Book Leave"
+          Save={handleLeaveSubmit}
+          showbutton={true}
+          close={() => {
+            LeaveRef.current?.close();
+            setLeaveRequest(new Leavereq());
+            setSelectedLeaveDate(null);
+          }}>
+          <AppView style={[$.mb_medium, $.flex_1]}>
+            <AppView style={[$.mb_medium]}>
+              <AppText style={[$.mb_extrasmall, $.fw_medium]}>
+                Select Leave Date
+              </AppText>
+              <TouchableOpacity
+                onPress={() => setShowDatePickerForLeave(true)}
+                style={[
+                  $.border_rounded,
+                  $.border,
+                  $.p_small,
+                  $.bg_tint_11,
+                  $.flex_row,
+                  $.align_items_center,
+                ]}>
+                <CustomIcon size={20} color={''} name={CustomIcons.Account} />
+                <AppText style={[$.ml_small]}>
+                  {selectedLeaveDate
+                    ? selectedLeaveDate.toLocaleDateString()
+                    : 'Select Date'}
+                </AppText>
+              </TouchableOpacity>
+            </AppView>
+
+            <AppView style={[$.mb_medium]}>
+              <AppText style={[$.mb_extrasmall, $.fw_medium]}>
+                Leave Type
+              </AppText>
+              <AppView style={[$.flex_row, $.align_items_center]}>
+                <AppText style={[$.mr_small]}>Half Day</AppText>
+                <AppSwitch
+                  value={leaveRequest.isfullday}
+                  onValueChange={handleFullDayToggle}
+                />
+                <AppText style={[$.ml_small]}>Full Day</AppText>
+              </AppView>
+            </AppView>
+
+            {!leaveRequest.isfullday && (
+              <AppView style={[$.mb_medium]}>
+                <AppText style={[$.mb_extrasmall, $.fw_medium]}>
+                  Select Time Slot
+                </AppText>
+                <AppView style={[$.flex_row, $.align_items_center, $.mb_small]}>
+                  <TouchableOpacity
+                    onPress={() => 
+                      setShowTimePickerForLeave({show: true, field: 'start_time'})
+                    }
+                    style={[
+                      $.border,
+                      $.border_rounded,
+                      $.p_small,
+                      $.flex_1,
+                      $.bg_tint_11,
+                    ]}>
+                    <AppText style={[$.fs_compact, $.text_center]}>
+                      {leaveRequest.start_time || 'Start Time'}
+                    </AppText>
+                  </TouchableOpacity>
+
+                  <AppText style={[$.mx_small]}>to</AppText>
+
+                  <TouchableOpacity
+                    onPress={() => 
+                      setShowTimePickerForLeave({show: true, field: 'end_time'})
+                    }
+                    style={[
+                      $.border,
+                      $.border_rounded,
+                      $.p_small,
+                      $.flex_1,
+                      $.bg_tint_11,
+                    ]}>
+                    <AppText style={[$.fs_compact, $.text_center]}>
+                      {leaveRequest.end_time || 'End Time'}
+                    </AppText>
+                  </TouchableOpacity>
+                </AppView>
+              </AppView>
+            )}
+
+            <AppView style={[$.mb_medium]}>
+              <AppText style={[$.mb_extrasmall, $.fw_medium]}>Location</AppText>
+              <AppText style={[$.text_tint_2, $.fw_medium, $.fs_compact]}>
+                {Selectedorganisationlocation?.name || 'Not selected'}
+              </AppText>
+            </AppView>
+          </AppView>
+        </BottomSheetComponent>
+
+        {/* Date Picker for Leave */}
+        {showDatePickerForLeave && (
+          <DatePickerComponent
+            date={selectedLeaveDate || new Date()}
+            show={showDatePickerForLeave}
+            mode="date"
+            setShow={() => setShowDatePickerForLeave(false)}
+            setDate={handleLeaveDateSelect}
+          />
+        )}
+
+        {/* Time Picker for Leave (Half Day) */}
+        {showTimePickerForLeave.show && (
+          <DatePickerComponent
+            date={new Date()}
+            show={showTimePickerForLeave.show}
+            mode="time"
+            setShow={() => setShowTimePickerForLeave({show: false, field: 'start_time'})}
+            setDate={handleLeaveTimeSelect}
+          />
+        )}
+
         <AppButton
           onPress={() => {
-              navigation.dispatch(
-                       CommonActions.reset({
-                         index: 0,
-                         routes: [
-                           {
-                             name: 'HomeTab',
-                           },
-                         ],
-                       }),
-                     );
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [
+                  {
+                    name: 'HomeTab',
+                  },
+                ],
+              }),
+            );
           }}
           name={'Save'}></AppButton>
 
@@ -539,7 +774,6 @@ console.log( req.organisationid,
                   $.justify_content_center,
                   {backgroundColor: '#007bff'},
                 ]}>
-                {/* <Save size={16} color="#fff" style={[$.mr_small]} /> */}
                 <AppText
                   style={{fontSize: 16, color: '#fff', fontWeight: 'bold'}}>
                   Save Business Hours

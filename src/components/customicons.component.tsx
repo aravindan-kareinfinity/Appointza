@@ -120,6 +120,7 @@ export enum CustomIcons {
   OnlinePayment,
   GroupAppointment,
   Payment,
+  Date,
 }
 type Props = {
   size: number;

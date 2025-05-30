@@ -2,6 +2,7 @@ import { ActionReq } from '../models/actionreq.model';
 import { ActionRes } from '../models/actionres.model';
 import { Appoinment, AppoinmentFinal } from '../models/appoinment.model';
 import {
+    Leavereq,
   OrganisationServiceTiming,
   OrganisationServiceTimingDeleteReq,
   OrganisationServiceTimingFinal,
@@ -81,15 +82,26 @@ export class OrganisationServiceTimingService {
 
 
     
-    async Bookappoinment(req: AppoinmentFinal) {
-        let postdata: ActionReq<AppoinmentFinal> = new ActionReq<AppoinmentFinal>();
-        postdata.item = req;
-        let resp = await this.http.post<ActionRes<string>>(
-            this.baseurl + '/Bookappoinment',
-            postdata
-        );
-                
-        return resp.item;
-    }
+        async Bookappoinment(req: AppoinmentFinal) {
+            let postdata: ActionReq<AppoinmentFinal> = new ActionReq<AppoinmentFinal>();
+            postdata.item = req;
+            let resp = await this.http.post<ActionRes<string>>(
+                this.baseurl + '/Bookappoinment',
+                postdata
+            );
+                    
+            return resp.item;
+        }
+
+        async BookLeave(req: Leavereq) {
+            let postdata: ActionReq<Leavereq> = new ActionReq<Leavereq>();
+            postdata.item = req;
+            let resp = await this.http.post<ActionRes<string>>(
+                this.baseurl + '/BookLeave',
+                postdata
+            );
+                    
+            return resp.item;
+        }
 
 }
