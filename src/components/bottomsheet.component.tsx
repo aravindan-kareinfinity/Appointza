@@ -6,6 +6,7 @@ import { AppText } from './apptext.component';
 import { $ } from '../styles';
 import { CustomIcon, CustomIcons } from './customicons.component';
 import { AppButton } from './appbutton.component';
+import { Button } from './button.component';
 type BottomSheetProps = {
     children: React.ReactNode;
     Buttonname?: string,
@@ -65,17 +66,11 @@ export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, re
                         $.justify_content_center,
 
                     ]}>
-                    <AppButton
-                        name="Cancel"
-                        style={[$.bg_tint_10, $.flex_1, $.mr_small]}
-                        textStyle={[$.text_danger]}
+                        <Button title={'Cancel'} variant='cancel' style={[ $.flex_1, $.mr_small]}
                         onPress={
                             () => { props.close() }
-                        }
-                    />
-                    <AppButton
-                        name="Save"
-                        style={[$.bg_success, $.flex_1]}
+                        }/>
+                 <Button title={'Save'} variant='save' style={[$.flex_1]}
                         textStyle={[$.text_tint_11]}
                         onPress={() => { props.Save() }}
                     />

@@ -4,6 +4,8 @@ import {
   CompositeScreenProps,
   useFocusEffect,
   useNavigation,
+  useRoute,
+  RouteProp,
 } from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AppStackParamList} from '../../appstack.navigation';
@@ -11,9 +13,10 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
-import {AppTextInput} from '../../components/apptextinput.component';
+import {FormInput} from '../../components/forminput.component';
+import {FormSelect} from '../../components/formselect.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {FlatList, TouchableOpacity} from 'react-native';
+import {FlatList, TouchableOpacity, ViewStyle} from 'react-native';
 import {useAppSelector} from '../../redux/hooks.redux';
 import {selectusercontext} from '../../redux/usercontext.redux';
 import {BottomSheetComponent} from '../../components/bottomsheet.component';
@@ -26,14 +29,23 @@ import {
   OrganisationServicesSelectReq,
 } from '../../models/organisationservices.model';
 import {AppButton} from '../../components/appbutton.component';
+import { Button } from '../../components/button.component';
+import { CustomHeader } from '../../components/customheader.component';
+import { Colors } from '../../constants/colors';
+import { Plus } from 'lucide-react-native';
 
 type ServiceAvailableScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'ServiceAvailable'>,
   BottomTabScreenProps<HomeTabParamList>
 >;
 
+type ServiceAvailableRouteParams = {
+  fromSignup?: boolean;
+};
+
 export function ServiceAvailableScreen() {
   const navigation = useNavigation<ServiceAvailableScreenProp['navigation']>();
+  const route = useRoute<RouteProp<{ params: ServiceAvailableRouteParams }, 'params'>>();
   const [isloading, setIsloading] = useState(false);
   const usercontext = useAppSelector(selectusercontext);
   const servicesAvailableservice = useMemo(
@@ -41,6 +53,9 @@ export function ServiceAvailableScreen() {
     [],
   );
   const bottomSheetRef = useRef<any>(null);
+
+  // Check if coming from signup
+  const isFromSignup = route.params?.fromSignup === true;
 
   // State management
   const [service, setService] = useState<OrganisationServices>(
@@ -187,23 +202,43 @@ export function ServiceAvailableScreen() {
       <TouchableOpacity
         onPress={() => openServiceForm(item, item.Iscombo)}
         style={[$.p_small, $.flex_1]}>
-        <AppText style={[$.flex_1, $.text_primary5, $.fs_compact, $.fw_bold]}>
+        <AppText
+          style={[
+            $.flex_1,
+            $.text_primary5,
+            $.fs_compact,
+            $.fw_bold,
+            $.my_compact,
+          ]}>
           {item.Servicename}
           {item.Iscombo && ' (Combo)'}
         </AppText>
-        <AppText style={[$.fs_small, $.text_tint_ash]}>
-          {item.timetaken} min session
-        </AppText>
-        <AppText style={[$.fs_small, $.flex_1, $.text_tint_ash]}>
-          <AppText
-            style={[
-              $.flex_1,
-              {textDecorationLine: 'line-through', color: 'gray'},
-            ]}>
-            ₹{item.prize}
+        {item.notes && (
+          <AppText style={[$.fs_small, $.text_tint_ash, $.mt_tiny, $.my_small]}>
+            {item.notes}
           </AppText>
-          <AppText> ₹{item.offerprize}</AppText>
-        </AppText>
+        )}
+        <AppView style={[$.flex_row, $.flex_1, $.border_top, $.border_tint_4]}>
+          <AppView style={[$.flex_column, $.flex_1, $.my_small]}>
+            <AppText>Duration</AppText>
+            <AppText style={[$.fs_small, $.text_tint_3]}>
+              {item.timetaken} min
+            </AppText>
+          </AppView>
+          <AppView style={[$.flex_column, $.flex_1, $.my_small]}>
+          <AppText>Price</AppText>
+            <AppText style={[$.fs_small, $.flex_1]}>
+              <AppText
+                style={[
+                  $.flex_1,$.text_tint_3,
+                  {textDecorationLine: 'line-through'},
+                ]}>
+                ₹{item.prize}
+              </AppText>
+              <AppText style={[$.text_success]}> ₹{item.offerprize}</AppText>
+            </AppText>
+          </AppView>
+        </AppView>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => handleDeleteService(item)}>
         <CustomIcon
@@ -226,52 +261,39 @@ export function ServiceAvailableScreen() {
     }
   };
 
+  const inputContainerStyle: ViewStyle = {
+    marginBottom: 16,
+  };
+
+  const serviceTypeOptions = [
+    {id: 0, name: 'Individual Service'},
+    {id: 1, name: 'Combo Service'},
+  ];
+
+  const handleServiceTypeSelect = (option: {
+    id: number;
+    name: string;
+    code?: string;
+  }) => {
+    const isCombo = option.id === 1;
+    setService(prev => ({
+      ...prev,
+      Iscombo: isCombo,
+      servicesids: isCombo ? {combolist: []} : prev.servicesids,
+    }));
+  };
+
   return (
-    <AppView style={[$.pt_normal, $.flex_1]}>
-      {/* Header */}
-      <AppView
-        style={[$.px_regular, $.flex_row, $.mb_medium]}>
-        <AppView style={[$.flex_row, $.flex_1, ]}>
-          {/* <TouchableOpacity onPress={() => navigation.goBack()}>
-            <CustomIcon
-              name={CustomIcons.LeftArrow}
-              size={$.s_regular}
-              color={$.tint_primary_5}
-            />
-          </TouchableOpacity> */}
-          <AppText
-            style={[$.ml_compact,  $.text_primary5, $.fw_medium]}>
-            Service Management
-          </AppText>
-        </AppView>
+    <AppView style={[ $.flex_1]}>
+      <CustomHeader
+        title="Service Management"
+        showBackButton
+        backgroundColor={Colors.light.background}
+        titleColor={Colors.light.text}
+      
+      />
 
-        {/* Add Service Button */}
-        <TouchableOpacity onPress={() => openServiceForm(undefined, false)}>
-          <CustomIcon
-            name={CustomIcons.Plus}
-            color={$.tint_primary_5}
-            size={$.s_big}
-          />
-        </TouchableOpacity>
-      </AppView>
-
-      {/* Create Combo Button (only shown when there are services to combine) */}
-      {serviceList.length >= 2 && (
-        <TouchableOpacity
-          onPress={() => openServiceForm(undefined, true)}
-          style={[
-            $.bg_tint_11,
-            $.border_rounded,
-            $.mx_normal,
-            $.mb_small,
-            $.p_small,
-            $.align_items_center,
-          ]}>
-          <AppText style={[$.text_primary5, $.fw_semibold]}>
-            Create New Combo
-          </AppText>
-        </TouchableOpacity>
-      )}
+    
 
       {/* Services List */}
       <FlatList
@@ -284,26 +306,31 @@ export function ServiceAvailableScreen() {
               No services available. Add your first service!
             </AppText>
 
-            <TouchableOpacity
-              style={[$.mt_medium, $.p_small, $.bg_tint_3, $.border_rounded]}
-              onPress={() => {
-                openServiceForm(undefined, false);
-              }}>
-              <AppText style={[$.text_tint_11, $.fw_semibold]}>
-                Add Service
-              </AppText>
-            </TouchableOpacity>
+            <Button title={'Add Service'} onPress={  ()=>{ openServiceForm(undefined, false)
+            } }/>
+              
+      
           </AppView>
         }
       />
 
-      <TouchableOpacity
-        style={[$.mt_medium, $.p_small, $.bg_tint_3, $.border_rounded,$.m_regular,$.text_center,$.align_items_center]}
-        onPress={() => {
-          navigation.navigate('Timing');
-        }}>
-        <AppText style={[$.text_tint_11, $.fw_semibold]}>Save</AppText>
-      </TouchableOpacity>
+      <AppView style={[$.mx_normal,$.mb_normal,$.flex_row]}>
+      {serviceList.length >= 2 && (  <Button title={'Combo'} variant='save' style={[$.flex_1,$.mr_small]}  onPress={() => openServiceForm(undefined, true)}/>
+          )}
+          <Button title={'New Service'} style={[$.flex_1]} variant='secondary' onPress={() => openServiceForm(undefined, false)}/>
+      </AppView>
+
+      {isFromSignup && (
+        <Button 
+          title={'Save'} 
+          variant='secondary' 
+          style={[$.mx_normal,$.mb_normal]} 
+          onPress={() => {
+            navigation.navigate('Timing', { fromService: true }); 
+          }}
+        />
+      )}
+     
 
       {/* Bottom Sheet for Service/Combo Form */}
       <BottomSheetComponent
@@ -311,9 +338,11 @@ export function ServiceAvailableScreen() {
         screenname={service.Iscombo ? 'Combo Details' : 'Service Details'}
         Save={handleSaveService}
         close={() => bottomSheetRef.current?.close()}>
+      
+
         {service.Iscombo && (
           <AppMultiSelect
-            data={serviceList.filter(s => !s.Iscombo)} // Only allow selecting individual services for combos
+            data={serviceList.filter(s => !s.Iscombo)}
             keyExtractor={item => item.id.toString()}
             searchKeyExtractor={item => item.Servicename}
             required={true}
@@ -333,32 +362,22 @@ export function ServiceAvailableScreen() {
             selecteditemlist={selectedComboServices}
             onSelect={handleComboSelection}
             title="Select Services for Combo"
-            style={[$.mb_normal]}
           />
         )}
 
-        <AppTextInput
-          style={[
-            $.bg_tint_11,
-            $.border_bottom,
-            $.border_primary5,
-            $.mb_compact,
-          ]}
-          placeholder={service.Iscombo ? 'Combo Name' : 'Service Name'}
+        <FormInput
+          label={service.Iscombo ? 'Combo Name' : 'Service Name'}
           value={service.Servicename}
           onChangeText={text => setService({...service, Servicename: text})}
+          placeholder={
+            service.Iscombo ? 'Enter combo name' : 'Enter service name'
+          }
+          containerStyle={inputContainerStyle}
         />
 
         {!service.Iscombo && (
-          <AppTextInput
-            style={[
-              $.bg_tint_11,
-              $.border_bottom,
-              $.border_primary5,
-              $.mb_compact,
-            ]}
-            placeholder="Price (₹)"
-            keyboardtype="numeric"
+          <FormInput
+            label="Price"
             value={service.prize.toString()}
             onChangeText={text =>
               setService({
@@ -366,18 +385,14 @@ export function ServiceAvailableScreen() {
                 prize: parseInt(text) || 0,
               })
             }
+            placeholder="Enter price in ₹"
+            keyboardType="numeric"
+            containerStyle={inputContainerStyle}
           />
         )}
 
-        <AppTextInput
-          style={[
-            $.bg_tint_11,
-            $.border_bottom,
-            $.border_primary5,
-            $.mb_compact,
-          ]}
-          placeholder="Offer Price (₹)"
-          keyboardtype="numeric"
+        <FormInput
+          label="Offer Price"
           value={service.offerprize.toString()}
           onChangeText={text =>
             setService({
@@ -385,17 +400,13 @@ export function ServiceAvailableScreen() {
               offerprize: parseInt(text) || 0,
             })
           }
+          placeholder="Enter offer price in ₹"
+          keyboardType="numeric"
+          containerStyle={inputContainerStyle}
         />
 
-        <AppTextInput
-          style={[
-            $.bg_tint_11,
-            $.border_bottom,
-            $.border_primary5,
-            $.mb_compact,
-          ]}
-          placeholder="Duration (minutes)"
-          keyboardtype="numeric"
+        <FormInput
+          label="Duration"
           value={service.timetaken.toString()}
           onChangeText={text =>
             setService({
@@ -403,6 +414,19 @@ export function ServiceAvailableScreen() {
               timetaken: parseInt(text) || 0,
             })
           }
+          placeholder="Enter duration in minutes"
+          keyboardType="numeric"
+          containerStyle={inputContainerStyle}
+        />
+
+        <FormInput
+          label="Notes"
+          value={service.notes || ''}
+          onChangeText={text => setService({...service, notes: text})}
+          placeholder="Enter any additional notes about the service"
+          multiline={true}
+          numberOfLines={3}
+          containerStyle={inputContainerStyle}
         />
       </BottomSheetComponent>
     </AppView>

@@ -11,8 +11,8 @@ import {useEffect, useMemo, useState} from 'react';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
-import {AppButton} from '../../components/appbutton.component';
-import {AppTextInput} from '../../components/apptextinput.component';
+import {Button} from '../../components/button.component';
+import {FormInput} from '../../components/forminput.component';
 import {UsersGetOtpReq, UsersLoginReq} from '../../models/users.model';
 import {UsersService} from '../../services/users.service';
 import {AppAlert} from '../../components/appalert.component';
@@ -21,12 +21,13 @@ import {
   selectusercontext,
   usercontextactions,
 } from '../../redux/usercontext.redux';
-import {TouchableOpacity} from 'react-native';
+import {ViewStyle, Image, Dimensions, TouchableOpacity} from 'react-native';
 
 type LoginScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList>,
   NativeStackScreenProps<AppStackParamList, 'Login'>
 >;
+
 export function LoginScreen() {
   const navigation = useNavigation<LoginScreenProp['navigation']>();
   const route = useRoute<LoginScreenProp['route']>();
@@ -38,6 +39,7 @@ export function LoginScreen() {
   const [mobile, setMobile] = useState('');
   const [name, setName] = useState('');
   const [otp, setOtp] = useState('');
+
   const login = async () => {
     setIsloading(true);
     try {
@@ -54,13 +56,12 @@ export function LoginScreen() {
       setIsloading(false);
     }
   };
+
   const getOtp = async () => {
-  
     setIsloading(true);
     try {
       let getotpreq = new UsersGetOtpReq();
       getotpreq.mobile = mobile;
-      // getotpreq.organisationtype = OrganisationTypes.Supplier;
       let getotpresp = await usersservice.GetOtp(getotpreq);
       setName(getotpresp!.name);
       setIsotpsent(true);
@@ -72,68 +73,116 @@ export function LoginScreen() {
     }
   };
 
-  
-  const gotoSignUp = (value:boolean) => {
-    navigation.navigate('SignUp',{isorganization:value});
+  const gotoSignUp = (value: boolean) => {
+    navigation.navigate('SignUp', {isorganization: value});
   };
-  return (
-    <AppView style={[$.flex_1]}>
-      <AppView style={[$.align_items_center, $.pt_colossal, $.mb_giant]}>
-        <AppText style={[$.fw_bold, $.fs_enormous, $.text_primary5]}>
-          Login
-        </AppText>
-      </AppView>
-      <AppView style={[$.justify_content_center, $.px_normal]}>
-        <AppTextInput
-          style={[
-            isotpsent ? $.mb_small : $.mb_giant,
-            $.border_bottom,
-            $.border_tint_8,
-            $.bg_tint_11,
-          ]}
-          placeholder="Mobile number"
-          value={mobile}
-          onChangeText={e => {
-            setMobile(e);
-          }}
-        />
-        {isotpsent && (
-          <AppTextInput
-            style={[$.mb_giant, $.border_bottom, $.border_tint_8, $.bg_tint_11]}
-            placeholder="OTP"
-            value={otp}
-            onChangeText={e => {
-              setOtp(e);
-            }}
-          />
-        )}
-      </AppView>
-      <AppView style={[$.justify_content_center, $.px_normal]}>
-        {isotpsent && (
-          <AppButton
-            name="Login"
-            style={[$.bg_tint_10, $.mb_small]}
-            textStyle={[$.text_tint_1, $.fs_compact, $.fw_medium]}
-            onPress={login}
-          />
-        )}
-        <AppButton
-          name={isotpsent ? 'Resend OTP' : 'Get OTP'}
-          style={[$.bg_tint_10, $.mb_small]}
-          textStyle={[$.text_tint_1, $.fs_compact, $.fw_medium]}
-          onPress={getOtp}
-        />
-      </AppView>
-      {/* <AppView style={[$.align_items_center, $.flex_row, $.px_massive]}>
-        <AppText style={[$.fs_small, $.fw_regular, $.text_tint_6]}>
-          Don't Have an account ? {}
-        </AppText>
-        <TouchableOpacity onPress={()=>{gotoSignUp(false)}}>
-          <AppText style={[$.text_tint_2]}>Sign Up</AppText>
-        </TouchableOpacity>
-      </AppView> */}
 
-      
+  const inputContainerStyle: ViewStyle = {
+    marginBottom: 15,
+  };
+
+  // Calculate image dimensions based on screen width
+  const screenWidth = Dimensions.get('window').width;
+  const imageSize = screenWidth * 0.4;
+
+  return (
+    <AppView style={[$.flex_1, { backgroundColor: '#F8F9FA' }]}>
+      {/* Header Section */}
+      <AppView style={[$.align_items_center, { paddingTop: 60, paddingBottom: 40 }]}>
+        <Image 
+          source={require('../../assert/A1.png')}
+          style={{
+            width: imageSize,
+            height: imageSize,
+            marginBottom: 24,
+          }}
+          resizeMode="contain"
+        />
+        <AppText style={[$.fw_bold, $.fs_enormous, $.text_primary5]}>
+          Appointza
+        </AppText>
+        <AppText style={{
+          fontSize: 16,
+          color: '#666666',
+          textAlign: 'center',
+          marginTop: 8,
+          lineHeight: 24,
+        }}>
+          Book. Manage. Meet.{'\n'}
+          All in One Place
+        </AppText>
+      </AppView>
+
+      {/* Card Container */}
+      <AppView style={{
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        marginHorizontal: 20,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+      }}>
+        <FormInput
+          label="Mobile Number"
+          value={mobile}
+          onChangeText={setMobile}
+          placeholder="Enter your mobile number"
+          keyboardType="phone-pad"
+          containerStyle={inputContainerStyle}
+        />
+
+        {isotpsent && (
+          <FormInput
+            label="OTP"
+            value={otp}
+            onChangeText={setOtp}
+            placeholder="Enter OTP"
+            keyboardType="numeric"
+            containerStyle={inputContainerStyle}
+          />
+        )}
+
+        {/* Buttons Section */}
+        <AppView style={{ }}>
+          {isotpsent && (
+            <Button
+              title="Login"
+              variant="secondary"
+              onPress={login}
+              loading={isloading}
+              disabled={isloading}
+              style={{ marginBottom: 12 }}
+            />
+          )}
+          <Button
+            title={isotpsent ? 'Resend OTP' : 'Get OTP'}
+            variant="secondary"
+            onPress={getOtp}
+            loading={isloading}
+            disabled={isloading}
+            style={{ marginBottom: 12 }}
+          />
+        </AppView>
+      </AppView>
+
+      {/* Footer Section */}
+      <AppView style={[$.align_items_center, $.flex_row, { 
+        justifyContent: 'center',
+        marginTop: 24,
+        paddingHorizontal: 20, backgroundColor: '#F8F9FA' 
+      }]}>
+        <AppText style={[$.fs_small, $.fw_regular, $.text_tint_1]}>
+          Don't Have an account?{' '}
+        </AppText>
+        <TouchableOpacity onPress={() => gotoSignUp(false)}><AppText>Sighn up</AppText></TouchableOpacity>
+       
+      </AppView>
     </AppView>
   );
 }

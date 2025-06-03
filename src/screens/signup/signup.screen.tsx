@@ -13,12 +13,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppView } from '../../components/appview.component';
 import { AppText } from '../../components/apptext.component';
 import { $ } from '../../styles';
-import { AppButton } from '../../components/appbutton.component';
-import { AppTextInput } from '../../components/apptextinput.component';
+import { Button } from '../../components/button.component';
+import { FormInput } from '../../components/forminput.component';
+import { FormSelect } from '../../components/formselect.component';
+import { HeaderButton } from '../../components/headerbutton.component';
+import { CustomHeader } from '../../components/customheader.component';
 import { REFERENCETYPE, UsersRegisterReq } from '../../models/users.model';
 import {
   Alert,
   Image,
+  Platform,
   ScrollView,
   Touchable,
   TouchableOpacity,
@@ -39,6 +43,7 @@ import { AppSingleSelect } from '../../components/appsingleselect.component';
 import { ReferenceValueService } from '../../services/referencevalue.service';
 import { ReferenceValue, ReferenceValueSelectReq } from '../../models/referencevalue.model';
 import { LocationPicker } from '../../components/LocationPicker';
+import { DefaultColor } from '../../styles/default-color.style';
 
 // type SignUpScreenProp = CompositeScreenProps<
 //   BottomTabScreenProps<HomeTabParamList>,
@@ -50,7 +55,7 @@ type SignUpScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList>
 >;
 export function SignUpScreen(props: SignUpScreenProp) {
-
+  const colors = DefaultColor.instance;
   const navigation = useNavigation<SignUpScreenProp['navigation']>();
   const route = useRoute();
   const dispatch = useAppDispatch();
@@ -188,6 +193,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
                     routes: [
                       {
                         name: 'ServiceAvailable',
+                        params: { fromSignup: true }
                       },
                     ],
                   }),
@@ -222,203 +228,252 @@ export function SignUpScreen(props: SignUpScreenProp) {
     console.error('Error:', error);
   };
 
+  const cardStyle = {
+    backgroundColor: colors.cardBackground,
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.text,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  };
+
   return (
-    <ScrollView contentContainerStyle={[$.p_medium]}>
-      <AppView style={[$.align_items_center, $.mb_medium]}>
-        <AppText style={[$.fs_large, $.fw_bold]}>Sign Up</AppText>
-      </AppView>
-
-      {/* Image Upload */}
-      <TouchableOpacity
-        onPress={pickAndUploadImage}
-        style={[$.mb_medium, $.bg_tint_10, $.p_small, $.border_rounded]}>
-        {signUpModel.organisationimageid === 0 ? (
-          <AppView style={[$.flex_row, $.align_items_center]}>
-            <CustomIcon name={CustomIcons.Image} color={$.tint_4} size={40} />
-            <AppText style={[$.ml_normal]}>Choose Image</AppText>
-          </AppView>
-        ) : (
-          <AppView style={[$.flex_row, $.align_items_center]}>
-            <Image
-              source={{
-                uri: filesService.get(signUpModel.organisationimageid),
-                width: 100,
-                height: 100,
-              }}
-            />
-            <AppText style={[$.ml_normal]}>Change Image</AppText>
-          </AppView>
-        )}
-      </TouchableOpacity>
-
-      {isOrganization && (
-        <View>
-          <AppSingleSelect
-            data={primaryBusinessTypes}
-            keyExtractor={item => item.id.toString()}
-            searchKeyExtractor={item => item.displaytext}
-            renderItemLabel={item => (
-              <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_1]}>
-                {item.displaytext}
-              </AppText>
-            )}
-            selecteditemid={signUpModel.primarytype.toString()}
-            onSelect={item => {
-              setSignUpModel(prev => ({
-                ...prev,
-                primarytypecode: item.identifier,
-                primarytype: item.id,
-                secondarytype: 0,
-                secondarytypecode: '',
-              }));
-              
-              fetchReferenceValues(item.id);
-            }}
-            title="Business Type"
-            style={[$.mb_normal]}
-          />
-
-          <AppSingleSelect
-            data={secondaryBusinessTypes}
-            keyExtractor={item => item.id.toString()}
-            searchKeyExtractor={item => item.displaytext}
-            renderItemLabel={item => (
-              <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_1]}>
-                {item.displaytext}
-              </AppText>
-            )}
-            selecteditemid={signUpModel.secondarytype.toString()}
-            onSelect={item => {
-              setSignUpModel(prev => ({
-                ...prev,
-                secondarytype: item.id,
-                secondarytypecode: item.identifier,
-              }));
-            }}
-            title="Business Details"
-            style={[$.mb_normal]}
-          />
-
-          <AppTextInput
-            placeholder="Organization Name"
-            value={signUpModel.organisationname}
-            onChangeText={text => setSignUpModel(prev => ({ ...prev, organisationname: text }))}
-            style={[$.mb_normal]}
-          />
-
-          <AppTextInput
-            placeholder="GST Number"
-            value={signUpModel.organisationgstnumber}
-            onChangeText={text => setSignUpModel(prev => ({ ...prev, organisationgstnumber: text }))}
-            style={[$.mb_normal]}
-          />
-        </View>
-      )}
-
-      {/* Location Picker */}
-      <TouchableOpacity 
-        onPress={() => setShowLocationPicker(true)}
-        style={[$.mb_normal, $.p_small, $.bg_tint_10, $.border_rounded]}
-      >
-        <AppText style={[$.text_tint_3]}>
-          {signUpModel.googlelocation || 'Select Location on Map'}
-        </AppText>
-      </TouchableOpacity>
-
-  {/* Location Details (auto-filled from map selection) */}
-  <AppTextInput
-        placeholder="Location Name "
-        value={signUpModel.locationname}
-        onChangeText={text => setSignUpModel(prev => ({ ...prev, locationname: text }))}
-        style={[$.mb_normal]}
-      />
-
-      {/* Location Details (auto-filled from map selection) */}
-      <AppTextInput
-        placeholder="Address Line 1"
-        value={signUpModel.locationaddressline1}
-        onChangeText={text => setSignUpModel(prev => ({ ...prev, locationaddressline1: text }))}
-        style={[$.mb_normal]}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <CustomHeader 
+        title="Sign Up"
+        showBackButton={true}
       />
       
-      <AppTextInput
-        placeholder="Address Line 2"
-        value={signUpModel.locationaddressline2}
-        onChangeText={text => setSignUpModel(prev => ({ ...prev, locationaddressline2: text }))}
-        style={[$.mb_normal]}
-      />
-
-      <AppView style={[$.flex_row, $.mb_normal]}>
-        <AppTextInput
-          placeholder="City"
-          value={signUpModel.locationcity}
-          onChangeText={text => setSignUpModel(prev => ({ ...prev, locationcity: text }))}
-          style={[$.flex_1, $.mr_small]}
+      <ScrollView contentContainerStyle={[$.p_medium, { backgroundColor: colors.background }]}>
+        {/* Image Upload */}
+        <HeaderButton
+          title={signUpModel.organisationimageid === 0 ? "Choose Image" : "Change Image"}
+          icon={
+            signUpModel.organisationimageid === 0 ? (
+              <CustomIcon name={CustomIcons.Image} color={colors.placeholder} size={40} />
+            ) : (
+              <Image
+                source={{
+                  uri: filesService.get(signUpModel.organisationimageid),
+                  width: 100,
+                  height: 100,
+                }}
+              />
+            )
+          }
+          onPress={pickAndUploadImage}
+          style={[
+            $.mb_medium,
+            {
+              backgroundColor: colors.cardBackground,
+              ...Platform.select({
+                ios: {
+                  shadowColor: colors.text,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                },
+                android: {
+                  elevation: 4,
+                },
+              }),
+            },
+            $.p_small,
+            $.border_rounded,
+          ]}
         />
-        <AppTextInput
-          placeholder="State"
-          value={signUpModel.locationstate}
-          onChangeText={text => setSignUpModel(prev => ({ ...prev, locationstate: text }))}
-          style={[$.flex_1]}
+
+        {isOrganization && (
+          <View style={cardStyle}>
+            <FormSelect
+              label="Business Type"
+              options={primaryBusinessTypes.map(type => ({
+                id: type.id,
+                name: type.displaytext,
+                code: type.identifier
+              }))}
+              selectedId={signUpModel.primarytype}
+              onSelect={(option) => {
+                setSignUpModel(prev => ({
+                  ...prev,
+                  primarytypecode: option.code || '',
+                  primarytype: option.id,
+                  secondarytype: 0,
+                  secondarytypecode: '',
+                }));
+                fetchReferenceValues(option.id);
+              }}
+            />
+
+            <FormSelect
+              label="Business Details"
+              options={secondaryBusinessTypes.map(type => ({
+                id: type.id,
+                name: type.displaytext,
+                code: type.identifier
+              }))}
+              selectedId={signUpModel.secondarytype}
+              onSelect={(option) => {
+                setSignUpModel(prev => ({
+                  ...prev,
+                  secondarytype: option.id,
+                  secondarytypecode: option.code || '',
+                }));
+              }}
+            />
+
+            <FormInput
+              label="Organization Name"
+              placeholder="Enter organization name"
+              value={signUpModel.organisationname}
+              onChangeText={text => setSignUpModel(prev => ({ ...prev, organisationname: text }))}
+            />
+
+            <FormInput
+              label="GST Number"
+              placeholder="Enter GST number"
+              value={signUpModel.organisationgstnumber}
+              onChangeText={text => setSignUpModel(prev => ({ ...prev, organisationgstnumber: text }))}
+            />
+          </View>
+        )}
+
+        {/* Location Picker */}
+        <HeaderButton
+          title={signUpModel.googlelocation || 'Select Location on Map'}
+          onPress={() => setShowLocationPicker(true)}
+          style={[
+            $.mb_normal,
+            $.p_small,
+            {
+              backgroundColor: colors.cardBackground,
+              ...Platform.select({
+                ios: {
+                  shadowColor: colors.text,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                },
+                android: {
+                  elevation: 4,
+                },
+              }),
+            },
+            $.border_rounded,
+          ]}
+          textStyle={[$.text_tint_3]}
         />
-      </AppView>
 
-      <AppView style={[$.flex_row, $.mb_normal]}>
-        <AppTextInput
-          placeholder="Country"
-          value={signUpModel.locationcountry}
-          onChangeText={text => setSignUpModel(prev => ({ ...prev, locationcountry: text }))}
-          style={[$.flex_1, $.mr_small]}
-        />
-        <AppTextInput
-          placeholder="Pincode"
-          value={signUpModel.locationpincode}
-          onChangeText={text => setSignUpModel(prev => ({ ...prev, locationpincode: text }))}
-          keyboardtype="numeric"
-          style={[$.flex_1]}
-        />
-      </AppView>
+        <View style={cardStyle}>
+          <FormInput
+            label="Location Name"
+            placeholder="Enter location name"
+            value={signUpModel.locationname}
+            onChangeText={text => setSignUpModel(prev => ({ ...prev, locationname: text }))}
+          />
 
-      <AppTextInput
-        placeholder="Your Name"
-        value={signUpModel.username}
-        onChangeText={text => setSignUpModel(prev => ({ ...prev, username: text }))}
-        style={[$.mb_normal]}
-      />
+          <FormInput
+            label="Address Line 1"
+            placeholder="Enter address line 1"
+            value={signUpModel.locationaddressline1}
+            onChangeText={text => setSignUpModel(prev => ({ ...prev, locationaddressline1: text }))}
+          />
+          
+          <FormInput
+            label="Address Line 2"
+            placeholder="Enter address line 2"
+            value={signUpModel.locationaddressline2}
+            onChangeText={text => setSignUpModel(prev => ({ ...prev, locationaddressline2: text }))}
+          />
 
-      <AppTextInput
-        placeholder="Mobile Number"
-        value={signUpModel.usermobile}
-        onChangeText={text => setSignUpModel(prev => ({ ...prev, usermobile: text }))}
-        keyboardtype="phone-pad"
-        style={[$.mb_normal]}
-      />
+          <AppView style={[$.flex_row, $.mb_normal]}>
+            <FormInput
+              label="City"
+              placeholder="Enter city"
+              value={signUpModel.locationcity}
+              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationcity: text }))}
+              containerStyle={{ flex: 1, marginRight: 8 }}
+            />
+            <FormInput
+              label="State"
+              placeholder="Enter state"
+              value={signUpModel.locationstate}
+              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationstate: text }))}
+              containerStyle={{ flex: 1 }}
+            />
+          </AppView>
 
-      {isOrganization && (
-        <AppTextInput
-          placeholder="Designation"
-          value={signUpModel.userdesignation}
-          onChangeText={text => setSignUpModel(prev => ({ ...prev, userdesignation: text }))}
+          <AppView style={[$.flex_row, $.mb_normal]}>
+            <FormInput
+              label="Country"
+              placeholder="Enter country"
+              value={signUpModel.locationcountry}
+              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationcountry: text }))}
+              containerStyle={{ flex: 1, marginRight: 8 }}
+            />
+            <FormInput
+              label="Pincode"
+              placeholder="Enter pincode"
+              value={signUpModel.locationpincode}
+              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationpincode: text }))}
+              keyboardType="numeric"
+              containerStyle={{ flex: 1 }}
+            />
+          </AppView>
+        </View>
+
+        <View style={cardStyle}>
+          <FormInput
+            label="Your Name"
+            placeholder="Enter your name"
+            value={signUpModel.username}
+            onChangeText={text => setSignUpModel(prev => ({ ...prev, username: text }))}
+          />
+
+          <FormInput
+            label="Mobile Number"
+            placeholder="Enter mobile number"
+            value={signUpModel.usermobile}
+            onChangeText={text => setSignUpModel(prev => ({ ...prev, usermobile: text }))}
+            keyboardType="phone-pad"
+          />
+
+          {isOrganization && (
+            <FormInput
+              label="Designation"
+              placeholder="Enter your designation"
+              value={signUpModel.userdesignation}
+              onChangeText={text => setSignUpModel(prev => ({ ...prev, userdesignation: text }))}
+            />
+          )}
+        </View>
+
+        <Button
+          title="Sign Up"
+          onPress={handleSignUp}
+          loading={isLoading}
+          variant="primary"
           style={[$.mb_medium]}
         />
-      )}
 
-      <AppButton
-        name="Sign Up"
-        onPress={handleSignUp}
-        isLoading={isLoading}
-        style={[$.bg_tint_1, $.mb_medium]}
-        textStyle={[$.text_tint_11]}
-      />
-
-      {/* Location Picker Modal */}
-      {showLocationPicker && (
-        <LocationPicker
-          visible={showLocationPicker}
-          onClose={() => setShowLocationPicker(false)}
-          onLocationSelect={handleLocationSelect}
-        />
-      )}
-    </ScrollView>
+        {/* Location Picker Modal */}
+        {showLocationPicker && (
+          <LocationPicker
+            visible={showLocationPicker}
+            onClose={() => setShowLocationPicker(false)}
+            onLocationSelect={handleLocationSelect}
+          />
+        )}
+      </ScrollView>
+    </View>
   );
 }

@@ -23,6 +23,7 @@ import { ServiceAvailableScreen } from './screens/servicesavailable/service.scre
 import { TimingScreen } from './screens/timing/timing.screen';
 import { AppoinmentBookingScreen } from './screens/appoinmentfixing/appoinmentbooking.screen';
 import { AppointmentTimelineScreen } from './screens/appointmentimeline/appointmenttimeline.screen';
+import { LucideIcon, LucideIcons } from './components/LucideIcons.component';
 
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
@@ -43,7 +44,9 @@ export type AppStackParamList = {
   Profile: undefined;
 
   ServiceAvailable:undefined
-  Timing:undefined
+  Timing: {
+    fromService?: boolean;
+  }
   AppoinmentFixing:{organisationid:number,organisationlocationid:number}
   AppointmentTimeline: {appointmentid:number};
 };
@@ -70,10 +73,17 @@ function AppStackNavigation() {
         initialRouteName="Launch"
         screenOptions={{
           headerStyle: {
-            backgroundColor: $.tint_11,
+            backgroundColor: colors.tint_11,
           },
           headerTitleAlign: 'center',
           headerTitle: ({children}) => <HeaderTitle>{children}</HeaderTitle>,
+          headerLeft: () => (
+            <LucideIcon 
+              name={LucideIcons.ChevronLeft} 
+              size={24} 
+              color={colors.tint_1}
+            />
+          ),
         }}>
         <AppStack.Screen
           name="Launch"

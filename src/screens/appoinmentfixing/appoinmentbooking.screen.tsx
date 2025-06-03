@@ -15,7 +15,13 @@ import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
 import {AppTextInput} from '../../components/apptextinput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {Alert, FlatList, TouchableOpacity} from 'react-native';
+import {
+  Alert,
+  FlatList,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 
 import {
   OrganisationLocation,
@@ -35,6 +41,7 @@ import {OrganisationService} from '../../services/organisation.service';
 import {OrganisationServiceTimingService} from '../../services/organisationservicetiming.service';
 import {environment} from '../../utils/environment';
 import {
+  OrganisationServiceTiming,
   OrganisationServiceTimingFinal,
   OrganisationServiceTimingSelectReq,
   Weeks,
@@ -52,10 +59,13 @@ import {
 } from '../../models/appoinment.model';
 import {BottomSheetComponent} from '../../components/bottomsheet.component';
 import {AppoinmentService} from '../../services/appoinment.service';
+import {Button} from '../../components/button.component';
+
 type AppoinmentFixingScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'AppoinmentFixing'>,
   BottomTabScreenProps<HomeTabParamList>
 >;
+
 export function AppoinmentBookingScreen() {
   const navigation = useNavigation<AppoinmentFixingScreenProp['navigation']>();
   const [organisationservices, setOrganisationservices] = useState<
@@ -83,8 +93,10 @@ export function AppoinmentBookingScreen() {
   const [selectedService, setSelectedService] = useState<SelectedSerivice[]>(
     [],
   );
-  const [organisationDetails, setOrganisationDetails] = useState<Organisation | null>(null);
-  const [locationDetails, setLocationDetails] = useState<OrganisationLocation | null>(null);
+  const [organisationDetails, setOrganisationDetails] =
+    useState<Organisation | null>(null);
+  const [locationDetails, setLocationDetails] =
+    useState<OrganisationLocation | null>(null);
 
   const handleServiceSelection = (req: OrganisationServices) => {
     const item = new SelectedSerivice();
@@ -98,24 +110,21 @@ export function AppoinmentBookingScreen() {
       const isSelected = prevSelected.some(service => service.id === item.id);
 
       setSelectedtiming(prev => {
-        // Convert `totime` from string to Date object
         const baseTime = prev?.totime
           ? new Date(`1970-01-01T${prev.totime}`)
           : new Date(`1970-01-01T${seletedTiming.fromtime}`);
 
-        // Add or subtract time based on selection
         if (isSelected) {
           baseTime.setMinutes(baseTime.getMinutes() - req.timetaken);
         } else {
           baseTime.setMinutes(baseTime.getMinutes() + req.timetaken);
         }
 
-        // Convert the updated time back to "hh:mm:ss" string format
         const updatedTotime = baseTime.toTimeString().split(' ')[0];
 
         return {
           ...prev,
-          totime: updatedTotime, // Store as string
+          totime: updatedTotime,
         };
       });
 
@@ -135,9 +144,9 @@ export function AppoinmentBookingScreen() {
     gettiming();
   }, [seleteddate]);
 
-  useEffect(() => {}, [organisationlocationTiming]);
 
   useEffect(() => {
+    gettimingdata()
     fetchOrganisationDetails();
   }, []);
 
@@ -170,14 +179,10 @@ export function AppoinmentBookingScreen() {
 
       const dayName = seleteddate.toLocaleDateString('en-US', {
         weekday: 'long',
-      }); // "Friday"
-
-      const dayNumber = Weeks[dayName as keyof typeof Weeks]; // Convert string to number
-
+      });
+      const dayNumber = Weeks[dayName as keyof typeof Weeks];
       organizariontimereq.day_of_week = dayNumber;
       organizariontimereq.appointmentdate = seleteddate;
-      console.log('organizariontimereq', organizariontimereq);
-      console.log('timing', organizariontimereq);
 
       var organisationtimingres =
         await organisationservicetiming.selecttimingslot(organizariontimereq);
@@ -187,6 +192,74 @@ export function AppoinmentBookingScreen() {
       }
     } catch {
       Alert.alert(environment.baseurl, 'error jnk');
+    }
+  };
+  const organisationservicetimingservice = useMemo(
+    () => new OrganisationServiceTimingService(),
+    [],
+  );
+  const daysOfWeek = [
+    {id: Weeks.Monday, label: 'Monday'},
+    {id: Weeks.Tuesday, label: 'Tuesday'},
+    {id: Weeks.Wednesday, label: 'Wednesday'},
+    {id: Weeks.Thursday, label: 'Thursday'},
+    {id: Weeks.Friday, label: 'Friday'},
+    {id: Weeks.Saturday, label: 'Saturday'},
+    {id: Weeks.Sunday, label: 'Sunday'},
+  ];
+  const timeStringToDate = (timeString: string): Date => {
+    const [hours, minutes, seconds] = timeString.split(':').map(Number);
+    const now = new Date();
+    now.setHours(hours, minutes, seconds, 0);
+    return now;
+  };
+  const [dayTimeSlots, setDayTimeSlots] = useState<
+  Record<number, OrganisationServiceTiming[]>
+>(() => {
+  const initialSlots: Record<number, OrganisationServiceTiming[]> = {};
+  daysOfWeek.forEach(day => {
+    initialSlots[day.id] = [];
+  });
+  return initialSlots;
+});
+const [counter, setCounter] = useState(0);
+const [openbefore, setopenbefore] = useState(0);
+
+  const gettimingdata = async () => {
+    try {
+      const req = new OrganisationServiceTimingSelectReq();
+      req.organisationid = route.params.organisationid;
+      req.organisationlocationid = route.params.organisationlocationid;
+      const res = await organisationservicetimingservice.select(req);
+
+      if (res && res.length > 0) {
+        const newDayTimeSlots: Record<number, OrganisationServiceTiming[]> = {};
+
+        // Initialize all days with empty arrays
+        daysOfWeek.forEach(day => {
+          newDayTimeSlots[day.id] = [];
+        });
+
+        // Populate time slots for each day
+        res.forEach(v => {
+          const slot = new OrganisationServiceTiming();
+          slot.id = v.id;
+          slot.localid = v.id || Date.now(); // Use existing ID or generate new one
+          slot.start_time = timeStringToDate(v.start_time);
+          slot.end_time = timeStringToDate(v.end_time);
+          slot.day_of_week = v.day_of_week;
+
+          if (newDayTimeSlots[v.day_of_week]) {
+            newDayTimeSlots[v.day_of_week].push(slot);
+          }
+        });
+
+        setDayTimeSlots(newDayTimeSlots);
+        setopenbefore(res[0].openbefore);
+        setCounter(res[0].counter);
+      }
+    } catch (error) {
+      console.error('Error fetching timing data:', error);
     }
   };
 
@@ -208,303 +281,286 @@ export function AppoinmentBookingScreen() {
   const openBottomSheet = () => {
     bottomSheetRef.current?.open();
   };
+
   const closeBottomSheet = () => {
     bottomSheetRef.current?.close();
   };
-  // function convertToUTCFormat(dateInput: string | Date): string {
-  //     // Ensure the input is a Date object
-  //     const date = new Date(dateInput);
-
-  //     // Convert to ISO format with milliseconds and 'Z' (UTC)
-  //     return date.toISOString();
-  // }
 
   function convertToUTCFormat(dateInput: string | Date): Date {
-    return new Date(dateInput); // Returns a Date object
+    return new Date(dateInput);
   }
 
   const sendToApi = (date: Date) => {
-    const utcDate = new Date(Date.UTC(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      0, 0, 0
-    ));
-    
-    return utcDate 
+    const utcDate = new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0),
+    );
+
+    return utcDate;
   };
-  
+
   const save = async () => {
     try {
-      var a = new AppoinmentFinal();
-    
-      a.appoinmentdate = sendToApi(seleteddate);
-
-      a.userid = usercontext.value.userid;
-      a.organisationlocationid = route.params.organisationlocationid;
-      a.organizationid = route.params.organisationid;
-
-      var fromtimeconverted = convertToUTCFormat(seletedTiming.fromtime);
-      a.totime = seletedTiming.totime;
-
-      a.fromtime = seletedTiming.fromtime;
-
-      if (seletedTiming.totime == seletedTiming.fromtime) {
-        Alert.alert(environment.baseurl, 'select min one service');
+      if (selectedService.length === 0) {
+        Alert.alert(
+          'No Services Selected',
+          'Please select at least one service before booking',
+        );
         return;
       }
 
-      // a.fromtime = convertToUTCFormat(seletedTiming.fromtime)
+      var a = new AppoinmentFinal();
+      a.appoinmentdate = sendToApi(seleteddate);
+      a.userid = usercontext.value.userid;
+      a.organisationlocationid = route.params.organisationlocationid;
+      a.organizationid = route.params.organisationid;
+      a.totime = seletedTiming.totime;
+      a.fromtime = seletedTiming.fromtime;
+
+      if (seletedTiming.totime == seletedTiming.fromtime) {
+        Alert.alert(environment.baseurl, 'Please select at least one service');
+        return;
+      }
+
       a.attributes.servicelist = selectedService;
-      console.log('seleteddate', seleteddate);
       var res = await organisationservicetiming.Bookappoinment(a);
-      console.log('Appointment saved:', res);
-      setSelectedService([])
-      Alert.alert(environment.baseurl, res?.toString());
-      bottomSheetRef.current.close();
+
+      Alert.alert(
+        'Appointment Booked',
+        'Your appointment has been successfully booked!',
+      );
+      setSelectedService([]);
+      bottomSheetRef.current?.close();
       gettiming();
     } catch (error) {
       console.error('Error saving appointment:', error);
+      Alert.alert(
+        'Error',
+        'There was an error booking your appointment. Please try again.',
+      );
     }
+  };
+
+  const isTimeSlotSelected = (timeSlot: AppoinmentFinal) => {
+    return seletedTiming.fromtime === timeSlot.fromtime;
+  };
+
+  const formatTime = (timeString: string) => {
+    const time = new Date(`1970-01-01T${timeString}`);
+    return time.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
   };
 
   return (
     <AppView style={[$.flex_1, $.bg_tint_11]}>
-      {/* Organization Details Section */}
-      <AppView style={[$.px_normal, $.pt_normal, $.pb_compact]}>
-        <AppText style={[$.fs_normal, $.fw_bold, $.text_primary5]}>
-          {organisationDetails?.name || 'Loading...'}
-        </AppText>
-        <AppView style={[$.flex_row, $.align_items_center, $.mt_small]}>
-          <CustomIcon
-            name={CustomIcons.LocationPin}
-            color={$.tint_2}
-            size={$.s_small}
-          />
-          <AppText style={[$.fs_small, $.text_tint_ash, $.ml_small, { flex: 1 }]}>
-            {locationDetails ? 
-              `${locationDetails.addressline1}, ${locationDetails.addressline2}, ${locationDetails.city}, ${locationDetails.state} - ${locationDetails.pincode}` 
-              : 'Loading address...'}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.container}>
+        {/* Organization Details Section */}
+        <AppView style={styles.orgDetailsContainer}>
+          <AppText style={styles.orgName}>
+            {organisationDetails?.name || 'Loading...'}
           </AppText>
-        </AppView>
-        <AppView style={[$.flex_row, $.align_items_center, $.mt_small]}>
-          <CustomIcon
-            name={CustomIcons.ServiceList}
-            color={$.tint_2}
-            size={$.s_small}
-          />
-          <AppText style={[$.fs_small, $.text_tint_ash, $.ml_small]}>
-            {organisationservices.length} Services Available
-          </AppText>
-        </AppView>
-      </AppView>
 
-      <AppView style={[$.border_bottom, $.border_tint_7, $.mb_normal]} />
-
-      {/* Services Preview Section */}
-      <AppView style={[$.px_normal, $.pb_compact]}>
-        <AppText style={[$.fs_small, $.fw_medium, $.text_primary5, $.mb_small]}>
-          Available Services
-        </AppText>
-        <AppView style={{ position: 'relative' }}>
-          <FlatList
-            data={organisationservices}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item, index) => index.toString()}
-            contentContainerStyle={{
-              paddingRight: 20
-            }}
-            renderItem={({item}) => (
-              <AppView 
-                style={[
-                  $.bg_tint_10,
-                  $.border_rounded,
-                  $.px_small,
-                  $.py_small,
-                  $.mr_small,
-                  { minWidth: 150 }
-                ]}
-              >
-                <AppText 
-                  style={[$.fs_small, $.text_primary5, { flexShrink: 1 }]} 
-                >
-                  {item.Servicename}
-                </AppText>
-                <AppText style={[$.fs_small, $.text_tint_2, $.mt_tiny]}>
-                  ₹{item.offerprize}
-                </AppText>
-              </AppView>
-            )}
-          />
-          <AppView 
-            style={{
-              position: 'absolute',
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: 40,
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              justifyContent: 'center',
-              alignItems: 'center',
-              pointerEvents: 'none'
-            }}
-          >
+          <AppView style={styles.detailRow}>
             <CustomIcon
-              name={CustomIcons.RightArrow}
+              name={CustomIcons.LocationPin}
               color={$.tint_2}
               size={$.s_small}
             />
+            <AppText style={styles.detailText}>
+              {locationDetails
+                ? `${locationDetails.addressline1}, ${locationDetails.addressline2}, ${locationDetails.city}, ${locationDetails.state} - ${locationDetails.pincode}`
+                : 'Loading address...'}
+            </AppText>
+            <AppText style={styles.detailText}> {locationDetails?.country}</AppText>
+          </AppView>
+
+          <AppView style={styles.detailRow}>
+            <CustomIcon
+              name={CustomIcons.ServiceList}
+              color={$.tint_2}
+              size={$.s_small}
+            />
+            <AppText style={styles.detailText}>
+              {organisationservices.length} Services Available
+            </AppText>
           </AppView>
         </AppView>
-      </AppView>
 
-      <AppView style={[$.border_bottom, $.border_tint_7, $.mb_normal]} />
+        <AppView style={styles.divider} />
 
-      {/* Date Selection Section */}
-      <AppView style={[$.px_normal, $.flex_row, $.align_items_center, { justifyContent: 'space-between' }]}>
-        <AppText style={[$.fs_small, $.fw_medium, $.text_primary5]}>
-          Select Date
-        </AppText>
-        <TouchableOpacity
-          onPress={() => setshowdatepicker(true)}
-          style={[
-            $.flex_row,
-            $.align_items_center,
-            $.border,
-            $.border_rounded,
-            $.px_compact,
-            $.py_tiny,
-            $.bg_tint_10,
-            $.border_tint_7,
-          ]}>
-          <CustomIcon
-            name={CustomIcons.Clock}
-            color={$.tint_2}
-            size={$.s_small}
-          />
-          <AppText style={[$.fs_small, $.fw_medium, $.text_primary5, $.ml_small]}>
-            {seleteddate.toLocaleDateString('en-US', { 
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric'
-            })}
-          </AppText>
-        </TouchableOpacity>
-      </AppView>
-
-      <AppView style={[ $.border_tint_7]} />
-
-      {/* Time Slots Section */}
-      <AppView style={[$.px_normal, { flex: 1 }]}>
-        <AppText style={[$.fs_small, $.fw_medium, $.text_primary5, $.mb_small]}>
-          Available Time Slots
-        </AppText>
-        {organisationlocationTiming && organisationlocationTiming.length > 0 ? (
-          <FlatList
-            data={organisationlocationTiming}
-            nestedScrollEnabled
-            showsVerticalScrollIndicator={false}
-            keyExtractor={(item, index) => index.toString()}
-            numColumns={3}
-            columnWrapperStyle={{ 
-              justifyContent: 'space-between',
-              paddingHorizontal: 5,
-              marginBottom: 10
-            }}
-            contentContainerStyle={{
-              paddingBottom: 60
-            }}
-            style={{ flex: 1 }}
-            renderItem={({item}) => (
-              <TouchableOpacity
-                style={[
-                  $.p_small,
-                  $.bg_tint_11,
-                  $.border_rounded,
-                  $.border,
-                  $.align_items_center,
-                  { 
-                    width: '30%',
-                    marginHorizontal: 5,
-                    opacity: item.statuscode === 'Booked' ? 0.6 : 1
-                  }
-                ]}
-                disabled={item.statuscode === 'Booked'}
-                onPress={() => {
-                  var a = {...item};
-                  a.totime = item.fromtime;
-                  setSelectedtiming(a);
-                  bottomSheetRef.current?.open();
-                }}>
-                <AppText style={[$.fw_medium, $.text_primary5, { textAlign: 'center' }]}>
-                  {item.fromtime.split(':').slice(0, 2).join(':')}
-                </AppText>
-              </TouchableOpacity>
-            )}
-          />
-        ) : (
-          <AppText style={[$.fs_small, $.text_tint_ash, $.text_center, $.py_normal]}>
-            No time slots available for this date
-          </AppText>
-        )}
-      </AppView>
-
-      <BottomSheetComponent
-        ref={bottomSheetRef}
-        screenname="Available Service"
-        Save={save}
-        close={closeBottomSheet}>
-        <AppView>
-          <AppText>
-            {seletedTiming.fromtime} -{seletedTiming.totime}
-          </AppText>
+        {/* Date Selection Section */}
+        <AppView style={styles.dateSelectionContainer}>
+          <AppText style={styles.sectionTitle}>Select Date</AppText>
+          <TouchableOpacity
+            onPress={() => setshowdatepicker(true)}
+            style={styles.datePickerButton}>
+            <AppView style={styles.datePickerContent}>
+              <CustomIcon
+                name={CustomIcons.Account}
+                color={$.tint_2}
+                size={$.s_small}
+              />
+              <AppText style={styles.dateText}>
+                {seleteddate.toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </AppText>
+            </AppView>
+          </TouchableOpacity>
         </AppView>
 
-        <FlatList
-          data={organisationservices}
-          nestedScrollEnabled={true}
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({item}) => {
-            const isSelected = selectedService.some(
-              service => service.id === item.id,
-            );
+        <AppView style={styles.divider} />
 
-            return (
-              <AppView style={[$.flex_row]}>
-                <TouchableOpacity
-                  onPress={() => handleServiceSelection(item)}
-                  style={[$.p_small, $.flex_1]}>
-                  <AppText style={[$.text_primary5, $.fs_compact, $.fw_bold]}>
-                    {item.Servicename}
-                  </AppText>
-                  <AppText style={[$.fs_small, $.text_tint_ash]}>
-                    {item.timetaken} min session
-                  </AppText>
-                  <AppText style={[$.fs_small, $.flex_1, $.text_tint_ash]}>
+        {/* Time Slots Section */}
+        <AppView style={styles.timeSlotsContainer}>
+          <AppText style={styles.sectionTitle}>Available Time Slots</AppText>
+
+          {organisationlocationTiming &&
+          organisationlocationTiming.length > 0 ? (
+            <FlatList
+              data={organisationlocationTiming}
+              scrollEnabled={false}
+              nestedScrollEnabled
+              keyExtractor={item => item.fromtime}
+              numColumns={3}
+              columnWrapperStyle={styles.timeSlotsGrid}
+              contentContainerStyle={styles.timeSlotsContent}
+              renderItem={({item}) => {
+                const isSelected = isTimeSlotSelected(item);
+                const isBooked = item.statuscode === 'Booked';
+
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.timeSlotButton,
+                      isSelected && styles.selectedTimeSlot,
+                      isBooked && styles.bookedTimeSlot,
+                    ]}
+                    disabled={isBooked}
+                    onPress={() => {
+                      var a = {...item};
+                      a.totime = item.fromtime;
+                      setSelectedtiming(a);
+                    }}>
                     <AppText
                       style={[
-                        $.flex_1,
-                        {textDecorationLine: 'line-through', color: 'gray'},
+                        styles.timeSlotText,
+                        isSelected && styles.selectedTimeSlotText,
+                        isBooked && styles.bookedTimeSlotText,
                       ]}>
-                      ₹{item.prize}
+                      {formatTime(item.fromtime)}
                     </AppText>
-                    <AppText>₹{item.offerprize}</AppText>
-                  </AppText>
-                </TouchableOpacity>
+                    {isBooked && (
+                      <AppText style={styles.bookedText}>Booked</AppText>
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          ) : (
+            <AppView style={styles.noSlotsContainer}>
+              <CustomIcon
+                name={CustomIcons.Clock}
+                color={$.tint_7}
+                size={$.s_large}
+              />
+              <AppText style={styles.noSlotsText}>
+                No time slots available for this date
+              </AppText>
+            </AppView>
+          )}
+        </AppView>
 
-                {isSelected && (
-                  <CustomIcon
-                    name={CustomIcons.SingleTick}
-                    color={$.tint_2}
-                    size={$.s_compact}></CustomIcon>
-                )}
-              </AppView>
-            );
-          }}
+        <AppView style={styles.divider} />
+
+        {/* Selected Services Preview */}
+        {selectedService.length > 0 && (
+          <AppView style={styles.selectedServicesContainer}>
+            <AppText style={styles.sectionTitle}>Selected Services</AppText>
+            <FlatList
+              data={selectedService}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              renderItem={({item}) => (
+                <AppView style={styles.selectedServicePill}>
+                  <AppText style={styles.selectedServiceText}>
+                    {item.servicename}
+                  </AppText>
+                </AppView>
+              )}
+              contentContainerStyle={styles.selectedServicesList}
+            />
+            <AppView style={styles.timeSelection}>
+              <AppText style={styles.timeSelectionText}>
+                {formatTime(seletedTiming.fromtime)} -{' '}
+                {formatTime(seletedTiming.totime)}
+              </AppText>
+            </AppView>
+          </AppView>
+        )}
+
+        {/* Services List Section */}
+        {seletedTiming.appoinmentdate && (
+          <AppView style={styles.servicesContainer}>
+            <AppText style={styles.sectionTitle}>Available Services</AppText>
+
+            <FlatList
+              data={organisationservices}
+              scrollEnabled={false}
+              nestedScrollEnabled={true}
+              renderItem={({item}) => {
+                const isSelected = selectedService.some(
+                  service => service.id === item.id,
+                );
+
+                return (
+                  <TouchableOpacity
+                    onPress={() => handleServiceSelection(item)}
+                    style={[
+                      styles.serviceItem,
+                      isSelected && styles.selectedServiceItem,
+                    ]}>
+                    <AppView style={styles.serviceInfo}>
+                      <AppText style={styles.serviceName}>
+                        {item.Servicename}
+                      </AppText>
+                      <AppText style={styles.serviceDuration}>
+                        {item.timetaken} min session
+                      </AppText>
+                      <AppView style={styles.priceContainer}>
+                        <AppText style={styles.originalPrice}>
+                          ₹{item.prize}
+                        </AppText>
+                        <AppText style={styles.discountedPrice}>
+                          ₹{item.offerprize}
+                        </AppText>
+                      </AppView>
+                    </AppView>
+
+                    {isSelected && (
+                      <CustomIcon
+                        name={CustomIcons.SingleTick}
+                        color={$.tint_2}
+                        size={$.s_compact}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </AppView>
+        )}
+
+        {/* Book Appointment Button */}
+        <Button
+          title="Book Appointment"
+          onPress={save}
+          disabled={selectedService.length === 0 || !seletedTiming.fromtime}
+          style={styles.bookButton}
         />
-      </BottomSheetComponent>
+      </ScrollView>
 
       <DatePickerComponent
         date={seleteddate}
@@ -518,3 +574,196 @@ export function AppoinmentBookingScreen() {
     </AppView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingBottom: 24,
+  },
+  orgDetailsContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  orgName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  detailText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
+    flex: 1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#eee',
+    marginVertical: 16,
+    marginHorizontal: 16,
+  },
+  selectedServicesContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  selectedServicesList: {
+    paddingVertical: 8,
+  },
+  selectedServicePill: {
+    backgroundColor: '#f0f7ff',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  selectedServiceText: {
+    color: '#1a73e8',
+    fontSize: 12,
+  },
+  timeSelection: {
+    marginTop: 8,
+    backgroundColor: '#e8f0fe',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  timeSelectionText: {
+    color: '#1a73e8',
+    fontWeight: '600',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  servicesContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  serviceItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  selectedServiceItem: {
+    backgroundColor: '#f5f5f5',
+  },
+  serviceInfo: {
+    flex: 1,
+  },
+  serviceName: {
+    color: '#333',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  serviceDuration: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  originalPrice: {
+    fontSize: 12,
+    color: '#999',
+    textDecorationLine: 'line-through',
+    marginRight: 8,
+  },
+  discountedPrice: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  dateSelectionContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  datePickerButton: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+  },
+  datePickerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 8,
+  },
+  timeSlotsContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  timeSlotsGrid: {
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  timeSlotsContent: {
+    paddingBottom: 8,
+  },
+  timeSlotButton: {
+    width: '30%',
+    aspectRatio: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  selectedTimeSlot: {
+    backgroundColor: '#1a73e8',
+    borderColor: '#1a73e8',
+  },
+  bookedTimeSlot: {
+    backgroundColor: '#f5f5f5',
+    opacity: 0.6,
+  },
+  timeSlotText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  selectedTimeSlotText: {
+    color: '#fff',
+  },
+  bookedTimeSlotText: {
+    color: '#999',
+  },
+  bookedText: {
+    fontSize: 10,
+    color: '#ff4444',
+    marginTop: 4,
+  },
+  noSlotsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+  },
+  noSlotsText: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  bookButton: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 24,
+  },
+});

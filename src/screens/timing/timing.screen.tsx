@@ -5,6 +5,8 @@ import {
   CompositeScreenProps,
   useFocusEffect,
   useNavigation,
+  useRoute,
+  RouteProp,
 } from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AppStackParamList} from '../../appstack.navigation';
@@ -42,19 +44,27 @@ import {DatePickerComponent} from '../../components/Datetimepicker.component';
 import {$} from '../../styles';
 import {OrganisationServiceTimingService} from '../../services/organisationservicetiming.service';
 import {environment} from '../../utils/environment';
-import {AppTextInput} from '../../components/apptextinput.component';
-import {CustomIcon, CustomIcons} from '../../components/customicons.component';
+import {FormInput} from '../../components/forminput.component';
+import {LucideIcon, LucideIcons} from '../../components/LucideIcons.component';
 import {AppButton} from '../../components/appbutton.component';
 import {AppSwitch} from '../../components/appswitch.component';
-import { BottomSheetComponent } from '../../components/bottomsheet.component';
+import {BottomSheetComponent} from '../../components/bottomsheet.component';
+import {CustomHeader} from '../../components/customheader.component';
+import {Colors} from '../../constants/colors';
+import {Button} from '../../components/button.component';
 
 type TimingScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Timing'>,
   BottomTabScreenProps<HomeTabParamList>
 >;
 
+type TimingRouteParams = {
+  fromService?: boolean;
+};
+
 export function TimingScreen() {
   const navigation = useNavigation<TimingScreenProp['navigation']>();
+  const route = useRoute<RouteProp<{params: TimingRouteParams}, 'params'>>();
   const [organisationlocation, setOrganisationlocation] = useState<
     OrganisationLocation[]
   >([]);
@@ -69,7 +79,7 @@ export function TimingScreen() {
   const [showDatePickerForLeave, setShowDatePickerForLeave] = useState(false);
   const [showTimePickerForLeave, setShowTimePickerForLeave] = useState({
     show: false,
-    field: 'start_time' as 'start_time' | 'end_time'
+    field: 'start_time' as 'start_time' | 'end_time',
   });
 
   const organisationservice = useMemo(() => new OrganisationService(), []);
@@ -122,6 +132,9 @@ export function TimingScreen() {
     });
     return initialSlots;
   });
+
+  // Check if coming from service screen
+  const isFromService = route.params?.fromService === true;
 
   // Fetch data on focus
   useFocusEffect(
@@ -292,7 +305,6 @@ export function TimingScreen() {
 
   const LeaveRef = useRef<any>(null);
 
-  
   // Handle Leave Submit
   const handleLeaveSubmit = async () => {
     try {
@@ -301,18 +313,26 @@ export function TimingScreen() {
         return;
       }
 
-      if (!leaveRequest.isfullday && (!leaveRequest.start_time || !leaveRequest.end_time)) {
-        Alert.alert('Error', 'Please select start and end time for half day leave');
+      if (
+        !leaveRequest.isfullday &&
+        (!leaveRequest.start_time || !leaveRequest.end_time)
+      ) {
+        Alert.alert(
+          'Error',
+          'Please select start and end time for half day leave',
+        );
         return;
       }
 
       // Prepare leave request data
       const leaveReq = new Leavereq();
       Object.assign(leaveReq, leaveRequest);
-      
+
       // Call API to save leave
-      const response = await organisationservicetimingservice.BookLeave(leaveReq);
-      
+      const response = await organisationservicetimingservice.BookLeave(
+        leaveReq,
+      );
+
       if (response) {
         Alert.alert('Success', 'Leave booked successfully');
         LeaveRef.current?.close();
@@ -342,7 +362,7 @@ export function TimingScreen() {
   const handleLeaveTimeSelect = (date: Date) => {
     const newLeaveRequest = new Leavereq();
     Object.assign(newLeaveRequest, leaveRequest);
-    
+
     if (showTimePickerForLeave.field === 'start_time') {
       newLeaveRequest.start_time = date.toLocaleTimeString('en-GB', {
         hour: '2-digit',
@@ -358,7 +378,7 @@ export function TimingScreen() {
         hour12: false,
       });
     }
-    
+
     setLeaveRequest(newLeaveRequest);
     setShowTimePickerForLeave({show: false, field: 'start_time'});
   };
@@ -386,424 +406,364 @@ export function TimingScreen() {
   };
 
   return (
-    <ScrollView>
-      <AppView style={[$.pt_medium, $.px_normal]}>
-        <AppView style={[$.mb_medium, $.flex_1]}>
-          <AppText style={[$.fs_compact, $.fw_bold, $.text_primary5]}>
-            Location
-          </AppText>
+    <AppView style={[$.flex_1]}>
+      <CustomHeader
+        title="Business Hours"
+        showBackButton
+        backgroundColor={Colors.light.background}
+        titleColor={Colors.light.text}
+      />
 
-          <FlatList
-            data={organisationlocation}
-            nestedScrollEnabled={true}
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={({item}) => (
-              <AppView style={[$.flex_row,$.py_small, $.border_bottom, $.border_tint_10]}>
-                <AppView style={[ ]}>
-                  <AppText
-                    style={[
-                      $.text_tint_2,
-                      $.fw_medium,
-                      $.fs_compact,
-                      $.text_primary5,
-                    ]}>
-                    {item.name}
-                  </AppText>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      gettimingdata(item.id);
-                      setSelectedOrganisationlocation(item);
-                      setModalVisible(true);
-                    }}
-                    style={[$.mt_extrasmall, $.flex_row, ]}>
-                    <CustomIcon size={20} color={''} name={CustomIcons.Clock} />
-
-                    <AppText style={[$.fw_bold, $.fs_compact, $.ml_extrasmall]}>
-                      Edit Business Hours
-                    </AppText>
-                  </TouchableOpacity>
-                </AppView>
-                <TouchableOpacity
-                  onPress={() => handleLocationSelect(item)}>
-                  <AppText>Book Leave</AppText>
-                </TouchableOpacity>
-              </AppView>
-            )}
-          />
-        </AppView>
-
-        {/* Leave Management Bottom Sheet */}
-        <BottomSheetComponent
-          ref={LeaveRef}
-          screenname="Book Leave"
-          Save={handleLeaveSubmit}
-          showbutton={true}
-          close={() => {
-            LeaveRef.current?.close();
-            setLeaveRequest(new Leavereq());
-            setSelectedLeaveDate(null);
-          }}>
-          <AppView style={[$.mb_medium, $.flex_1]}>
-            <AppView style={[$.mb_medium]}>
-              <AppText style={[$.mb_extrasmall, $.fw_medium]}>
-                Select Leave Date
-              </AppText>
-              <TouchableOpacity
-                onPress={() => setShowDatePickerForLeave(true)}
+      <FlatList
+        data={organisationlocation}
+        nestedScrollEnabled={true}
+        contentContainerStyle={[$.p_small, $.flex_1]}
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({item}) => (
+          <AppView
+            style={[
+              $.mx_normal,
+              $.mb_small,
+              $.elevation_4,
+              $.border_rounded,
+              $.p_small,
+              $.flex_row,
+            ]}>
+            <AppView style={[$.flex_1]}>
+              <AppText
                 style={[
-                  $.border_rounded,
-                  $.border,
-                  $.p_small,
-                  $.bg_tint_11,
-                  $.flex_row,
-                  $.align_items_center,
+                  $.text_tint_2,
+                  $.fw_semibold,
+                  $.fs_medium,
+                  $.text_primary5,
                 ]}>
-                <CustomIcon size={20} color={''} name={CustomIcons.Account} />
-                <AppText style={[$.ml_small]}>
-                  {selectedLeaveDate
-                    ? selectedLeaveDate.toLocaleDateString()
-                    : 'Select Date'}
-                </AppText>
-              </TouchableOpacity>
-            </AppView>
-
-            <AppView style={[$.mb_medium]}>
-              <AppText style={[$.mb_extrasmall, $.fw_medium]}>
-                Leave Type
+                {item.name}
               </AppText>
-              <AppView style={[$.flex_row, $.align_items_center]}>
-                <AppText style={[$.mr_small]}>Half Day</AppText>
-                <AppSwitch
-                  value={leaveRequest.isfullday}
-                  onValueChange={handleFullDayToggle}
+              <AppView style={[$.flex_row, $.justify_content_center, $.mt_small]}>
+                <Button
+                  title="Edit Business Hours"
+                  variant="secondary"
+                  style={[$.flex_1, $.mr_small]}
+                  onPress={() => {
+                    gettimingdata(item.id);
+                    setSelectedOrganisationlocation(item);
+                    setModalVisible(true);
+                  }}
                 />
-                <AppText style={[$.ml_small]}>Full Day</AppText>
+                <Button
+                  title="Book Leave"
+                  variant="primary"
+                  style={[$.flex_1]}
+                  onPress={() => handleLocationSelect(item)}
+                />
               </AppView>
-            </AppView>
-
-            {!leaveRequest.isfullday && (
-              <AppView style={[$.mb_medium]}>
-                <AppText style={[$.mb_extrasmall, $.fw_medium]}>
-                  Select Time Slot
-                </AppText>
-                <AppView style={[$.flex_row, $.align_items_center, $.mb_small]}>
-                  <TouchableOpacity
-                    onPress={() => 
-                      setShowTimePickerForLeave({show: true, field: 'start_time'})
-                    }
-                    style={[
-                      $.border,
-                      $.border_rounded,
-                      $.p_small,
-                      $.flex_1,
-                      $.bg_tint_11,
-                    ]}>
-                    <AppText style={[$.fs_compact, $.text_center]}>
-                      {leaveRequest.start_time || 'Start Time'}
-                    </AppText>
-                  </TouchableOpacity>
-
-                  <AppText style={[$.mx_small]}>to</AppText>
-
-                  <TouchableOpacity
-                    onPress={() => 
-                      setShowTimePickerForLeave({show: true, field: 'end_time'})
-                    }
-                    style={[
-                      $.border,
-                      $.border_rounded,
-                      $.p_small,
-                      $.flex_1,
-                      $.bg_tint_11,
-                    ]}>
-                    <AppText style={[$.fs_compact, $.text_center]}>
-                      {leaveRequest.end_time || 'End Time'}
-                    </AppText>
-                  </TouchableOpacity>
-                </AppView>
-              </AppView>
-            )}
-
-            <AppView style={[$.mb_medium]}>
-              <AppText style={[$.mb_extrasmall, $.fw_medium]}>Location</AppText>
-              <AppText style={[$.text_tint_2, $.fw_medium, $.fs_compact]}>
-                {Selectedorganisationlocation?.name || 'Not selected'}
-              </AppText>
             </AppView>
           </AppView>
-        </BottomSheetComponent>
-
-        {/* Date Picker for Leave */}
-        {showDatePickerForLeave && (
-          <DatePickerComponent
-            date={selectedLeaveDate || new Date()}
-            show={showDatePickerForLeave}
-            mode="date"
-            setShow={() => setShowDatePickerForLeave(false)}
-            setDate={handleLeaveDateSelect}
-          />
         )}
+      />
 
-        {/* Time Picker for Leave (Half Day) */}
-        {showTimePickerForLeave.show && (
-          <DatePickerComponent
-            date={new Date()}
-            show={showTimePickerForLeave.show}
-            mode="time"
-            setShow={() => setShowTimePickerForLeave({show: false, field: 'start_time'})}
-            setDate={handleLeaveTimeSelect}
+      {/* Leave Management Bottom Sheet */}
+      <BottomSheetComponent
+        ref={LeaveRef}
+        screenname="Book Leave"
+        Save={handleLeaveSubmit}
+        showbutton={true}
+        close={() => {
+          LeaveRef.current?.close();
+          setLeaveRequest(new Leavereq());
+          setSelectedLeaveDate(null);
+        }}>
+        <AppView style={[$.mb_medium, $.flex_1]}>
+          <TouchableOpacity onPress={() => setShowDatePickerForLeave(true)}>
+            <FormInput
+              label="Select Leave Date"
+              placeholder="Select Date"
+              value={selectedLeaveDate ? selectedLeaveDate.toLocaleDateString() : ''}
+              editable={false}
+              onChangeText={() => {}}
+            />
+          </TouchableOpacity>
+
+          <AppView style={[$.mb_medium]}>
+            <AppText style={[$.mb_extrasmall, $.fw_medium]}>Leave Type</AppText>
+            <AppView style={[$.flex_row, $.align_items_center]}>
+              <AppText style={[$.mr_small]}>Half Day</AppText>
+              <AppSwitch
+                value={leaveRequest.isfullday}
+                onValueChange={handleFullDayToggle}
+              />
+              <AppText style={[$.ml_small]}>Full Day</AppText>
+            </AppView>
+          </AppView>
+
+          {!leaveRequest.isfullday && (
+            <AppView style={[$.mb_medium]}>
+              <AppText style={[$.mb_extrasmall, $.fw_medium]}>Time Slot</AppText>
+              <AppView style={[$.flex_row, $.align_items_center, $.mb_small]}>
+                <TouchableOpacity 
+                  style={[$.flex_1, $.mr_small]}
+                  onPress={() => setShowTimePickerForLeave({show: true, field: 'start_time'})}
+                >
+                  <FormInput
+                    label="Start Time"
+                    placeholder="Start Time"
+                    value={leaveRequest.start_time || ''}
+                    editable={false}
+                    onChangeText={() => {}}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={[$.flex_1]}
+                  onPress={() => setShowTimePickerForLeave({show: true, field: 'end_time'})}
+                >
+                  <FormInput
+                    label="End Time"
+                    placeholder="End Time"
+                    value={leaveRequest.end_time || ''}
+                    editable={false}
+                    onChangeText={() => {}}
+                  />
+                </TouchableOpacity>
+              </AppView>
+            </AppView>
+          )}
+
+          <FormInput
+            label="Location"
+            value={Selectedorganisationlocation?.name || 'Not selected'}
+            editable={false}
+            onChangeText={() => {}}
           />
-        )}
+        </AppView>
+      </BottomSheetComponent>
 
-        <AppButton
+      {/* Date Picker for Leave */}
+      {showDatePickerForLeave && (
+        <DatePickerComponent
+          date={selectedLeaveDate || new Date()}
+          show={showDatePickerForLeave}
+          mode="date"
+          setShow={() => setShowDatePickerForLeave(false)}
+          setDate={handleLeaveDateSelect}
+        />
+      )}
+
+      {/* Time Picker for Leave (Half Day) */}
+      {showTimePickerForLeave.show && (
+        <DatePickerComponent
+          date={new Date()}
+          show={showTimePickerForLeave.show}
+          mode="time"
+          setShow={() =>
+            setShowTimePickerForLeave({show: false, field: 'start_time'})
+          }
+          setDate={handleLeaveTimeSelect}
+        />
+      )}
+
+      {isFromService && (
+        <Button
+          title={'Save'}
+          style={[$.m_small]}
+          variant="save"
           onPress={() => {
             navigation.dispatch(
               CommonActions.reset({
                 index: 0,
-                routes: [
-                  {
-                    name: 'HomeTab',
-                  },
-                ],
+                routes: [{name: 'HomeTab'}],
               }),
             );
           }}
-          name={'Save'}></AppButton>
+        />
+      )}
 
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}>
-          <AppView style={[$.bg_tint_11, $.flex_1]}>
-            {/* Header */}
-            <AppView
-              style={[
-                $.p_normal,
-                $.border_bottom,
-                $.border_tint_9,
-                $.flex_row,
-                $.align_items_center,
-              ]}>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                style={[$.mr_medium]}>
-                <CustomIcon size={20} color={''} name={CustomIcons.LeftArrow} />
-              </TouchableOpacity>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <AppView style={[$.bg_tint_11, $.flex_1]}>
+          <CustomHeader
+            title={Selectedorganisationlocation?.name || 'Business Hours'}
+            showBackButton
+            onBackPress={() => setModalVisible(false)}
+            backgroundColor={Colors.light.background}
+            titleColor={Colors.light.text}
+          />
 
-              <AppText style={[$.fw_regular, $.fs_large]}>
-                {Selectedorganisationlocation?.name}
-              </AppText>
-            </AppView>
-
-            <ScrollView style={[$.flex_1, $.p_normal]}>
-              {/* Settings Section */}
-              <AppView style={[$.mb_medium, $.border_rounded2, $.bg_tint_11]}>
-                <AppView style={[$.mb_medium]}>
-                  <AppText style={[$.mb_extrasmall, $.fw_medium]}>
-                    Counters
-                  </AppText>
-                  <AppTextInput
-                    style={[
-                      $.border_rounded,
-                      $.border,
-                      $.p_small,
-                      $.bg_tint_11,
-                    ]}
-                    placeholder="Number of counters"
-                    value={counter.toString()}
-                    onChangeText={e => setCounter(parseInt(e) || 0)}
-                    keyboardtype="numeric"
-                  />
-                </AppView>
-
-                <AppView>
-                  <AppText style={[$.mb_extrasmall, $.fw_medium]}>
-                    Booking Window (days)
-                  </AppText>
-                  <AppTextInput
-                    style={[
-                      $.border_rounded,
-                      $.border,
-                      $.p_small,
-                      $.bg_tint_11,
-                    ]}
-                    placeholder="Days before appointment booking"
-                    value={openbefore.toString()}
-                    onChangeText={e => setopenbefore(parseInt(e) || 0)}
-                    keyboardtype="numeric"
-                  />
-                </AppView>
+          <ScrollView style={[$.flex_1, $.p_normal]}>
+            {/* Settings Section */}
+            <AppView style={[$.mb_medium, $.border_rounded2, $.bg_tint_11]}>
+              <AppView style={[$.mb_medium]}>
+                <FormInput
+                  label="Counters"
+                  placeholder="Number of counters"
+                  value={counter.toString()}
+                  onChangeText={e => setCounter(parseInt(e) || 0)}
+                  keyboardType="numeric"
+                />
               </AppView>
 
-              {/* Days with Time Slots */}
-              {daysOfWeek.map(day => (
-                <AppView
-                  key={day.id}
-                  style={[
-                    $.mb_medium,
-                    $.pb_medium,
-                    $.border_bottom,
-                    $.border_tint_10,
-                  ]}>
-                  <AppView
-                    style={[
-                      $.flex_row,
-                      $.align_items_center,
-                      $.justify_content_start,
-                      $.mb_small,
-                    ]}>
-                    <AppText style={[$.flex_1, $.fw_bold]}>{day.label}</AppText>
-                    <TouchableOpacity
-                      onPress={() => addTimeSlot(day.id)}
-                      style={[
-                        $.flex_row,
-                        $.align_items_center,
-                        $.p_small,
-                        $.border_rounded,
-                        $.bg_tint_10,
-                      ]}>
-                      <CustomIcon
-                        size={20}
-                        color={''}
-                        name={CustomIcons.Plus}
-                      />
-                      <AppText style={[$.ml_extrasmall]}>Add time</AppText>
-                    </TouchableOpacity>
-                  </AppView>
-
-                  {!dayTimeSlots[day.id]?.length && (
-                    <AppText style={[$.text_tint_4, $.fs_compact]}>
-                      No hours set
-                    </AppText>
-                  )}
-
-                  {dayTimeSlots[day.id]?.map(slot => (
-                    <AppView
-                      key={slot.localid}
-                      style={[$.flex_row, $.align_items_center, $.mb_small]}>
-                      <TouchableOpacity
-                        onPress={() => {
-                          setShowPicker({
-                            localid: slot.localid,
-                            dayId: day.id,
-                            field: 'start_time',
-                          });
-                        }}
-                        style={[
-                          $.border,
-                          $.border_rounded,
-                          $.p_small,
-                          $.flex_1,
-                          $.bg_tint_11,
-                        ]}>
-                        <AppText style={[$.fs_compact, $.text_center]}>
-                          {slot.start_time instanceof Date
-                            ? slot.start_time.toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                            : 'Start'}
-                        </AppText>
-                      </TouchableOpacity>
-
-                      <AppText style={[$.mx_small]}>to</AppText>
-
-                      <TouchableOpacity
-                        onPress={() => {
-                          setShowPicker({
-                            localid: slot.localid,
-                            dayId: day.id,
-                            field: 'end_time',
-                          });
-                        }}
-                        style={[
-                          $.border,
-                          $.border_rounded,
-                          $.p_small,
-                          $.flex_1,
-                          $.bg_tint_11,
-                        ]}>
-                        <AppText style={[$.fs_compact, $.text_center]}>
-                          {slot.end_time instanceof Date
-                            ? slot.end_time.toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                            : 'End'}
-                        </AppText>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => removeTimeSlot(day.id, slot.localid)}
-                        style={[
-                          $.ml_small,
-                          $.p_extrasmall,
-                          $.align_items_center,
-                          $.justify_content_center,
-                          $.border_rounded,
-                          {backgroundColor: '#f5f5f5'},
-                        ]}>
-                        <CustomIcon
-                          size={20}
-                          color={''}
-                          name={CustomIcons.Minus}
-                        />
-                      </TouchableOpacity>
-                    </AppView>
-                  ))}
-                </AppView>
-              ))}
-            </ScrollView>
-
-            {/* Footer - Save Button */}
-            <AppView
-              style={[$.p_normal, $.border_top, $.border_tint_9, $.bg_tint_11]}>
-              <TouchableOpacity
-                onPress={() => {
-                  save();
-                  setModalVisible(false);
-                }}
-                style={[
-                  $.p_normal,
-                  $.align_items_center,
-                  $.border_rounded,
-                  $.flex_row,
-                  $.justify_content_center,
-                  {backgroundColor: '#007bff'},
-                ]}>
-                <AppText
-                  style={{fontSize: 16, color: '#fff', fontWeight: 'bold'}}>
-                  Save Business Hours
-                </AppText>
-              </TouchableOpacity>
+              <AppView>
+                <FormInput
+                  label="Booking Window (days)"
+                  placeholder="Days before appointment booking"
+                  value={openbefore.toString()}
+                  onChangeText={e => setopenbefore(parseInt(e) || 0)}
+                  keyboardType="numeric"
+                />
+              </AppView>
             </AppView>
 
-            {/* DateTime Picker */}
-            {showPicker.localid !== null && (
-              <DatePickerComponent
-                date={
-                  dayTimeSlots[showPicker.dayId!]?.find(
-                    t => t.localid === showPicker.localid,
-                  )?.[showPicker.field] || new Date()
-                }
-                show={showPicker.localid !== null}
-                mode="time"
-                setShow={() =>
-                  setShowPicker({
-                    localid: null,
-                    dayId: null,
-                    field: 'start_time',
-                  })
-                }
-                setDate={setSelectedTime}
-              />
-            )}
+            {/* Days with Time Slots */}
+            {daysOfWeek.map(day => (
+              <AppView
+                key={day.id}
+                style={[
+                  $.mb_medium,
+                  $.pb_medium,
+                  $.border_bottom,
+                  $.border_tint_10,
+                ]}>
+                <AppView
+                  style={[
+                    $.flex_row,
+                    $.align_items_center,
+                    $.justify_content_start,
+                    $.mb_small,
+                  ]}>
+                  <AppText style={[$.flex_1, $.fw_bold]}>{day.label}</AppText>
+                  <Button
+                    title="Add"
+                    variant="outline"
+                    style={[]}
+                    onPress={() => addTimeSlot(day.id)}
+                  />
+                </AppView>
+
+                {!dayTimeSlots[day.id]?.length && (
+                  <AppText style={[$.text_tint_4, $.fs_compact]}>
+                    No hours set
+                  </AppText>
+                )}
+
+                {dayTimeSlots[day.id]?.map(slot => (
+                  <AppView
+                    key={slot.localid}
+                    style={[$.flex_row, $.align_items_center, $.mb_small]}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowPicker({
+                          localid: slot.localid,
+                          dayId: day.id,
+                          field: 'start_time',
+                        });
+                      }}
+                      style={[$.flex_1, $.mr_small]}>
+                      <FormInput
+                        label=""
+                        placeholder="Start Time"
+                        value={slot.start_time instanceof Date
+                          ? slot.start_time.toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : 'Start'}
+                        editable={false}
+                        onChangeText={() => {}}
+                      />
+                    </TouchableOpacity>
+
+                    <AppText style={[$.mx_small, {color: Colors.light.text}]}>to</AppText>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowPicker({
+                          localid: slot.localid,
+                          dayId: day.id,
+                          field: 'end_time',
+                        });
+                      }}
+                      style={[$.flex_1]}>
+                      <FormInput
+                        label=""
+                        placeholder="End Time"
+                        value={slot.end_time instanceof Date
+                          ? slot.end_time.toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : 'End'}
+                        editable={false}
+                        onChangeText={() => {}}
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => removeTimeSlot(day.id, slot.localid)}
+                      style={[
+                        $.ml_small,
+                        $.p_extrasmall,
+                        $.align_items_center,
+                        $.justify_content_center,
+                        $.border_rounded,
+                        {backgroundColor: Colors.light.background}
+                      ]}>
+                      <LucideIcon size={20} color={Colors.light.text} name={LucideIcons.X} />
+                    </TouchableOpacity>
+                  </AppView>
+                ))}
+              </AppView>
+            ))}
+          </ScrollView>
+
+          {/* Footer - Save Button */}
+          <AppView
+            style={[$.p_normal, $.bg_tint_11]}>
+            <TouchableOpacity
+              onPress={() => {
+                save();
+                setModalVisible(false);
+              }}
+              style={[
+                $.p_normal,
+                $.align_items_center,
+                $.border_rounded,
+                $.flex_row,
+                $.justify_content_center,
+                {backgroundColor: '#007bff'},
+              ]}>
+              <AppText
+                style={{fontSize: 16, color: '#fff', fontWeight: 'bold'}}>
+                Save Business Hours
+              </AppText>
+            </TouchableOpacity>
           </AppView>
-        </Modal>
-      </AppView>
-    </ScrollView>
+
+          {/* DateTime Picker */}
+          {showPicker.localid !== null && (
+            <DatePickerComponent
+              date={
+                dayTimeSlots[showPicker.dayId!]?.find(
+                  t => t.localid === showPicker.localid,
+                )?.[showPicker.field] || new Date()
+              }
+              show={showPicker.localid !== null}
+              mode="time"
+              setShow={() =>
+                setShowPicker({
+                  localid: null,
+                  dayId: null,
+                  field: 'start_time',
+                })
+              }
+              setDate={setSelectedTime}
+            />
+          )}
+        </AppView>
+      </Modal>
+    </AppView>
   );
 }

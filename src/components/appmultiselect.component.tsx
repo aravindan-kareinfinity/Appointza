@@ -2,19 +2,18 @@ import {ReactNode, useEffect, useMemo, useState} from 'react';
 import {
   FlatList,
   Modal,
-  ScrollView,
-  StyleProp,
-  TextStyle,
+  StyleSheet,
   TouchableOpacity,
-  TouchableOpacityProps,
+  View,
   ViewStyle,
 } from 'react-native';
-import {$} from '../styles';
+import {Colors} from '../constants/colors';
 import {AppText} from './apptext.component';
-import {AppView} from './appview.component';
 import {AppTextInput} from './apptextinput.component';
 import {AppButton} from './appbutton.component';
 import {createDelayedMethod} from '../utils/delaymethod.util';
+import {ChevronDown} from 'lucide-react-native';
+
 type AppMultiSelectProps<T> = {
   data: T[];
   selecteditemlist: T[];
@@ -23,15 +22,14 @@ type AppMultiSelectProps<T> = {
   keyExtractor: (item: T) => string;
   searchKeyExtractor: (item: T) => string;
   title: string;
-  style?: StyleProp<ViewStyle>;
+  style?: ViewStyle;
   showerror?: boolean;
   required?: boolean;
+  label?: string;
 };
+
 export const AppMultiSelect = <T,>(props: AppMultiSelectProps<T>) => {
   const [openModal, setOpenModal] = useState(false);
-  const toggleModel = () => {
-    setOpenModal(!openModal);
-  };
   const [selecteditemiddict, setSelecteditemiddict] = useState<{
     [key: string]: number;
   }>({});
@@ -41,7 +39,7 @@ export const AppMultiSelect = <T,>(props: AppMultiSelectProps<T>) => {
 
   useEffect(() => {
     let selectediddict: {[key: string]: number} = {};
-    props.selecteditemlist.forEach((e, i) => {
+    props.selecteditemlist.forEach((e) => {
       let key = props.keyExtractor(e);
       selectediddict[key] = 1;
     });
@@ -60,6 +58,7 @@ export const AppMultiSelect = <T,>(props: AppMultiSelectProps<T>) => {
   const isSelected = (id: string) => {
     return selecteditemiddict.hasOwnProperty(id);
   };
+
   const toggleSelection = (id: string) => {
     if (selecteditemiddict[id]) {
       delete selecteditemiddict[id];
@@ -68,87 +67,170 @@ export const AppMultiSelect = <T,>(props: AppMultiSelectProps<T>) => {
     }
     setSelecteditemiddict({...selecteditemiddict});
   };
+
   const onDone = () => {
     let selecteditemlist = props.data.filter(e => {
       return selecteditemiddict[props.keyExtractor(e)];
     });
     props.onSelect(selecteditemlist);
-    toggleModel();
+    setOpenModal(false);
   };
+
   const isvalid = () => {
     return props.required && Object.keys(selecteditemiddict).length > 0;
   };
+
+  const getSelectedItemsText = () => {
+    if (props.selecteditemlist.length === 0) {
+      return "Select items";
+    }
+    return `${props.selecteditemlist.length} items selected`;
+  };
+
   return (
-    <TouchableOpacity
-      style={[
-        $.bg_tint_11,$.p_small,$.m_tiny,$.border_rounded,
-        props.style,$.elevation_4,
-        props.showerror && !isvalid() && [$.border, $.border_danger],
-      ]}
-      onPress={toggleModel}>
-      <AppView style={$.flex_row}>
-        <AppText style={[$.fs_compact,$.text_primary5, $.flex_1]}>{props.title}</AppText>
-        {props.required && (
-          <AppText style={[$.text_danger, $.fs_regular]}>*</AppText>
-        )}
-      </AppView>
-      <AppView style={[$.flex_row, $.flex_wrap_wrap]}>
-        {props.selecteditemlist.map(selecteditem => {
-          return props.renderItemLabel(selecteditem);
-        })}
-      </AppView>
+    <View style={[styles.container, props.style]}>
+      <AppText style={styles.label}>
+        {props.label || props.title}
+        {props.required && <AppText style={styles.required}>*</AppText>}
+      </AppText>
+      
+      <TouchableOpacity
+        style={[
+          styles.selectButton,
+          props.showerror && !isvalid() && styles.selectButtonError,
+        ]}
+        onPress={() => setOpenModal(true)}>
+        <AppText style={styles.selectText}>{getSelectedItemsText()}</AppText>
+        <ChevronDown size={20} color={Colors.light.text} />
+      </TouchableOpacity>
 
       <Modal
         transparent={true}
-        animationType="fade"
+        animationType="slide"
         visible={openModal}
-        onRequestClose={() => toggleModel()}>
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={toggleModel}
-          style={[$.w_100, $.h_100, {backgroundColor: '#000000aa'}]}>
-          <AppView
-            style={[
-              $.bg_tint_11,
-              $.flex_1,
-              $.mt_colossal,
-              $.border,
-              $.border_tint_8,
-              {borderTopLeftRadius: 20, borderTopRightRadius: 20},
-            ]}>
-            <AppText
-              style={[$.fs_compact, $.fs_medium, $.text_primary5, $.p_compact]}>
-              {props.title}
-            </AppText>
+        onRequestClose={() => setOpenModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <AppText style={styles.modalTitle}>{props.title}</AppText>
+            
             <AppTextInput
-              style={[$.bg_tint_11,$.px_compact,$.text_primary5]}
+              style={styles.searchInput}
               placeholder="Search"
               onChangeText={text => {
                 setSearchtext(text);
                 delayedsearchmethod(() => onSearch(text));
               }}
             />
+
             <FlatList
               data={filtereddata}
-              style={[$.pt_compact,]}
+              style={styles.list}
               renderItem={({item}) => {
-                let id = props.keyExtractor(item);
-
+                const id = props.keyExtractor(item);
                 return (
                   <TouchableOpacity
-                    style={[$.p_compact, isSelected(id) && [$.bg_tint_8]]}
-                    onPress={() => {
-                      toggleSelection(id);
-                    }}>
+                    style={[
+                      styles.optionItem,
+                      isSelected(id) && styles.selectedOption,
+                    ]}
+                    onPress={() => toggleSelection(id)}>
                     {props.renderItemLabel(item)}
                   </TouchableOpacity>
                 );
               }}
             />
-            <AppButton onPress={onDone} name="Done"></AppButton>
-          </AppView>
-        </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onDone}>
+              <AppText style={styles.closeButtonText}>Done</AppText>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
-    </TouchableOpacity>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 16,
+    width: "100%",
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 6,
+    color: Colors.light.text,
+  },
+  required: {
+    color: Colors.light.error,
+    marginLeft: 4,
+  },
+  selectButton: {
+    backgroundColor: Colors.light.inputBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  selectButtonError: {
+    borderColor: Colors.light.error,
+  },
+  selectText: {
+    fontSize: 16,
+    color: Colors.light.text,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: Colors.light.background,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 20,
+    maxHeight: "70%",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+    textAlign: "center",
+    color: Colors.light.text,
+  },
+  searchInput: {
+    backgroundColor: Colors.light.inputBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  list: {
+    marginBottom: 16,
+  },
+  optionItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+  },
+  selectedOption: {
+    backgroundColor: `${Colors.light.primary}20`,
+  },
+  closeButton: {
+    padding: 16,
+    backgroundColor: Colors.light.inputBackground,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.text,
+  },
+});

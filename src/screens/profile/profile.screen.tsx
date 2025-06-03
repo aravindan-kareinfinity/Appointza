@@ -8,7 +8,7 @@ import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
-import {AppTextInput} from '../../components/apptextinput.component';
+import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {ScrollView, TouchableOpacity, Alert} from 'react-native';
 import {
@@ -27,6 +27,7 @@ import {useSelector} from 'react-redux';
 import {selectiscustomer} from '../../redux/iscustomer.redux';
 import {BottomSheetComponent} from '../../components/bottomsheet.component';
 import {store} from '../../redux/store.redux';
+import { Button } from '../../components/button.component';
 
 type ProfileScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Profile'>,
@@ -146,24 +147,30 @@ export function ProfileScreen() {
         </AppView>
 
         {/* Profile Fields */}
-        <AppTextInput
-          style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
-          placeholder="Name"
-          value={profile.name}
-          onChangeText={text => setProfile({...profile, name: text})}
-        />
-        <AppTextInput
-          style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
-          placeholder="Role"
-          value={profile.designation}
-          onChangeText={text => setProfile({...profile, designation: text})}
-        />
-        <AppTextInput
-          style={[$.bg_tint_11, $.mx_regular, $.mb_medium, $.text_primary5]}
-          placeholder="Contact"
-          value={profile.mobile}
-          onChangeText={text => setProfile({...profile, mobile: text})}
-        />
+        <AppView style={[$.px_regular]}>
+          <FormInput
+            label="Name"
+            value={profile.name}
+            onChangeText={text => setProfile({...profile, name: text})}
+            placeholder="Enter your name"
+            containerStyle={{ marginBottom: 16 }}
+          />
+          <FormInput
+            label="Role"
+            value={profile.designation}
+            onChangeText={text => setProfile({...profile, designation: text})}
+            placeholder="Enter your role"
+            containerStyle={{ marginBottom: 16 }}
+          />
+          <FormInput
+            label="Contact"
+            value={profile.mobile}
+            onChangeText={text => setProfile({...profile, mobile: text})}
+            placeholder="Enter your contact number"
+            keyboardType="phone-pad"
+            containerStyle={{ marginBottom: 16 }}
+          />
+        </AppView>
       </AppView>
 
       {/* Delete Button */}
@@ -181,25 +188,13 @@ export function ProfileScreen() {
           $.mx_regular,
           $.mb_normal,
         ]}>
-        <AppButton
-          name="Cancel"
-          style={[
-            $.bg_tint_11,
-            $.flex_1,
-            $.mr_huge,
-            $.border,
-            $.border_rounded,
-            $.border_danger,
-          ]}
-          textStyle={[$.text_danger]}
-          onPress={() => navigation.goBack()}
-        />
-        <AppButton
-          name="Save"
-          style={[$.flex_1, $.border, $.border_rounded, $.border_success]}
-          textStyle={[$.text_success]}
-          onPress={saveProfile}
-        />
+        <Button title={'Cancel'} variant='cancel' style={[$.flex_1, $.mr_small]}
+        onPress={() => {
+          navigation.goBack();
+        }}/>
+        <Button title={'Save'} variant='save' style={[$.flex_1]}
+        onPress={saveProfile}/>
+        
       </AppView>
 
       {/* Delete Confirmation Bottom Sheet */}
@@ -236,7 +231,7 @@ export function ProfileScreen() {
           </AppText> */}
 
           <AppButton
-            name="Cornfirm Delete"
+            name="Confirm Delete"
             style={[$.bg_danger, $.flex_1]}
             textStyle={[$.text_tint_11]}
             onPress={handleDelete}

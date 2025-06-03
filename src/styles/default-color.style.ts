@@ -1,15 +1,12 @@
-
 import { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { Theme } from '../models/theme.model';
 
-
-export type ThemeType = 'light' | 'dark' | 'custom'  | 'Aravind';
+export type ThemeType = 'light';
 
 export class DefaultColor {
-  private constructor() { }
+  private constructor() {}
 
   private static _instance: DefaultColor | null = null;
-
 
   public static get instance(): DefaultColor {
     if (DefaultColor._instance == null) {
@@ -17,22 +14,14 @@ export class DefaultColor {
     }
     return this._instance!;
   }
-  
 
-  // Switch the current theme, validating the theme
   public switchTheme(theme: ThemeType): void {
-    console.log("theme", theme);
-
     this.currentTheme = theme;
-    console.log("ajn", theme, this.currentTheme);
-    this.getTheme()
-    const selectedTheme = this.getTheme();
+    this.getTheme();
   }
 
   private currentTheme: ThemeType = 'light';
 
-
-  // Directly returns the selected theme's colors
   public getTheme(): ThemeType {
     return this.currentTheme;
   }
@@ -41,142 +30,90 @@ export class DefaultColor {
     return this.currentTheme;
   }
 
-
   public getAvailableThemes(): ThemeType[] {
     return Object.keys(this.themes) as ThemeType[];
   }
 
   private themes: Record<ThemeType, Theme> = {
-    dark: {
-      tint_1: '#FFFFFF',
-      tint_2: '#F5F5F5',
-      tint_3: '#EAEAEA',
-      tint_4: '#D4D4D4',
-      tint_5: '#BFBFBF',
-      tint_6: '#A9A9A9',
-      tint_7: '#949494',
-      tint_8: '#7F7F7F',
-      tint_9: '#696969',
-      tint_10: '#545454',
-      tint_11: '#3E3E3E',
-      tint_ash: '#4B5563', // Ash Gray
-      danger: '#FF3B30',
-      success: '#34C759',
-      warn: '#FFD60A',
-      primary1:'',
-      primary2:'',
-      primary3:'',
-      primary4:'',
-      primary5:'',
-    },
-    light: 
-    {
-      tint_1: '#0D2B4B',  // Deep Navy Blue
-      tint_2: '#1A4D80',  // Royal Blue
-      tint_3: '#2E6BA8',  // Classic Blue
-      tint_4: '#4285C7',  // Bright Blue
-      tint_5: '#5A9AD0',  // Sky Blue
-      tint_6: '#7DB1DA',  // Light Blue
-      tint_7: '#9BC5E3',  // Soft Pastel Blue
-      tint_8: '#B9D8EB',  // Powder Blue
-      tint_9: '#D7E9F4',  // Pale Blue
-      tint_10: '#F0F7FC', // Almost White Blue
-      
-      tint_11: '#FFFFFF',  // White
-      tint_ash: "#505A6B", // Sophisticated Ash
-      
-      // accent_1: '#8A6D3B', // Warm Gold
-      // accent_2: '#C0A875', // Light Gold
-      
-      danger: '#C93C3C',  // Refined Red
-      success: '#2F8A6A', // Emerald Success
-      warn: '#E6B54C',    // Rich Amber
-      
-      primary1: '#F5F7FA',  // Light Background
-      primary2: '#1E4C8A',  // Deep Blue
-      primary3: '#3F7CAC',  // Medium Blue
-      primary4: '#B8A88A',  // Warm Taupe (luxury touch)
-      primary5: '#212836',  // Almost Black
+    light: {
+      // Background colors
+      background: '#f9fafb',
+      cardBackground: '#ffffff',
+    
+      // Button colors
+      primary: '#FF6A00',           // Updated from indigo to logo orange
+      secondary: '#009CFF',         // Updated from orange to logo blue
+    
+      // Text colors
+      text: '#1f2937',
+      placeholder: '#9ca3af',
+    
+      // Border colors
+      border: '#e5e7eb',
+    
+      // Legacy colors (mapped to new ones)
+      tint_1: '#FF6A00',
+      tint_2: '#009CFF',
+      tint_3: '#1f2937',
+      tint_4: '#9ca3af',
+      tint_5: '#e5e7eb',
+      tint_6: '#f9fafb',
+      tint_7: '#ffffff',
+      tint_8: '#FF6A00',
+      tint_9: '#009CFF',
+      tint_10: '#1f2937',
+      tint_11: '#ffffff',
+      tint_ash: '#9ca3af',
+    
+      // Alerts
+      danger: '#ef4444',
+      success: '#22c55e',
+      warn: '#f59e0b',
+    
+      // Primary sets
+      primary1: '#f9fafb',
+      primary2: '#FF6A00',
+      primary3: '#009CFF',
+      primary4: '#ffffff',
+      primary5: '#1f2937',
     }
-    // {
-    //   tint_1: '#0B3D02',  // Deep Forest Green  
-    //   tint_2: '#165B12',  // Dark Green  
-    //   tint_3: '#1F7A1F',  // Classic Green  
-    //   tint_4: '#2C9B2F',  // Bright Leaf Green  
-    //   tint_5: '#3DBB40',  // Vivid Green  
-    //   tint_6: '#5DDC5A',  // Light Vibrant Green  
-    //   tint_7: '#7FE27F',  // Soft Pastel Green  
-    //   tint_8: '#A3EAA3',  // Mint Green  
-    //   tint_9: '#C7F1C7',  // Pale Green  
-    //   tint_10: '#EAF9EA', // Almost White Green  
-    //   tint_11: '#FFFFFF',
-    //   tint_ash: "#4B5563", // Ash Gray
     
-    //   danger: '#D32F2F',  // Adjusted for better contrast
-    //   success: '#388E3C', // Rich Success Green
-    //   warn: '#FBC02D',   // Golden Warning
-    
-    //   primary1: '#EFF6FF',  // sky blue 
-    //   primary2: '#2A5EDD',  // Dark Blue  
-    //   primary3: '#2FA866',  // Fresh Emerald Green  
-    //   primary4: '#81C784',  // Light Mint Green  
-    //   primary5: '#000',  // black  
-    // }
-,    
-
-    Aravind: {
-      tint_1: '#404040',  // Dark Gray
-      tint_2: '#2B2B2B',  // Almost Black
-      tint_3: '#565656',  // Charcoal Gray
-      tint_4: '#6B6B6B',  // Medium Gray
-      tint_5: '#818181',  // Soft Gray
-      tint_6: '#969696',  // Neutral Gray
-      tint_7: '#ADADAD',  // Light Gray
-      tint_8: '#C3C3C3',  // Very Light Gray
-      tint_9: '#D9D9D9',  // Pale Gray
-      tint_10: '#EFEFEF', // Almost White
-      tint_11: '#FFFFFF', // Pure White
-      tint_ash: '#4B5563', // Ash Gray
-      danger: '#FF3B30',  // Bright Red
-      success: '#30D158', // Fresh Green
-      warn: '#FFC300',    // Warm Yellow
-      primary1:'',
-      primary2:'',
-      primary3:'',
-      primary4:'',
-      primary5:'',
-},
-
-    custom: {
-      tint_1: '#2B2B2B',
-      tint_2: '#3C3C3C',
-      tint_3: '#4D4D4D',
-      tint_4: '#5E5E5E',
-      tint_5: '#6F6F6F',
-      tint_6: '#808080',
-      tint_7: '#919191',
-      tint_8: '#A2A2A2',
-      tint_9: '#B3B3B3',
-      tint_10: '#C4C4C4',
-      tint_11: '#D5D5D5',
-      tint_ash: '#4B5563', // Ash Gray
-      danger: '#FF6B6B',
-      success: '#51CF66',
-      warn: '#FFC107',
-      primary1:'',
-      primary2:'',
-      primary3:'',
-      primary4:'',
-      primary5:'',
-    },
   };
 
   get colors(): Theme {
-    
     return this.themes[this.currentTheme];
   }
 
-  // Accessors for theme colors
+  // New color accessors
+  get background(): string {
+    return this.colors.background;
+  }
+
+  get cardBackground(): string {
+    return this.colors.cardBackground;
+  }
+
+  get primary(): string {
+    return this.colors.primary;
+  }
+
+  get secondary(): string {
+    return this.colors.secondary;
+  }
+
+  get text(): string {
+    return this.colors.text;
+  }
+
+  get placeholder(): string {
+    return this.colors.placeholder;
+  }
+
+  get border(): string {
+    return this.colors.border;
+  }
+
+  // Legacy color accessors (keeping for backward compatibility)
   get tint__1(): string {
     return this.colors.tint_1;
   }
@@ -221,6 +158,10 @@ export class DefaultColor {
     return this.colors.tint_11;
   }
 
+  get tint__ash(): string {
+    return this.colors.tint_ash;
+  }
+
   get danger_(): string {
     return this.colors.danger;
   }
@@ -232,17 +173,17 @@ export class DefaultColor {
   get warn_(): string {
     return this.colors.warn;
   }
+
   get primary__1(): string {
     return this.colors.primary1;
   }
+
   get primary__2(): string {
     return this.colors.primary2;
   }
+
   get primary__5(): string {
     return this.colors.primary5;
-  }
-  get tint__ash(): string {
-    return this.colors.tint_ash;
   }
 
   // Color variables
@@ -260,9 +201,9 @@ export class DefaultColor {
   danger: string = this.colors.danger;
   success: string = this.colors.success;
   warn: string = this.colors.warn;
-  tint_primary_5 :string = this.colors.primary5;
-  tint_ash :string =this.colors.tint_ash
-  primary2:string=this.colors.primary2
+  tint_primary_5: string = this.colors.primary5;
+  tint_ash: string = this.colors.tint_ash;
+  primary2: string = this.colors.primary2;
 
   /* Text Styles */
   text_tint_1: StyleProp<TextStyle> = { color: this.tint__1 };
@@ -280,10 +221,6 @@ export class DefaultColor {
   text_primary1: StyleProp<TextStyle> = { color: this.primary__1 };
   text_primary2: StyleProp<TextStyle> = { color: this.primary__2 };
   text_primary5: StyleProp<TextStyle> = { color: this.primary__5 };
-
-
-
-
   text_danger: StyleProp<TextStyle> = { color: this.danger_ };
   text_success: StyleProp<TextStyle> = { color: this.success_ };
   text_warn: StyleProp<TextStyle> = { color: this.warn_ };
@@ -300,11 +237,9 @@ export class DefaultColor {
   bg_tint_9: StyleProp<ViewStyle> = { backgroundColor: this.tint__9 };
   bg_tint_10: StyleProp<ViewStyle> = { backgroundColor: this.tint__10 };
   bg_tint_11: StyleProp<ViewStyle> = { backgroundColor: this.tint__11 };
-
   bg_danger: StyleProp<ViewStyle> = { backgroundColor: this.danger_ };
   bg_success: StyleProp<ViewStyle> = { backgroundColor: this.success_ };
   bg_warn: StyleProp<ViewStyle> = { backgroundColor: this.warn_ };
-
   bg_primary1: StyleProp<ViewStyle> = { backgroundColor: this.primary__1 };
   bg_primary2: StyleProp<ViewStyle> = { backgroundColor: this.primary__2 };
   bg_primary5: StyleProp<ViewStyle> = { backgroundColor: this.primary__5 };
@@ -321,15 +256,10 @@ export class DefaultColor {
   border_tint_9: StyleProp<ViewStyle> = { borderColor: this.tint__9 };
   border_tint_10: StyleProp<ViewStyle> = { borderColor: this.tint__10 };
   border_tint_11: StyleProp<ViewStyle> = { borderColor: this.tint__11 };
-
-  
-  border_danger: StyleProp<ViewStyle> = {borderColor: this.danger};
-  border_success: StyleProp<ViewStyle> = {borderColor: this.success};
-  border_warn: StyleProp<ViewStyle> = {borderColor: this.warn};
-
-  border_primary1: StyleProp<ViewStyle> = {borderColor: this.primary__1};
-  border_primary2: StyleProp<ViewStyle> = {borderColor: this.primary__2};
-  border_primary5: StyleProp<ViewStyle> = {borderColor: this.primary__5};
-
-  
+  border_danger: StyleProp<ViewStyle> = { borderColor: this.danger };
+  border_success: StyleProp<ViewStyle> = { borderColor: this.success };
+  border_warn: StyleProp<ViewStyle> = { borderColor: this.warn };
+  border_primary1: StyleProp<ViewStyle> = { borderColor: this.primary__1 };
+  border_primary2: StyleProp<ViewStyle> = { borderColor: this.primary__2 };
+  border_primary5: StyleProp<ViewStyle> = { borderColor: this.primary__5 };
 }

@@ -7,22 +7,13 @@ import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {
-  FlatList,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import {Dimensions, FlatList, Image, ScrollView, TouchableOpacity} from 'react-native';
 import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
 import {
   selectusercontext,
   usercontextactions,
 } from '../../redux/usercontext.redux';
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {DefaultColor} from '../../styles/default-color.style';
 import {themeActions} from '../../redux/theme.redux';
 import {store} from '../../redux/store.redux';
@@ -37,7 +28,7 @@ import {
 } from '../../models/organisationlocation.model';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
 import {AppAlert} from '../../components/appalert.component';
-import { UsersContext } from '../../models/users.model';
+import {UsersContext} from '../../models/users.model';
 
 type AccountScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Account'>,
@@ -57,8 +48,8 @@ export function AccountScreen() {
 
   const logout = () => {
     dispatch(usercontextactions.clear());
-    dispatch(usercontextactions.set(new UsersContext()))
-    dispatch(iscustomeractions.setIsCustomer(true))
+    dispatch(usercontextactions.set(new UsersContext()));
+    dispatch(iscustomeractions.setIsCustomer(true));
   };
 
   const isLoggedIn = usercontext && usercontext.value.userid > 0;
@@ -146,14 +137,7 @@ export function AccountScreen() {
     <TouchableOpacity
       key={index}
       onPress={item.onPress}
-      style={[
-        $.flex_row,
-        $.align_items_center,
-        $.p_medium,
-        $.border_bottom,
-        $.border_tint_10,
-        index === 0 && $.border_top,
-      ]}>
+      style={[$.flex_row, $.align_items_center, $.p_medium, $.border_tint_4]}>
       <CustomIcon color={$.tint_primary_5} name={item.icon} size={$.s_normal} />
       <AppText
         style={[
@@ -182,7 +166,7 @@ export function AccountScreen() {
 
   const [selectlocation, Setselectlocation] =
     useState<OrganisationLocationStaffRes | null>(null);
-    
+
   useEffect(() => {
     if (isLoggedIn) {
       getstafflocation();
@@ -214,13 +198,17 @@ export function AccountScreen() {
     dispatch(iscustomeractions.setIsCustomer(!isCustomer));
   };
 
+  const screenWidth = Dimensions.get('window').width;
+  const imageSize = screenWidth * 0.4;
+
+
   return (
-    <ScrollView style={[$.flex_1, $.bg_tint_11]}>
+    <ScrollView style={[$.flex_1, {backgroundColor: '#F5F7FA'}]}>
       {/* Profile Header */}
-      <AppView style={[$.pt_medium, $.px_normal, $.pb_medium]}>
+      <AppView style={[$.mx_normal, $.border_rounded2, $.m_small, $.p_big]}>
         {isLoggedIn && (
-          <>
-            <AppView style={[$.flex_row, $.align_items_center, $.mb_medium]}>
+          <AppView>
+            <AppView style={[$.flex_row, $.align_items_center, $.mb_small]}>
               <AppView style={[$.mr_medium]}>
                 <Image
                   style={{
@@ -286,35 +274,62 @@ export function AccountScreen() {
                 </TouchableOpacity>
               </AppView>
             )}
-          </>
+          </AppView>
         )}
 
         {!isLoggedIn && (
-          <AppView style={[$.py_large, $.align_items_center]}>
-            <CustomIcon
-              color={$.tint_primary_5}
-              name={CustomIcons.Account}
-              size={60}
-            />
-            <AppText
-              style={[$.fs_big, $.fw_bold, $.text_primary5, $.mt_medium]}>
-              Welcome
-            </AppText>
-            <AppText style={[$.fs_compact, $.text_tint_2, $.mt_tiny]}>
-              Sign up or log in to continue
-            </AppText>
+          <AppView style={[ $.align_items_center]}>
+            <AppView
+              style={[
+                $.align_items_center
+              ]}>
+              <Image
+                source={require('../../assert/A1.png')}
+                style={{
+                  width: imageSize,
+                  height: imageSize,
+                  marginBottom: 24,
+                }}
+                resizeMode="contain"
+              />
+              <AppText style={[$.fw_bold, $.fs_enormous, $.text_primary5]}>
+                Appointza
+              </AppText>
+              <AppText
+                style={{
+                  fontSize: 16,
+                  color: '#666666',
+                  textAlign: 'center',
+                  marginTop: 8,
+                  lineHeight: 24,
+                }}>
+                Book. Manage. Meet.{'\n'}
+                All in One Place
+              </AppText>
+            </AppView>
           </AppView>
         )}
       </AppView>
 
       {/* Menu Section */}
       <AppView
-        style={[$.bg_tint_11, $.mx_normal, $.border_rounded2, $.mb_large]}>
+        style={[
+          $.mx_normal,
+          $.m_big,
+          $.border_rounded2,
+          $.mb_large,
+          {backgroundColor: '#FFFFFF'},
+        ]}>
         {menuItems.map(renderMenuItem)}
       </AppView>
 
       {/* App Version */}
-      <AppView style={[$.align_items_center, $.mb_large]}>
+      <AppView
+        style={[
+          $.align_items_center,
+          $.mb_large,
+          {backgroundColor: '#F5F7FA'},
+        ]}>
         <AppText style={[$.fs_extrasmall, $.text_tint_4]}>
           App Version 1.0.0
         </AppText>

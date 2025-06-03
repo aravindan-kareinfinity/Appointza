@@ -6,11 +6,11 @@ import {AppStackParamList} from '../../appstack.navigation';
 import {useEffect, useMemo, useState} from 'react';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
-import {AppButton} from '../../components/appbutton.component';
+import {Button} from '../../components/button.component';
 import {$} from '../../styles';
-import {AppTextInput} from '../../components/apptextinput.component';
+import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {ScrollView, TouchableOpacity, ActivityIndicator} from 'react-native';
+import {ScrollView, TouchableOpacity, ActivityIndicator, ViewStyle} from 'react-native';
 import {
   OrganisationLocation,
   OrganisationLocationSelectReq,
@@ -177,6 +177,10 @@ export function LocationScreen(props: LocationScreenProp) {
     }));
   };
 
+  const inputContainerStyle: ViewStyle = {
+    marginBottom: 16,
+  };
+
   return (
     <AppView style={[$.pt_normal, $.flex_1]}>
       {/* Header */}
@@ -194,11 +198,18 @@ export function LocationScreen(props: LocationScreenProp) {
       </AppView>
 
       {/* Location Picker Button */}
-      <TouchableOpacity
+     
+
+      <Button
+        title="Select Location on Map"
+        variant="outline"
         onPress={() => setShowLocationPicker(true)}
-        style={[$.mb_normal, $.p_small, $.bg_tint_10, $.border_rounded, $.mx_regular]}>
-        <AppText style={[$.text_tint_3]}>{'Select Location on Map'}</AppText>
-      </TouchableOpacity>
+        disabled={isLoading}
+        style={[$.mb_normal, $.p_small, $.border_rounded, $.mx_regular]}
+      />
+
+
+    
 
       {showLocationPicker && (
         <LocationPicker
@@ -214,53 +225,58 @@ export function LocationScreen(props: LocationScreenProp) {
         </AppView>
       ) : (
         <ScrollView style={[$.flex_1, $.pb_large]}>
-          {/* Form Fields */}
-          <AppTextInput
-            style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
-            placeholder="Location name*"
-            value={organisationLocation.name}
-            onChangeText={value => updateOrganisationLocation('name', value)}
-          />
+          <AppView style={[$.px_regular]}>
+            {/* Form Fields */}
+            <FormInput
+              label="Location Name"
+              value={organisationLocation.name}
+              onChangeText={value => updateOrganisationLocation('name', value)}
+              placeholder="Enter location name"
+              containerStyle={inputContainerStyle}
+            />
 
-          <AppTextInput
-            style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
-            placeholder="No, Building name*"
-            value={organisationLocation.addressline1}
-            onChangeText={value => updateOrganisationLocation('addressline1', value)}
-          />
+            <FormInput
+              label="Building Details"
+              value={organisationLocation.addressline1}
+              onChangeText={value => updateOrganisationLocation('addressline1', value)}
+              placeholder="Enter building number and name"
+              containerStyle={inputContainerStyle}
+            />
 
-          <AppTextInput
-            style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
-            placeholder="Road name, Area"
-            value={organisationLocation.addressline2}
-            onChangeText={value => updateOrganisationLocation('addressline2', value)}
-          />
+            <FormInput
+              label="Area Details"
+              value={organisationLocation.addressline2}
+              onChangeText={value => updateOrganisationLocation('addressline2', value)}
+              placeholder="Enter road name and area"
+              containerStyle={inputContainerStyle}
+            />
 
-          <AppTextInput
-            style={[$.bg_tint_11, $.flex_1, $.mr_medium, $.mb_medium, $.mx_regular]}
-            placeholder="State*"
-            value={organisationLocation.state}
-            onChangeText={value => updateOrganisationLocation('state', value)}
-            readonly={!isFromMap}
-          />
-          
-          <AppTextInput
-            style={[$.bg_tint_11, $.flex_1, $.mb_medium, $.mx_regular]}
-            placeholder="City*"
-            value={organisationLocation.city}
-            onChangeText={value => updateOrganisationLocation('city', value)}
-            readonly={!isFromMap}
-          />
+            <FormInput
+              label="State"
+              value={organisationLocation.state}
+              onChangeText={value => updateOrganisationLocation('state', value)}
+              placeholder="Enter state"
+              editable={!isFromMap}
+              containerStyle={inputContainerStyle}
+            />
+            
+            <FormInput
+              label="City"
+              value={organisationLocation.city}
+              onChangeText={value => updateOrganisationLocation('city', value)}
+              placeholder="Enter city"
+              editable={!isFromMap}
+              containerStyle={inputContainerStyle}
+            />
 
-          <AppView style={[$.mx_regular, $.mb_medium]}>
-            <AppTextInput
-              style={[$.bg_tint_11]}
-              placeholder="Pincode*"
+            <FormInput
+              label="Pincode"
               value={organisationLocation.pincode}
               onChangeText={value => updateOrganisationLocation('pincode', value)}
-              keyboardtype="numeric"
-              maxLength={6}
-              readonly={!isFromMap}
+              placeholder="Enter pincode"
+              keyboardType="numeric"
+              editable={!isFromMap}
+              containerStyle={inputContainerStyle}
             />
           </AppView>
         </ScrollView>
@@ -268,20 +284,20 @@ export function LocationScreen(props: LocationScreenProp) {
 
       {/* Footer Buttons */}
       <AppView style={[$.flex_row, $.justify_content_center, $.mx_regular, $.mb_medium, $.py_regular]}>
-        <AppButton
-          name="Cancel"
-          style={[$.bg_tint_11, $.flex_1, $.mr_huge]}
-          textStyle={[$.text_danger]}
+        <Button
+          title="Cancel"
+          variant="outline"
           onPress={() => navigation.goBack()}
           disabled={isLoading}
+          style={[$.flex_1, $.mr_huge]}
         />
-        <AppButton
-          name={props.route.params?.id ? 'Update' : 'Save'}
-          style={[$.bg_success, $.flex_1]}
-          textStyle={[$.text_tint_11]}
+        <Button
+          title={props.route.params?.id ? 'Update' : 'Save'}
+          variant="primary"
           onPress={handleSave}
-          isLoading={isLoading}
+          loading={isLoading}
           disabled={isLoading}
+          style={[$.flex_1]}
         />
       </AppView>
     </AppView>

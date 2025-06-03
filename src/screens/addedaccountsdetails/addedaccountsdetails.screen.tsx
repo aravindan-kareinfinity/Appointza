@@ -7,9 +7,10 @@ import { AppView } from '../../components/appview.component';
 import { $ } from '../../styles';
 import { Alert, ScrollView } from 'react-native';
 import { AppText } from '../../components/apptext.component';
-import { AppTextInput } from '../../components/apptextinput.component';
+import { FormInput } from '../../components/forminput.component';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppButton } from '../../components/appbutton.component';
+import { FormSelect } from '../../components/formselect.component';
 import { AppSwitch } from '../../components/appswitch.component';
 import { useAppSelector } from '../../redux/hooks.redux';
 import { selectusercontext } from '../../redux/usercontext.redux';
@@ -19,7 +20,6 @@ import { StaffService } from '../../services/staff.service';
 import { OrganisationLocation, OrganisationLocationSelectReq } from '../../models/organisationlocation.model';
 import { UsersService } from '../../services/users.service';
 import { Staff, StaffSelectReq } from '../../models/staff.model';
-import { AppSingleSelect } from '../../components/appsingleselect.component';
 
 type AddedAccountsDetailsScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'AddedAccountsDetails'>,
@@ -244,24 +244,40 @@ export function AddedAccountsDetailsScreen({ route }: AddedAccountsDetailsScreen
   );
 
   return (
-    <AppView style={[$.flex_1, $.m_small]}>
+    <AppView style={[$.flex_1, $.m_small, { backgroundColor: '#F8F9FA' }]}>
       {/* Search Section (only shown in create mode) */}
       {!isEditMode && (
-        <AppView style={[$.flex_row, $.mb_normal]}>
-          <AppTextInput
-            style={[$.bg_tint_10, $.flex_1, $.mr_small]}
-            placeholder="Enter contact number"
+        <AppView style={[$.flex_row, $.mb_normal, $.align_items_center]}>
+          <FormInput
+            label="Contact Number"
             value={searchContact}
             onChangeText={setSearchContact}
-            keyboardtype="phone-pad"
-           
+            placeholder="Enter contact number"
+            keyboardType="phone-pad"
+            containerStyle={{ flex: 1, marginRight: 12 }}
           />
           <AppButton
             name="Search"
-            style={[$.bg_success]}
-            textStyle={[$.text_tint_11]}
+            style={{
+              backgroundColor: '#2196F3',
+              paddingVertical: 12,
+              paddingHorizontal: 24,
+              borderRadius: 8,
+              shadowColor: '#000',
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 3,
+            }}
+            textStyle={{
+              color: '#FFFFFF',
+              fontSize: 16,
+              fontWeight: '600',
+            }}
             onPress={handleSearch}
-            
           />
         </AppView>
       )}
@@ -277,84 +293,92 @@ export function AddedAccountsDetailsScreen({ route }: AddedAccountsDetailsScreen
       {/* User Details Section */}
       {(selectedUser || isEditMode) && (
         <AppView style={[$.flex_1]}>
-
           <AppView style={[$.flex_1]}>
-
-
-          {selectedUser && (
-            <AppView style={[$.mb_normal]}>
-              <AppText style={[$.fw_bold]}>User Details:</AppText>
-              <AppText>Name: {selectedUser.username}</AppText>
-              <AppText>Mobile: {selectedUser.usermobile}</AppText>
-              <AppText>Current Location: {selectedUser.organisationlocationname}</AppText>
-            </AppView>
-          )}
-
-          {/* Location Selection */}
-          <AppSingleSelect
-            data={organisationLocations}
-            keyExtractor={item => item.id.toString()}
-            searchKeyExtractor={item => item.city}
-            renderItemLabel={item => (
-              <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_1]}>
-                {item.city}
-              </AppText>
-            )}
-            selecteditemid={selectedLocationId.toString()}
-            onSelect={item => setSelectedLocationId(item.id)}
-            title="Select Business Location"
-            style={[$.mb_normal]}
-            
-          />
-            </AppView>
-
-          {/* Permissions Section */}
-          {/* <AppText style={[$.fw_bold, $.mb_small]}>Permissions:</AppText>
-          <ScrollView style={[$.flex_1, $.mb_normal]}>
-            {(Object.keys(userPermissions) as Array<keyof UsersPermissionData>).map((key) => (
-              <AppView key={key} style={[$.mb_regular, $.border_bottom, $.pb_small]}>
-                <AppText style={[$.text_tint_2, $.fw_medium, $.mb_small]}>
-                  {formatLabel(key)}
-                </AppText>
-
-                <AppView style={[$.flex_row, $.justify_content_center]}>
-                  <AppView style={[$.flex_row, $.align_items_center]}>
-                    <AppText style={[$.mr_small]}>View</AppText>
-                    <AppSwitch
-                      value={userPermissions[key].view}
-                      onValueChange={(value) => handlePermissionChange(key, 'view', value)}
-                      
-                    />
-                  </AppView>
-
-                  <AppView style={[$.flex_row, $.align_items_center]}>
-                    <AppText style={[$.mr_small]}>Manage</AppText>
-                    <AppSwitch
-                      value={userPermissions[key].manage}
-                      onValueChange={(value) => handlePermissionChange(key, 'manage', value)}
-                      
-                    />
-                  </AppView>
-                </AppView>
+            {selectedUser && (
+              <AppView style={[$.mb_normal, {
+                backgroundColor: '#FFFFFF',
+                padding: 16,
+                borderRadius: 12,
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 2,
+                },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 2,
+              }]}>
+                <AppText style={[$.fw_bold, { color: '#1A237E', fontSize: 18 }]}>User Details:</AppText>
+                <AppText style={{ color: '#424242', marginTop: 8 }}>Name: {selectedUser.username}</AppText>
+                <AppText style={{ color: '#424242', marginTop: 4 }}>Mobile: {selectedUser.usermobile}</AppText>
+                <AppText style={{ color: '#424242', marginTop: 4 }}>Current Location: {selectedUser.organisationlocationname}</AppText>
               </AppView>
-            ))}
-          </ScrollView> */}
+            )}
+
+            {/* Location Selection */}
+            <AppView style={[$.mb_normal]}>
+              <FormSelect
+                label="Select Business Location"
+                options={organisationLocations.map(loc => ({
+                  id: loc.id,
+                  name: loc.city,
+                }))}
+                selectedId={selectedLocationId}
+                onSelect={(item) => setSelectedLocationId(item.id)}
+              />
+            </AppView>
+          </AppView>
 
           {/* Action Buttons */}
-          <AppView style={[$.flex_row, $.justify_content_center]}>
+          <AppView style={[$.flex_row, $.justify_content_center, $.mt_normal]}>
             <AppButton
               name="Cancel"
-              style={[$.bg_danger, $.flex_1, $.mr_small]}
-              textStyle={[$.text_tint_11]}
+              style={{
+                backgroundColor: '#FF5252',
+                paddingVertical: 12,
+                paddingHorizontal: 24,
+                borderRadius: 8,
+                flex: 1,
+                marginRight: 12,
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 2,
+                },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+              textStyle={{
+                color: '#FFFFFF',
+                fontSize: 16,
+                fontWeight: '600',
+              }}
               onPress={() => navigation.goBack()}
-              
             />
             <AppButton
               name={isEditMode ? "Update" : "Save"}
-              style={[$.bg_success, $.flex_1]}
-              textStyle={[$.text_tint_11]}
+              style={{
+                backgroundColor: '#4CAF50',
+                paddingVertical: 12,
+                paddingHorizontal: 24,
+                borderRadius: 8,
+                flex: 1,
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 2,
+                },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+              textStyle={{
+                color: '#FFFFFF',
+                fontSize: 16,
+                fontWeight: '600',
+              }}
               onPress={handleSaveStaff}
-              
             />
           </AppView>
         </AppView>

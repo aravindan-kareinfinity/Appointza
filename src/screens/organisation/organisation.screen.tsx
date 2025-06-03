@@ -12,9 +12,9 @@ import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
-import {AppTextInput} from '../../components/apptextinput.component';
+import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {FlatList, TouchableOpacity} from 'react-native';
+import {FlatList, TouchableOpacity, ViewStyle} from 'react-native';
 
 import {
   OrganisationLocation,
@@ -31,10 +31,12 @@ import {
   OrganisationSelectReq,
 } from '../../models/organisation.model';
 import {OrganisationService} from '../../services/organisation.service';
+
 type OrganisationScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Organisation'>,
   BottomTabScreenProps<HomeTabParamList>
 >;
+
 export function OrganisationScreen() {
   const navigation = useNavigation<OrganisationScreenProp['navigation']>();
   const [organisation, setOrganisation] = useState(new Organisation());
@@ -48,11 +50,17 @@ export function OrganisationScreen() {
     [],
   );
   const usercontext = useAppSelector(selectusercontext);
+
+  const inputContainerStyle: ViewStyle = {
+    marginBottom: 16,
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       getData();
     }, []),
   );
+
   const getData = async () => {
     setIsloading(true);
     try {
@@ -120,28 +128,35 @@ export function OrganisationScreen() {
             Organisation
           </AppText>
         </AppView>
-        <AppTextInput
-          style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
-          placeholder="Organisation name"
-          value={organisation.name}
-          onChangeText={org => {
-            setOrganisation({
-              ...organisation,
-              name: org,
-            });
-          }}
-        />
-        <AppTextInput
-          style={[$.bg_tint_11, $.mx_regular, $.mb_medium]}
-          placeholder="GST number"
-          value={organisation.gstnumber}
-          onChangeText={org => {
-            setOrganisation({
-              ...organisation,
-              gstnumber: org,
-            });
-          }}
-        />
+
+        <AppView style={[$.px_regular]}>
+          <FormInput
+            label="Organisation Name"
+            value={organisation.name}
+            onChangeText={org => {
+              setOrganisation({
+                ...organisation,
+                name: org,
+              });
+            }}
+            placeholder="Enter organisation name"
+            containerStyle={inputContainerStyle}
+          />
+
+          <FormInput
+            label="GST Number"
+            value={organisation.gstnumber}
+            onChangeText={org => {
+              setOrganisation({
+                ...organisation,
+                gstnumber: org,
+              });
+            }}
+            placeholder="Enter GST number"
+            containerStyle={inputContainerStyle}
+          />
+        </AppView>
+
         <TouchableOpacity
           onPress={() => {
             navigation.navigate('Location', {id: 0});
@@ -158,47 +173,112 @@ export function OrganisationScreen() {
             Location
           </AppText>
           <AppView style={[$.border,$.border_tint_11,$.elevation_4]}>
-
-          <CustomIcon
-            name={CustomIcons.AddSquareRounded}
-            size={$.s_medium}
-            color={$.tint_primary_5}
-          />
+            <CustomIcon
+              name={CustomIcons.AddSquareRounded}
+              size={$.s_medium}
+              color={$.tint_primary_5}
+            />
           </AppView>
         </TouchableOpacity>
+
         <FlatList
           style={[$.flex_1]}
           data={organisationlocation}
           keyExtractor={item => item.id.toString()}
+          contentContainerStyle={[$.px_regular]}
           renderItem={({item}) => (
             <TouchableOpacity
-              style={[$.justify_content_center]}
+              style={[
+                $.mb_small,
+                $.border_rounded,
+                $.elevation_4,
+                $.bg_tint_11,
+                $.p_small,
+              ]}
               onPress={() => {
                 navigation.navigate('Location', {
                   id: item.id,
                 });
               }}>
-              <AppText
-                style={[
-                  $.text_primary5,
-                  $.mx_regular,
-                  $.fw_semibold,
-                  $.fs_compact,
-                ]}>
-                {item.name},{item.addressline1},{item.addressline2},{item.city},
-                {item.state},{item.pincode}
-              </AppText>
-              <TouchableOpacity style={[$.flex_1,{position: 'absolute', top: 5, right: 20}]}>
-                <CustomIcon
-                  name={CustomIcons.Delete}
-                  size={$.s_compact}
-                  color={$.danger}
-                />
-              </TouchableOpacity>
+              <AppView style={[$.flex_row, $.align_items_center]}>
+                <AppView style={[$.flex_1]}>
+                  <AppText
+                    style={[
+                      $.text_primary5,
+                      $.fw_semibold,
+                      $.fs_compact,
+                      $.mb_tiny,
+                    ]}>
+                    {item.name}
+                  </AppText>
+                  <AppText
+                    style={[
+                      $.text_tint_ash,
+                      $.fs_small,
+                      $.mb_tiny,
+                    ]}>
+                    {item.addressline1}
+                    {item.addressline2 ? `, ${item.addressline2}` : ''}
+                  </AppText>
+                  <AppText
+                    style={[
+                      $.text_tint_ash,
+                      $.fs_small,
+                    ]}>
+                    {item.city}, {item.state} - {item.pincode}
+                  </AppText>
+                </AppView>
+                <TouchableOpacity 
+                  style={[
+                    $.p_tiny,
+                    $.border_rounded,
+                    $.bg_tint_11,
+                    $.elevation_2,
+                  ]}
+                  onPress={() => {
+                    // Add delete functionality here
+                    AppAlert({message: 'Delete functionality to be implemented'});
+                  }}>
+                  <CustomIcon
+                    name={CustomIcons.Delete}
+                    size={$.s_compact}
+                    color={$.danger}
+                  />
+                </TouchableOpacity>
+              </AppView>
             </TouchableOpacity>
           )}
+          ListEmptyComponent={
+            <AppView style={[$.p_medium, $.align_items_center]}>
+              <AppText style={[$.text_tint_3, $.fw_medium]}>
+                No locations added yet
+              </AppText>
+              <TouchableOpacity
+                style={[
+                  $.mt_medium,
+                  $.p_small,
+                  $.bg_tint_3,
+                  $.border_rounded,
+                  $.flex_row,
+                  $.align_items_center,
+                ]}
+                onPress={() => {
+                  navigation.navigate('Location', {id: 0});
+                }}>
+                <CustomIcon
+                  name={CustomIcons.AddSquareRounded}
+                  size={$.s_medium}
+                  color={$.tint_primary_5}
+                />
+                <AppText style={[$.ml_tiny, $.text_tint_11, $.fw_semibold]}>
+                  Add Location
+                </AppText>
+              </TouchableOpacity>
+            </AppView>
+          }
         />
       </AppView>
+
       <AppView
         style={[
           $.flex_row,

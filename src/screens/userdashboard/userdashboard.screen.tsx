@@ -50,6 +50,8 @@ import {ReferenceValue} from '../../models/referencevalue.model';
 import {HomeTabParamList} from '../../hometab.navigation';
 import {AppStackParamList} from '../../appstack.navigation';
 import { environment } from '../../utils/environment';
+import { CustomHeader } from '../../components/customheader.component';
+import { Colors } from '../../constants/colors';
 
 const statusColors: Record<string, string> = {
   'CONFIRMED': '#4CAF50',
@@ -216,13 +218,16 @@ export function UserDashboardScreen() {
 
   return (
     <AppView style={styles.container}>
-      {/* Header Section */}
-      <View style={[$.flex_row, $.m_small,$.px_small]}>
-        <AppText style={[$.fs_regular,$.fw_bold,$.flex_1,$.text_tint_1]}>Dashboard</AppText>
-        <TouchableOpacity onPress={handleRefresh}>
-          <CustomIcon name={CustomIcons.Clock} size={24} color={$.tint_3} />
-        </TouchableOpacity>
-      </View>
+      <CustomHeader
+        title="Dashboard"
+        backgroundColor={Colors.light.background}
+        titleColor={Colors.light.text}
+        rightComponent={
+          <TouchableOpacity onPress={handleRefresh}>
+            <CustomIcon name={CustomIcons.Clock} size={24} color={$.tint_3} />
+          </TouchableOpacity>
+        }
+      />
       
       {isloading && !isRefreshing ? (
         <View style={styles.loadingContainer}>

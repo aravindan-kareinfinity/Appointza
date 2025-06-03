@@ -13,6 +13,8 @@ import { $ } from '../../styles';
 import { CustomIcon, CustomIcons } from '../../components/customicons.component';
 import { AppText as AppTextStyle } from '../../styles/app-text.style';
 import { AppView as AppViewStyle } from '../../styles/app-view.style';
+import { CustomHeader } from '../../components/customheader.component';
+import { Colors } from '../../constants/colors';
 
 const StyledView = styled(AppView);
 const textStyle = AppTextStyle.instance;
@@ -81,9 +83,12 @@ export const AppointmentTimelineScreen = () => {
 
   return (
     <AppView style={[viewStyle.flex_1, { backgroundColor: colors.tint_11 }]}>
-      <View style={[viewStyle.flex_row, viewStyle.m_regular, viewStyle.px_regular]}>
-        <AppText style={[textStyle.fs_regular, textStyle.fw_bold, { color: colors.tint_1 }]}>Appointment Timeline</AppText>
-      </View>
+      <CustomHeader
+        title="Appointment Timeline"
+        showBackButton
+        backgroundColor={Colors.light.background}
+        titleColor={Colors.light.text}
+      />
 
       <StyledView style={[viewStyle.p_regular]}>
         <StyledView style={[viewStyle.flex_row, viewStyle.mb_big, viewStyle.align_items_center]}>

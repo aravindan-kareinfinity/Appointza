@@ -1,7 +1,6 @@
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {HomeScreen} from './screens/home/home.screen';
 import {$} from './styles';
-import {CustomIcon, CustomIcons} from './components/customicons.component';
 import {AppView} from './components/appview.component';
 import {AccountScreen} from './screens/account/account.screen';
 import {TouchableOpacity} from 'react-native';
@@ -15,6 +14,8 @@ import {useAppSelector} from './redux/hooks.redux';
 import {selectiscustomer} from './redux/iscustomer.redux';
 import {BussinessAppoinmentScreen} from './screens/bussinessappoinment/bussinessappoinment.screen';
 import { UserDashboardScreen } from './screens/userdashboard/userdashboard.screen';
+import { LucideIcon, LucideIcons } from './components/LucideIcons.component';
+import { DefaultColor } from './styles/default-color.style';
 
 export type HomeTabParamList = {
   Home: undefined;
@@ -27,7 +28,10 @@ export type HomeTabParamList = {
   UserAppoinment: undefined;
   BussinessAppoinment: undefined;
 };
+
 const HomeTab = createBottomTabNavigator<HomeTabParamList>();
+const colors = DefaultColor.instance;
+
 function HomeTabNavigation() {
   const usercontext = useAppSelector(selectiscustomer);
   return (
@@ -95,7 +99,7 @@ function HomeTabNavigation() {
         component={UserDashboardScreen}
         options={{
           tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Diagram} />
+            <TabBarIcon focused={focused} icon={LucideIcons.BarChart2} />
           ),
         }}
       />}
@@ -105,7 +109,7 @@ function HomeTabNavigation() {
         component={BussinessDashboardScreen}
         options={{
           tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Diagram} />
+            <TabBarIcon focused={focused} icon={LucideIcons.BarChart2} />
           ),
         }}
       />}
@@ -115,7 +119,7 @@ function HomeTabNavigation() {
         component={ServiceScreen}
         options={{
           tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Shop} />
+            <TabBarIcon focused={focused} icon={LucideIcons.Settings} />
           ),
         }}
       />
@@ -127,7 +131,7 @@ function HomeTabNavigation() {
           component={UserAppoinmentScreen}
           options={{
             tabBarIcon: ({focused}) => (
-              <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
+              <TabBarIcon focused={focused} icon={LucideIcons.Calendar} />
             ),
           }}
         />
@@ -139,7 +143,7 @@ function HomeTabNavigation() {
           component={BussinessAppoinmentScreen}
           options={{
             tabBarIcon: ({focused}) => (
-              <TabBarIcon focused={focused} icon={CustomIcons.Clock} />
+              <TabBarIcon focused={focused} icon={LucideIcons.Calendar} />
             ),
           }}
         />
@@ -149,7 +153,7 @@ function HomeTabNavigation() {
         component={AccountScreen}
         options={{
           tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Account} />
+            <TabBarIcon focused={focused} icon={LucideIcons.User} />
           ),
         }}
       />
@@ -157,14 +161,14 @@ function HomeTabNavigation() {
   );
 }
 
-const TabBarIcon = (props: {focused: boolean; icon: CustomIcons}) => {
+const TabBarIcon = (props: {focused: boolean; icon: LucideIcons}) => {
   return (
     <AppView style={[$.align_items_center, $.justify_content_center]}>
-      <CustomIcon
+      <LucideIcon
         name={props.icon}
-        color={props.focused ? $.tint_3 : $.tint_1}
-        size={$.s_big}
-        stroke={3}
+        color={props.focused ? colors.tint_3 : colors.tint_1}
+        size={24}
+        stroke={2}
       />
     </AppView>
   );

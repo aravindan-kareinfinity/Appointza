@@ -55,6 +55,9 @@ import {
   Service,
   Timing,
 } from '../../models/organisationlocation.model';
+import { OrganizationCard } from '../../components/organizationcard.component';
+import { CustomHeader } from '../../components/customheader.component';
+import { Colors } from '../../constants/colors';
 
 type ServiceScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Service'>,
@@ -65,6 +68,7 @@ export function ServiceScreen() {
   const [isloading, setIsloading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const Organizationlist = useMemo(() => new OrganisationService(), []);
+  const filesService = useMemo(() => new FilesService(), []);
   const organisationlocationservice = useMemo(
     () => new OrganisationLocationService(),
     [],
@@ -297,49 +301,25 @@ export function ServiceScreen() {
 
   return (
     <AppView style={[$.bg_tint_11, $.flex_1]}>
-      {/* Header with filter button */}
-      <AppView style={[$.flex_row, $.align_items_center, $.p_normal, { backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.1)' }]}>
-        <AppText
-          style={[
-            $.fs_medium,
-            $.fw_semibold,
-            $.text_primary2,
-            $.flex_1,
-          ]}>
-          Services
-        </AppText>
-
-        <TouchableOpacity
-          onPress={() => {
-            PrimarybottomSheetRef.current.open();
-          }}
-          style={[
-            $.flex_row,
-            $.align_items_center,
-            $.border,
-            $.border_rounded,
-            $.px_small,
-            $.py_tiny,
-            $.border_tint_7,
-            { 
-              backgroundColor: 'white',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.1,
-              shadowRadius: 2,
-              elevation: 2
-            }
-          ]}>
-          <CustomIcon
-            color={$.tint_primary_5}
-            name={CustomIcons.Filter}
-            size={$.s_small}
-          />
-          <AppText style={[$.ml_tiny, $.fs_small, $.text_primary5]}>
-            Filter
-          </AppText>
-        </TouchableOpacity>
-      </AppView>
+      <CustomHeader
+        title="Services"
+        backgroundColor={Colors.light.background}
+        titleColor={Colors.light.text}
+        rightComponent={
+          <TouchableOpacity
+            onPress={() => {
+              PrimarybottomSheetRef.current.open();
+            }}
+        >
+            <CustomIcon
+              color={$.tint_primary_5}
+              name={CustomIcons.Filter}
+              size={$.s_big}
+            />
+          
+          </TouchableOpacity>
+        }
+      />
 
       {/* Loading indicator when initial data is loading */}
       {isloading && !isRefreshing ? (
@@ -354,7 +334,7 @@ export function ServiceScreen() {
         <FlatList
           data={filteredOrganisations}
           nestedScrollEnabled={true}
-          contentContainerStyle={{paddingBottom: 100, paddingTop: 16}}
+          contentContainerStyle={[$.p_small]}
           showsHorizontalScrollIndicator={false}
           refreshing={isRefreshing}
           onRefresh={getInitialData}
@@ -393,155 +373,22 @@ export function ServiceScreen() {
               )}
             </AppView>
           }
-          renderItem={({item, index}) => (
-            <AppView
-              style={[
-                $.mb_medium,
-                $.mx_small,
-                {
-                  backgroundColor: 'white',
-                  borderRadius: 12,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                  elevation: 4,
-                  borderLeftWidth: 4,
-                  borderLeftColor: $.tint_3,
-                },
-              ]}>
-              {/* Header Section */}
-              <AppView style={[$.p_medium]}>
-                <AppView style={[$.flex_row, $.align_items_center]}>
-                  <AppText
-                    style={[$.fw_bold, $.fs_normal, $.text_primary5, $.flex_1]}>
-                    {item.organisationname}
-                  </AppText>
-                  <TouchableOpacity
-                    onPress={() => {
-                      getLocationDetail(item.organisationlocationid);
-                    }}
-                    style={[
-                      $.p_tiny,
-                      $.border_rounded2,
-                      {
-                        backgroundColor: 'rgba(0,0,0,0.05)',
-                        width: 32,
-                        height: 32,
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }
-                    ]}>
-                    <CustomIcon
-                      color={$.tint_3}
-                      name={CustomIcons.Information}
-                      size={$.s_small}
-                    />
-                  </TouchableOpacity>
-                </AppView>
-
-                {/* Address with Location Icon */}
-                <AppView style={[$.flex_row, $.align_items_center, $.mt_small]}>
-                  <CustomIcon
-                    name={CustomIcons.LocationPin}
-                    color={$.tint_2}
-                    size={$.s_small}
-                  />
-                  <AppText style={[$.text_tint_ash, $.fs_small, $.ml_small, $.flex_1]}>
-                    {item.organisationlocationname},{' '}
-                    {item.organisationlocationaddressline1},{' '}
-                    {item.organisationlocationcity},{' '}
-                    {item.organisationlocationstate},{' '}
-                    {item.organisationlocationpincode}
-                  </AppText>
-                </AppView>
-              </AppView>
-
-              {/* Footer Section with Tags and Button */}
-              <AppView
-                style={[
-                  $.flex_row,
-                  $.align_items_center,
-                  $.p_medium,
-                  $.pt_small,
-                  $.border_top,
-                  {
-                    borderTopColor: 'rgba(0,0,0,0.1)',
-                    backgroundColor: 'rgba(0,0,0,0.02)',
-                    borderBottomLeftRadius: 12,
-                    borderBottomRightRadius: 12
-                  },
-                ]}>
-                {/* Tags */}
-                <AppView style={[$.flex_row, $.flex_wrap_wrap, $.flex_1]}>
-                  {item.organisationprimarytypecode && (
-                    <AppView
-                      style={[
-                        $.px_small,
-                        $.py_tiny,
-                        $.mr_small,
-                        $.border_rounded,
-                        {
-                          backgroundColor: 'rgba(0,0,0,0.05)'
-                        }
-                      ]}>
-                      <AppText style={[$.fw_medium, $.fs_small, $.text_tint_2]}>
-                        {item.organisationprimarytypecode}
-                      </AppText>
-                    </AppView>
-                  )}
-
-                  {item.organisationsecondarytypecode && (
-                    <AppView
-                      style={[
-                        $.px_small,
-                        $.py_tiny,
-                        $.border_rounded,
-                        {
-                          backgroundColor: 'rgba(0,0,0,0.03)'
-                        }
-                      ]}>
-                      <AppText style={[$.fw_medium, $.fs_small, $.text_tint_1]}>
-                        {item.organisationsecondarytypecode}
-                      </AppText>
-                    </AppView>
-                  )}
-                </AppView>
-
-                {/* Book Appointment Button */}
-                <TouchableOpacity
-                  style={[
-                    $.border_rounded,
-                    $.px_small,
-                    $.py_tiny,
-                    $.flex_row,
-                    $.align_items_center,
-                    {
-                      backgroundColor: $.tint_3,
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 4,
-                      elevation: 2
-                    }
-                  ]}
-                  onPress={() => {
-                    navigation.navigate('AppoinmentFixing', {
-                      organisationid: item.organisationid,
-                      organisationlocationid: item.organisationlocationid,
-                    });
-                  }}>
-                  <CustomIcon
-                    color={$.tint_11}
-                    name={CustomIcons.Scheduled}
-                    size={$.s_small}
-                  />
-                  <AppText style={[$.fw_medium, $.fs_small, $.text_tint_11, $.ml_small]}>
-                    Book Now
-                  </AppText>
-                </TouchableOpacity>
-              </AppView>
-            </AppView>
+          renderItem={({item}) => (
+            <OrganizationCard
+              organization={{
+                id: item.organisationid,
+                name: item.organisationname,
+                image: item.organisationimageid ? filesService.get(item.organisationimageid) : undefined,
+                address: `${item.organisationlocationname}, ${item.organisationlocationaddressline1}, ${item.organisationlocationcity}, ${item.organisationlocationstate}, ${item.organisationlocationpincode}`,
+                services: item.organisationprimarytypecode ? [item.organisationprimarytypecode] : [],
+              }}
+              onPress={() => {
+                navigation.navigate('AppoinmentFixing', {
+                  organisationid: item.organisationid,
+                  organisationlocationid: item.organisationlocationid,
+                });
+              }}
+            />
           )}
         />
       )}

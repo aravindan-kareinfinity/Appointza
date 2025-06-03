@@ -6,6 +6,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   ScrollView,
+  Text,
+  View,
 } from 'react-native';
 import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import {
@@ -49,6 +51,7 @@ import {AppStackParamList} from '../../appstack.navigation';
 import { environment } from '../../utils/environment';
 import { AppTextInput } from '../../components/apptextinput.component';
 import { DatePickerComponent } from '../../components/Datetimepicker.component';
+import {FormSelect} from '../../components/formselect.component';
 
 type BussinessAppoinmentScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'BussinessAppoinment'>,
@@ -292,78 +295,84 @@ export function BussinessAppoinmentScreen() {
 
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
-      style={[
-        $.mx_small,
-        $.mb_medium,
-        $.border,
-        $.border_tint_8,
-        $.border_rounded2,
-        $.bg_tint_11,
-        $.p_medium,
-        $.elevation_3,
-        {borderLeftWidth: 4, borderLeftColor: $.primary2}
-      ]}
+      style={{
+        marginHorizontal: 8,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        borderRadius: 8,
+        backgroundColor: '#f8f9fa',
+        padding: 16,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        borderLeftWidth: 4,
+        borderLeftColor: '#4a6da7'
+      }}
       activeOpacity={0.9}
       onPress={() => {}}>
       
       {/* Header with Date and Time */}
-      <AppView style={[$.flex_row, $.align_items_center, $.mb_medium]}>
-        <AppText style={[$.fw_bold, $.fs_regular, $.text_primary5,$.flex_1]}>
+      <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 16}}>
+        <Text style={{fontWeight: 'bold', fontSize: 16, color: '#333', flex: 1}}>
           {new Date(item.appoinmentdate).toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',
             day: 'numeric',
           })}
-        </AppText>
+        </Text>
         
-        <AppView style={[$.flex_row, $.align_items_center, $.bg_tint_9, $.p_tiny, $.border_rounded]}>
-          <AppText style={[$.fw_medium, $.fs_small, $.text_tint_2, $.mr_tiny]}>
+        <View style={{flexDirection: 'row', alignItems: 'center', backgroundColor: '#e9ecef', padding: 4, borderRadius: 4}}>
+          <Text style={{fontWeight: '500', fontSize: 12, color: '#495057', marginRight: 4}}>
             {item.fromtime.toString().substring(0, 5)}
-          </AppText>
-          <AppText style={[$.fw_light, $.fs_small, $.text_tint_4]}>-</AppText>
-          <AppText style={[$.fw_medium, $.fs_small, $.text_tint_2, $.ml_tiny]}>
+          </Text>
+          <Text style={{fontWeight: '300', fontSize: 12, color: '#adb5bd'}}>-</Text>
+          <Text style={{fontWeight: '500', fontSize: 12, color: '#495057', marginLeft: 4}}>
             {item.totime.toString().substring(0, 5)}
-          </AppText>
-        </AppView>
-      </AppView>
+          </Text>
+        </View>
+      </View>
   
       {/* Client Info */}
-      <AppView style={[$.flex_row, $.align_items_center, $.mb_medium]}>
-        <AppView style={[
-          $.bg_tint_9, 
-          $.p_small, 
-          $.border_rounded,
-          $.justify_content_center,
-          $.align_items_center,
-          {width: 40, height: 40}
-        ]}>
+      <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 16}}>
+        <View style={{
+          backgroundColor: '#e9ecef', 
+          padding: 8, 
+          borderRadius: 4,
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: 40, 
+          height: 40
+        }}>
           <CustomIcon
             size={24}
-            color={$.primary2}
+            color="#4a6da7"
             name={CustomIcons.Account}
           />
-        </AppView>
+        </View>
         
-        <AppView style={[$.ml_medium, $.flex_1]}>
-          <AppText style={[$.fw_semibold, $.fs_regular, $.text_primary5]}>
+        <View style={{marginLeft: 16, flex: 1}}>
+          <Text style={{fontWeight: '600', fontSize: 16, color: '#333'}}>
             {item.username}
-          </AppText>
-          <AppText style={[$.fw_regular, $.fs_small, $.text_tint_ash]}>
+          </Text>
+          <Text style={{fontWeight: '400', fontSize: 12, color: '#6c757d'}}>
             {item.mobile || 'No mobile provided'}
-          </AppText>
-        </AppView>
-      </AppView>
+          </Text>
+        </View>
+      </View>
   
       {/* Status and Staff Badges */}
-      <AppView style={[$.flex_row, $.mb_medium, {gap: 8}]}>
-        <AppView style={[
-          $.flex_row, 
-          $.align_items_center, 
-          $.bg_tint_9, 
-          $.p_tiny, 
-          $.border_rounded,
-          {paddingHorizontal: 8}
-        ]}>
+      <View style={{flexDirection: 'row', marginBottom: 16, gap: 8}}>
+        <View style={{
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          backgroundColor: '#e9ecef', 
+          padding: 4, 
+          borderRadius: 4,
+          paddingHorizontal: 8
+        }}>
           <CustomIcon
             name={
               item.statuscode === 'COMPLETED' ? CustomIcons.OnlinePayment :
@@ -374,181 +383,179 @@ export function BussinessAppoinmentScreen() {
             size={20}
             color={getStatusColor(item.statuscode)}
           />
-          <AppText style={[$.ml_tiny, $.fw_medium, $.fs_small, $.text_tint_2]}>
+          <Text style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#495057'}}>
             {item.statuscode || 'No status'}
-          </AppText>
-        </AppView>
+          </Text>
+        </View>
         
-        <AppView style={[
-          $.flex_row, 
-          $.align_items_center, 
-          $.bg_tint_9, 
-          $.p_tiny, 
-          $.border_rounded,
-          {paddingHorizontal: 8}
-        ]}>
+        <View style={{
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          backgroundColor: '#e9ecef', 
+          padding: 4, 
+          borderRadius: 4,
+          paddingHorizontal: 8
+        }}>
           <CustomIcon
             size={14}
-            color={$.tint_3}
+            color="#adb5bd"
             name={CustomIcons.Account}
           />
-          <AppText style={[$.ml_tiny, $.fw_medium, $.fs_small, $.text_tint_2]}>
+          <Text style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#495057'}}>
             {item.staffname || 'Unassigned'}
-          </AppText>
-        </AppView>
+          </Text>
+        </View>
         
         {item.ispaid && (
-          <AppView style={[
-            $.flex_row, 
-            $.align_items_center, 
-          $.border_success,$.border,
-            $.p_tiny, 
-            $.border_rounded,
-            {paddingHorizontal: 8}
-          ]}>
+          <View style={{
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            borderWidth: 1,
+            borderColor: '#28a745',
+            padding: 4, 
+            borderRadius: 4,
+            paddingHorizontal: 8
+          }}>
             <CustomIcon
               size={14}
-              color={$.success}
+              color="#28a745"
               name={CustomIcons.Circle}
             />
-            <AppText style={[$.ml_tiny, $.fw_medium, $.fs_small, $.text_success]}>
+            <Text style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#28a745'}}>
               Paid
-            </AppText>
-          </AppView>
+            </Text>
+          </View>
         )}
-      </AppView>
+      </View>
   
       {/* Services List */}
       {item.attributes?.servicelist?.length > 0 && (
-        <AppView style={[$.mb_medium]}>
-          <AppText style={[$.fw_semibold, $.fs_small, $.text_tint_ash, $.mb_small]}>
+        <View style={{marginBottom: 16}}>
+          <Text style={{fontWeight: '600', fontSize: 12, color: '#6c757d', marginBottom: 8}}>
             SERVICES
-          </AppText>
+          </Text>
           
-          <AppView style={[$.border, $.border_tint_8, $.border_rounded, ]}>
+          <View style={{borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 4}}>
             {item.attributes.servicelist.map((service, index) => (
-              <AppView 
+              <View 
                 key={index}
-                style={[
-                  $.flex_row, 
-                  $.justify_content_center, 
-                  $.align_items_center,
-                  $.p_small,
-                  { 
-                    backgroundColor: index % 2 === 0 ? $.tint_10 : $.tint_11,
-                    borderBottomWidth: index === item.attributes.servicelist.length - 1 ? 0 : 1,
-                    borderBottomColor: $.tint_8
-                  }
-                ]}>
-                <AppText style={[$.fw_regular, $.fs_small, $.text_tint_ash]}>
+                style={{
+                  flexDirection: 'row', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  padding: 8,
+                  backgroundColor: index % 2 === 0 ? '#f1f3f5' : '#f8f9fa',
+                  borderBottomWidth: index === item.attributes.servicelist.length - 1 ? 0 : 1,
+                  borderBottomColor: '#e0e0e0'
+                }}>
+                <Text style={{fontWeight: '400', fontSize: 12, color: '#6c757d'}}>
                   {service.servicename}
-                </AppText>
-                <AppText style={[$.fw_semibold, $.fs_small, $.text_primary2]}>
+                </Text>
+                <Text style={{fontWeight: '600', fontSize: 12, color: '#4a6da7'}}>
                   ₹{service.serviceprice}
-                </AppText>
-              </AppView>
+                </Text>
+              </View>
             ))}
             
             {/* Total Price */}
-            <AppView style={[
-              $.flex_row, 
-              $.justify_content_center, 
-              $.align_items_center,
-              $.p_small,
-              $.bg_tint_9
-            ]}>
-              <AppText style={[$.fw_semibold, $.fs_small, $.text_primary5]}>
+            <View style={{
+              flexDirection: 'row', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              padding: 8,
+              backgroundColor: '#e9ecef'
+            }}>
+              <Text style={{fontWeight: '600', fontSize: 12, color: '#333'}}>
                 Total
-              </AppText>
-              <AppText style={[$.fw_bold, $.fs_small, $.text_primary2]}>
+              </Text>
+              <Text style={{fontWeight: '700', fontSize: 12, color: '#4a6da7'}}>
                 ₹{item.attributes.servicelist
                   .reduce((total, service) => total + (Number(service.serviceprice) || 0), 0)
                   .toLocaleString('en-IN')}
-              </AppText>
-            </AppView>
-          </AppView>
-        </AppView>
+              </Text>
+            </View>
+          </View>
+        </View>
       )}
   
       {/* Action Buttons */}
-      <AppView style={[$.flex_row, $.justify_content_end, {gap: 8}]}>
+      <View style={{flexDirection: 'row', justifyContent: 'flex-end', gap: 8}}>
         {stafflist.length > 0 && (
           <TouchableOpacity
-            style={[
-              $.flex_row, 
-              $.align_items_center,
-              $.p_small,
-              $.border,
-              $.border_primary2,
-              $.border_rounded,
-              {backgroundColor: $.tint_10}
-            ]}
+            style={{
+              flexDirection: 'row', 
+              alignItems: 'center',
+              padding: 8,
+              borderWidth: 1,
+              borderColor: '#4a6da7',
+              borderRadius: 4,
+              backgroundColor: '#f1f3f5'
+            }}
             onPress={() => { 
               addStaffSheetRef.current?.open(); 
               Setselectedappoinmentid(item.id);
             }}>
             <CustomIcon
               size={16}
-              color={$.primary2}
+              color="#4a6da7"
               name={CustomIcons.AddAccount}
             />
-            <AppText style={[$.ml_tiny, $.fw_medium, $.fs_small, $.text_primary2]}>
+            <Text style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#4a6da7'}}>
               Assign
-            </AppText>
+            </Text>
           </TouchableOpacity>
         )}
         
         <TouchableOpacity
-          style={[
-            $.flex_row, 
-            $.align_items_center,
-            $.p_small,
-            $.border,
-            $.border_success,
-            $.border_rounded,
-            {backgroundColor: $.tint_10}
-          ]}
+          style={{
+            flexDirection: 'row', 
+            alignItems: 'center',
+            padding: 8,
+            borderWidth: 1,
+            borderColor: '#28a745',
+            borderRadius: 4,
+            backgroundColor: '#f1f3f5'
+          }}
           onPress={() => {
             Setselectedappoinmentid(item.id); 
             statusSheetRef.current?.open();
           }}>
           <CustomIcon
             size={16}
-            color={$.success}
+            color="#28a745"
             name={CustomIcons.Edit}
           />
-          <AppText style={[$.ml_tiny, $.fw_medium, $.fs_small, $.text_success]}>
+          <Text style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#28a745'}}>
             Status
-          </AppText>
+          </Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[
-            $.flex_row, 
-            $.align_items_center,
-            $.p_small,
-            $.border,
-            $.border_primary2,
-            $.border_rounded,
-            {backgroundColor: $.tint_10}
-          ]}
+          style={{
+            flexDirection: 'row', 
+            alignItems: 'center',
+            padding: 8,
+            borderWidth: 1,
+            borderColor: '#4a6da7',
+            borderRadius: 4,
+            backgroundColor: '#f1f3f5'
+          }}
           onPress={() => {
             Setselectedappoinmentid(item.id); 
             paymentSheetRef.current?.open();
           }}>
           <CustomIcon
             size={16}
-            color={$.primary2}
+            color="#4a6da7"
             name={CustomIcons.Save}
           />
-          <AppText style={[$.ml_tiny, $.fw_medium, $.fs_small, $.text_primary2]}>
+          <Text style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#4a6da7'}}>
             Payment
-          </AppText>
+          </Text>
         </TouchableOpacity>
-      </AppView>
+      </View>
     </TouchableOpacity>
   );
-
 
     useEffect(() => {
       if (selectlocation) {
@@ -582,13 +589,10 @@ export function BussinessAppoinmentScreen() {
                     $.mr_small,
                     $.align_items_center,
                     $.justify_content_center,
-                    $.bg_tint_10,
+                  
                     $.border_tint_7,
                   ]}>
-                  {/* <CustomIcon
-                            name={CustomIcons.SingleTick}
-                            color={$.tint_2}
-                            size={$.s_compact}></CustomIcon> */}
+              
                   <AppText style={{fontSize: 14, fontWeight: 'bold', color: '#333'}}>
                     {seleteddate ? seleteddate.toDateString() : 'All Dates'}
                   </AppText>
@@ -597,22 +601,26 @@ export function BussinessAppoinmentScreen() {
 
       {/* Location Selector */}
       {locationlist.length > 1 && (
-        <AppSingleSelect
-          data={locationlist}
-          keyExtractor={e => e.organisationlocationid.toString()}
-          searchKeyExtractor={e => e.name}
-          renderItemLabel={item => (
-            <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_1]}>
-              {item.name}
-            </AppText>
-          )}
-          selecteditemid={
-            selectlocation?.organisationlocationid.toString() || ''
-          }
-          onSelect={handleLocationChange}
-          title="Select Location"
-          style={[$.mb_normal]}
-        />
+
+        <AppView style={{marginLeft:10,marginRight:10}}>
+        <FormSelect
+     
+          label="Select Location"
+          options={locationlist.map(loc => ({
+            id: loc.organisationlocationid,
+            name: loc.name
+          }))}
+          selectedId={selectlocation?.organisationlocationid || 0}
+          onSelect={(option) => {
+            const selectedLocation = locationlist.find(
+              loc => loc.organisationlocationid === option.id
+            );
+            if (selectedLocation) {
+              handleLocationChange(selectedLocation);
+            }
+          }}
+          
+      /></AppView>
       )}
       
       <ScrollView>
@@ -792,23 +800,20 @@ export function BussinessAppoinmentScreen() {
           
           {/* Payment Type Selection */}
           <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Type</AppText>
-          <AppView style={[$.flex_row, $.mb_small]}>
-            <TouchableOpacity
-              style={[$.p_small, $.mr_small, $.bg_tint_10, $.border_rounded]}
-              onPress={() => setSelectedPaymentType('Cash')}>
-              <AppText style={[$.fw_medium, selectedPaymentType === 'Cash' && $.text_success]}>Cash</AppText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[$.p_small, $.mr_small, $.bg_tint_10, $.border_rounded]}
-              onPress={() => setSelectedPaymentType('Card')}>
-              <AppText style={[$.fw_medium, selectedPaymentType === 'Card' && $.text_success]}>Card</AppText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[$.p_small, $.bg_tint_10, $.border_rounded]}
-              onPress={() => setSelectedPaymentType('Online')}>
-              <AppText style={[$.fw_medium, selectedPaymentType === 'Online' && $.text_success]}>Online</AppText>
-            </TouchableOpacity>
-          </AppView>
+          <FormSelect
+            label=""
+            options={[
+              { id: 1, name: 'Cash' },
+              { id: 2, name: 'Card' },
+              { id: 3, name: 'Online' }
+            ]}
+            selectedId={selectedPaymentType === 'Cash' ? 1 : 
+                       selectedPaymentType === 'Card' ? 2 : 3}
+            onSelect={(option) => {
+              setSelectedPaymentType(option.name);
+            }}
+            containerStyle={{ marginBottom: 16 }}
+          />
 
           {/* Amount Input */}
           <AppText style={[$.fw_medium, $.mb_tiny]}>Amount</AppText>

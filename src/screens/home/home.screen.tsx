@@ -59,7 +59,7 @@ export function HomeScreen() {
           onChangeText={text => setTextinputvalue(text)}
         />
         <AppTextInput
-          icon={CustomIcons.Group}
+          icon={CustomIcons.AddAccount}
           style={[$.mb_compact]}
           placeholder="Text Input with Icon"
           value={textinputwithiconvalue}
@@ -68,13 +68,13 @@ export function HomeScreen() {
         <AppButton
           name="Save"
           style={[$.bg_success, $.mb_compact]}
-          textstyle={[$.text_tint_11]}
+       
           onPress={() => {}}
         />
         <AppButton
           name="Cancel"
           style={[$.bg_tint_10, $.mb_compact]}
-          textstyle={[$.text_danger]}
+          
           onPress={() => {}}
         />
         <AppView style={[$.flex_row, $.align_items_center]}>

@@ -22,7 +22,7 @@ import {
 import {AppText} from '../../components/apptext.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {useCallback, useContext, useEffect, useMemo, useState} from 'react';
-import {AppTextInput} from '../../components/apptextinput.component';
+import {FormSelect} from '../../components/formselect.component';
 import {AppButton} from '../../components/appbutton.component';
 import {UsersService} from '../../services/users.service';
 import {
@@ -48,6 +48,8 @@ import {
 } from '../../models/staff.model';
 import {AppSwitch} from '../../components/appswitch.component';
 import {environment} from '../../utils/environment';
+import { CustomHeader } from '../../components/customheader.component';
+import { Colors } from '../../constants/colors';
 
 type AddedAccountsScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'AddedAccounts'>,
@@ -191,34 +193,39 @@ export function AddedAccountsScreen() {
   };
 
   return (
-    <ScrollView>
-      <AppView style={[$.pt_medium]}>
-        <AppView
-          style={[$.px_normal, $.flex_row, $.align_items_center, $.mb_medium]}>
-          <AppView style={[$.flex_row, $.flex_1, $.align_items_center]}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
+    <ScrollView style={{ }}>
+      <AppView style={[$.pt_medium,{ }]}>
+        <CustomHeader
+          title="Added Accounts"
+          showBackButton
+          backgroundColor={Colors.light.background}
+          titleColor={Colors.light.text}
+          rightComponent={
+            <TouchableOpacity
+              onPress={() => {
+                handleAddAccountPress('');
+              }}
+              style={{
+                backgroundColor: '#FFFFFF',
+                padding: 8,
+                borderRadius: 12,
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 2,
+                },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 2,
+              }}>
               <CustomIcon
-                name={CustomIcons.LeftArrow}
-                size={$.s_regular}
+                name={CustomIcons.AddSquareRounded}
                 color={$.tint_2}
+                size={$.s_huge}
               />
             </TouchableOpacity>
-            <AppText
-              style={[$.ml_compact, $.p_small, $.text_tint_2, $.fw_medium]}>
-              Added Accounts
-            </AppText>
-          </AppView>
-          <TouchableOpacity
-            onPress={() => {
-              handleAddAccountPress('');
-            }}>
-            <CustomIcon
-              name={CustomIcons.AddSquareRounded}
-              color={$.tint_2}
-              size={$.s_huge}
-            />
-          </TouchableOpacity>
-        </AppView>
+          }
+        />
 
         {error && (
           <AppView style={[$.px_normal, $.mb_normal]}>
@@ -226,20 +233,17 @@ export function AddedAccountsScreen() {
           </AppView>
         )}
 
-        <AppSingleSelect
-          data={organisationlocation}
-          keyExtractor={e => e.id.toString()}
-          searchKeyExtractor={e => e.city}
-          renderItemLabel={item => (
-            <AppText style={[$.fs_compact, $.fw_semibold, $.text_tint_1]}>
-              {item.city}
-            </AppText>
-          )}
-          selecteditemid={Selectorganisationlocationid.toString()}
-          onSelect={handleLocationSelect}
-          title="Select Business Location"
-          style={[$.mb_normal]}
-        />
+        <AppView style={[$.px_normal, $.mb_normal,{ }]}>
+          <FormSelect
+            label="Select Business Location"
+            options={organisationlocation.map(loc => ({
+              id: loc.id,
+              name: loc.city,
+            }))}
+            selectedId={Selectorganisationlocationid}
+            onSelect={(item) => handleLocationSelect(organisationlocation.find(loc => loc.id === item.id)!)}
+          />
+        </AppView>
 
         {isLoading ? (
           <AppView style={[$.p_normal, $.align_items_center]}>
@@ -253,47 +257,60 @@ export function AddedAccountsScreen() {
           <FlatList
             data={stafflist}
             style={[$.pt_compact]}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
             renderItem={({item}) => (
               <TouchableOpacity
-                style={[$.p_compact]}
+                style={[$.mb_normal]}
                 onPress={() => {
                   // Navigate to details screen with selected staff ID
                   // Handle staff item press if needed
                 }}>
                 <AppView
-                  style={[
-                    $.px_normal,
-                    $.mb_normal,
-                    $.flex_row,
-                    $.align_items_center,
-                  ]}>
-                  <AppView style={[$.flex_row,]}>
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 12,
+                    padding: 16,
+                    shadowColor: '#000',
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}>
+                  <AppView style={[$.flex_row, $.align_items_center, { justifyContent: 'space-between' }]}>
                     <AppView style={[$.flex_1]}>
-
-                    <AppView style={[$.flex_row,]}>
                       <AppText
-                        style={[$.fs_compact, $.fw_semibold, $.text_tint_2]}>
+                        style={[$.fs_compact, $.fw_semibold, $.text_tint_1, $.mb_tiny]}>
                         {item.name}
                       </AppText>
-                    </AppView>
-                    <AppView style={[$.flex_row, $.align_items_center]}>
-                      <AppText
-                        style={[$.fs_extrasmall, $.fw_regular, $.text_tint_6]}>
-                        {item.city}
-                      </AppText>
-                      <CustomIcon
-                        name={CustomIcons.Dot}
-                        size={$.s_big}
-                        color={$.tint_8}
-                      />
-                      <AppText
-                        style={[$.fs_extrasmall, $.fw_regular, $.text_tint_6]}>
-                        {item.country}
-                      </AppText>
-                    </AppView>
+                      <AppView style={[$.flex_row, $.align_items_center]}>
+                        <AppText
+                          style={[$.fs_extrasmall, $.fw_regular, $.text_tint_2]}>
+                          {item.city}
+                        </AppText>
+                        <AppView style={[$.mx_tiny]}>
+                          <CustomIcon
+                            name={CustomIcons.Dot}
+                            size={$.s_big}
+                            color={$.tint_8}
+                          />
+                        </AppView>
+                        <AppText
+                          style={[$.fs_extrasmall, $.fw_regular, $.text_tint_6]}>
+                          {item.country}
+                        </AppText>
+                      </AppView>
                     </AppView>
 
-                    <TouchableOpacity onPress={() => deleteuser(item.id)}>
+                    <TouchableOpacity 
+                      onPress={() => deleteuser(item.id)}
+                      style={{
+                        backgroundColor: '#FFF5F5',
+                        padding: 8,
+                        borderRadius: 8,
+                      }}>
                       <CustomIcon
                         name={CustomIcons.Delete}
                         size={$.s_big}
