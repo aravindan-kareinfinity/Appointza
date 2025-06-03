@@ -54,7 +54,7 @@ export const BottomSheetComponent = forwardRef<any, BottomSheetProps>((props, re
                 }}
             >
 
-                <AppText style={[ $.fs_medium,$.text_primary5]}>{props.screenname}</AppText>
+                <AppText style={[$.fw_semibold, $.mb_medium, $.fs_medium, {color: '#333'}]}>{props.screenname}</AppText>
 
                 <ScrollView style={[$.flex_1,$.text_primary5]}>
 

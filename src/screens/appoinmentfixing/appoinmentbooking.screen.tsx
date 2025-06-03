@@ -60,6 +60,7 @@ import {
 import {BottomSheetComponent} from '../../components/bottomsheet.component';
 import {AppoinmentService} from '../../services/appoinment.service';
 import {Button} from '../../components/button.component';
+import {FormInput} from '../../components/forminput.component';
 
 type AppoinmentFixingScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'AppoinmentFixing'>,
@@ -97,6 +98,10 @@ export function AppoinmentBookingScreen() {
     useState<Organisation | null>(null);
   const [locationDetails, setLocationDetails] =
     useState<OrganisationLocation | null>(null);
+  const [showPaymentSheet, setShowPaymentSheet] = useState(false);
+  const [showCancelSheet, setShowCancelSheet] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
 
   const handleServiceSelection = (req: OrganisationServices) => {
     const item = new SelectedSerivice();
@@ -108,29 +113,38 @@ export function AppoinmentBookingScreen() {
 
     setSelectedService(prevSelected => {
       const isSelected = prevSelected.some(service => service.id === item.id);
-
-      setSelectedtiming(prev => {
-        const baseTime = prev?.totime
-          ? new Date(`1970-01-01T${prev.totime}`)
-          : new Date(`1970-01-01T${seletedTiming.fromtime}`);
-
-        if (isSelected) {
-          baseTime.setMinutes(baseTime.getMinutes() - req.timetaken);
-        } else {
-          baseTime.setMinutes(baseTime.getMinutes() + req.timetaken);
-        }
-
-        const updatedTotime = baseTime.toTimeString().split(' ')[0];
-
-        return {
-          ...prev,
-          totime: updatedTotime,
-        };
-      });
-
-      return isSelected
+      const newSelectedServices = isSelected
         ? prevSelected.filter(service => service.id !== item.id)
         : [...prevSelected, item];
+
+      // Calculate total duration of selected services
+      const totalDuration = newSelectedServices.reduce(
+        (sum, service) => sum + service.servicetimetaken,
+        0
+      );
+
+      // Update the end time based on the new total duration
+      if (seletedTiming.fromtime) {
+        const baseTime = new Date(`1970-01-01T${seletedTiming.fromtime}`);
+        const endTime = new Date(baseTime.getTime() + totalDuration * 60000); // Convert minutes to milliseconds
+
+        // Check if the end time exceeds the business hours
+        const businessEndTime = new Date(`1970-01-01T${organisationlocationTiming[organisationlocationTiming.length - 1]?.fromtime}`);
+        if (endTime > businessEndTime) {
+          Alert.alert(
+            'Time Slot Unavailable',
+            'The selected services cannot be completed within business hours. Please select a different time slot or fewer services.'
+          );
+          return prevSelected; // Keep the previous selection
+        }
+
+        setSelectedtiming(prev => ({
+          ...prev,
+          totime: endTime.toTimeString().split(' ')[0]
+        }));
+      }
+
+      return newSelectedServices;
     });
   };
 
@@ -327,10 +341,19 @@ const [openbefore, setopenbefore] = useState(0);
       Alert.alert(
         'Appointment Booked',
         'Your appointment has been successfully booked!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Reset states
+              setSelectedService([]);
+              setSelectedtiming(new AppoinmentFinal());
+              // Navigate back
+              navigation.goBack();
+            },
+          },
+        ],
       );
-      setSelectedService([]);
-      bottomSheetRef.current?.close();
-      gettiming();
     } catch (error) {
       console.error('Error saving appointment:', error);
       Alert.alert(
@@ -348,6 +371,214 @@ const [openbefore, setopenbefore] = useState(0);
     const time = new Date(`1970-01-01T${timeString}`);
     return time.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
   };
+
+  // Update time slot selection to handle service duration
+  const handleTimeSlotSelection = (timeSlot: AppoinmentFinal) => {
+    if (selectedService.length > 0) {
+      // Calculate total duration of selected services
+      const totalDuration = selectedService.reduce(
+        (sum, service) => sum + service.servicetimetaken,
+        0
+      );
+
+      // Calculate end time
+      const baseTime = new Date(`1970-01-01T${timeSlot.fromtime}`);
+      const endTime = new Date(baseTime.getTime() + totalDuration * 60000);
+
+      // Check if the end time exceeds the business hours
+      const businessEndTime = new Date(`1970-01-01T${organisationlocationTiming[organisationlocationTiming.length - 1]?.fromtime}`);
+      if (endTime > businessEndTime) {
+        Alert.alert(
+          'Time Slot Unavailable',
+          'The selected services cannot be completed within business hours. Please select a different time slot or remove some services.'
+        );
+        return;
+      }
+
+      setSelectedtiming({
+        ...timeSlot,
+        totime: endTime.toTimeString().split(' ')[0]
+      });
+    } else {
+      setSelectedtiming({
+        ...timeSlot,
+        totime: timeSlot.fromtime
+      });
+    }
+  };
+
+  const PaymentBottomSheet = () => (
+    <BottomSheetComponent
+      ref={bottomSheetRef}
+      screenname="Payment Details"
+      Save={() => {
+        // Handle payment submission
+        setShowPaymentSheet(false);
+        setPaymentMethod('');
+      }}
+      showbutton={true}
+      close={() => {
+        setShowPaymentSheet(false);
+        setPaymentMethod('');
+      }}>
+      <AppView style={[$.p_medium, $.flex_1]}>
+        <AppText style={[$.fw_semibold, $.fs_large, $.mb_medium]}>
+          Select Payment Method
+        </AppText>
+
+        <AppView style={[$.mb_medium]}>
+          <FormInput
+            label="Payment Method"
+            value={paymentMethod}
+            onChangeText={setPaymentMethod}
+            placeholder="Select payment method"
+            editable={false}
+            containerStyle={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 12,
+              padding: 16,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          />
+        </AppView>
+
+        <AppView style={[$.flex_row, {justifyContent: 'space-between'}, $.mb_medium]}>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              marginRight: 8,
+              backgroundColor: '#F8F9FA',
+              padding: 16,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: paymentMethod === 'Cash' ? '#4A90E2' : '#E9ECEF',
+              alignItems: 'center',
+            }}
+            onPress={() => setPaymentMethod('Cash')}>
+            <CustomIcon
+              name={CustomIcons.CashPayment}
+              size={24}
+              color={paymentMethod === 'Cash' ? '#4A90E2' : '#6C757D'}
+            />
+            <AppText
+              style={{
+                marginTop: 8,
+                color: paymentMethod === 'Cash' ? '#4A90E2' : '#6C757D',
+                fontWeight: '500',
+              }}>
+              Cash
+            </AppText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              marginLeft: 8,
+              backgroundColor: '#F8F9FA',
+              padding: 16,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: paymentMethod === 'Card' ? '#4A90E2' : '#E9ECEF',
+              alignItems: 'center',
+            }}
+            onPress={() => setPaymentMethod('Card')}>
+            <CustomIcon
+              name={CustomIcons.OnlinePayment}
+              size={24}
+              color={paymentMethod === 'Card' ? '#4A90E2' : '#6C757D'}
+            />
+            <AppText
+              style={{
+                marginTop: 8,
+                color: paymentMethod === 'Card' ? '#4A90E2' : '#6C757D',
+                fontWeight: '500',
+              }}>
+              Card
+            </AppText>
+          </TouchableOpacity>
+        </AppView>
+
+        <AppView style={[$.mb_medium]}>
+          <FormInput
+            label="Total Amount"
+            value={`₹${selectedService.reduce((sum, service) => sum + service.serviceprice, 0)}`}
+            onChangeText={() => {}}
+            editable={false}
+            containerStyle={{
+              backgroundColor: '#F8F9FA',
+              borderRadius: 12,
+              padding: 16,
+            }}
+          />
+        </AppView>
+      </AppView>
+    </BottomSheetComponent>
+  );
+
+  const CancelAppointmentBottomSheet = () => (
+    <BottomSheetComponent
+      ref={bottomSheetRef}
+      screenname="Cancel Appointment"
+      Save={() => {
+        // Handle cancellation
+        setShowCancelSheet(false);
+        setCancelReason('');
+      }}
+      showbutton={true}
+      close={() => {
+        setShowCancelSheet(false);
+        setCancelReason('');
+      }}>
+      <AppView style={[$.p_medium, $.flex_1]}>
+        <AppText style={[$.fw_semibold, $.fs_large, $.mb_medium]}>
+          Cancel Appointment
+        </AppText>
+
+        <AppView style={[$.mb_medium]}>
+          <FormInput
+            label="Reason for Cancellation"
+            value={cancelReason}
+            onChangeText={setCancelReason}
+            placeholder="Please provide a reason for cancellation"
+            multiline={true}
+            numberOfLines={4}
+            containerStyle={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 12,
+              padding: 16,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          />
+        </AppView>
+
+        <AppView style={[$.mb_medium]}>
+          <AppText style={[$.fw_medium, $.mb_small]}>Cancellation Policy</AppText>
+          <AppView
+            style={{
+              backgroundColor: '#F8F9FA',
+              padding: 16,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: '#E9ECEF',
+            }}>
+            <AppText style={{ color: '#6C757D', lineHeight: 20 }}>
+              • Cancellations made 24 hours before the appointment are fully refundable{'\n'}
+              • Cancellations made within 24 hours may be subject to a cancellation fee{'\n'}
+              • No-shows will be charged the full appointment fee
+            </AppText>
+          </AppView>
+        </AppView>
+      </AppView>
+    </BottomSheetComponent>
+  );
 
   return (
     <AppView style={[$.flex_1, $.bg_tint_11]}>
@@ -439,11 +670,7 @@ const [openbefore, setopenbefore] = useState(0);
                       isBooked && styles.bookedTimeSlot,
                     ]}
                     disabled={isBooked}
-                    onPress={() => {
-                      var a = {...item};
-                      a.totime = item.fromtime;
-                      setSelectedtiming(a);
-                    }}>
+                    onPress={() => handleTimeSlotSelection(item)}>
                     <AppText
                       style={[
                         styles.timeSlotText,
@@ -507,49 +734,96 @@ const [openbefore, setopenbefore] = useState(0);
             <AppText style={styles.sectionTitle}>Available Services</AppText>
 
             <FlatList
-              data={organisationservices}
-              scrollEnabled={false}
-              nestedScrollEnabled={true}
-              renderItem={({item}) => {
-                const isSelected = selectedService.some(
-                  service => service.id === item.id,
-                );
-
-                return (
-                  <TouchableOpacity
-                    onPress={() => handleServiceSelection(item)}
-                    style={[
-                      styles.serviceItem,
-                      isSelected && styles.selectedServiceItem,
-                    ]}>
-                    <AppView style={styles.serviceInfo}>
-                      <AppText style={styles.serviceName}>
-                        {item.Servicename}
-                      </AppText>
-                      <AppText style={styles.serviceDuration}>
-                        {item.timetaken} min session
-                      </AppText>
-                      <AppView style={styles.priceContainer}>
-                        <AppText style={styles.originalPrice}>
-                          ₹{item.prize}
-                        </AppText>
-                        <AppText style={styles.discountedPrice}>
-                          ₹{item.offerprize}
-                        </AppText>
-                      </AppView>
-                    </AppView>
-
-                    {isSelected && (
-                      <CustomIcon
-                        name={CustomIcons.SingleTick}
-                        color={$.tint_2}
-                        size={$.s_compact}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              }}
+  data={organisationservices}
+  scrollEnabled={false}
+  nestedScrollEnabled={true}
+  renderItem={({item}) => {
+    const isSelected = selectedService.some(service => service.id === item.id);
+    
+    return (
+      <TouchableOpacity
+        onPress={() => handleServiceSelection(item)}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingVertical: 16,
+          paddingHorizontal: 20,
+          marginBottom: 8,
+          backgroundColor: isSelected ? '#F0F7FF' : '#FFFFFF',
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: isSelected ? '#4A90E2' : '#EDEDED',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 3,
+          elevation: 2
+        }}>
+        
+        {/* Service Information */}
+        <AppView style={{ flex: 1 ,   backgroundColor: isSelected ? '#F0F7FF' : '#FFFFFF',}}>
+          {/* Service Name */}
+          <AppText style={{
+            fontSize: 16,
+            fontWeight: '600',
+         
+            marginBottom: 4
+          }}>
+            {item.Servicename}
+          </AppText>
+          
+          {/* Duration */}
+          <AppText style={{
+            fontSize: 13,
+            color: '#718096',
+            marginBottom: 8
+          }}>
+            {item.timetaken} min session
+          </AppText>
+          
+          {/* Pricing */}
+          <AppView style={{ flexDirection: 'row', alignItems: 'center',   backgroundColor: isSelected ? '#F0F7FF' : '#FFFFFF', }}>
+            <AppText style={{
+              fontSize: 15,
+              fontWeight: '600',
+              color: '#4A90E2',
+              marginRight: 8
+            }}>
+              ₹{item.offerprize}
+            </AppText>
+            <AppText style={{
+              fontSize: 13,
+              color: '#A0AEC0',
+              textDecorationLine: 'line-through'
+            }}>
+              ₹{item.prize}
+            </AppText>
+          </AppView>
+        </AppView>
+        
+        {/* Selection Indicator */}
+        {isSelected && (
+          <AppView style={{
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            backgroundColor: '#4A90E2',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginLeft: 12
+          }}>
+            <CustomIcon
+              name={CustomIcons.SingleTick}
+              color="#FFFFFF"
+              size={16}
             />
+          </AppView>
+        )}
+      </TouchableOpacity>
+    );
+  }}
+/>
           </AppView>
         )}
 
@@ -570,7 +844,12 @@ const [openbefore, setopenbefore] = useState(0);
         setDate={v => {
           setselectedate(v);
         }}
+        daysBefore={openbefore}
+        disablePrevious={true}
       />
+
+      {showPaymentSheet && <PaymentBottomSheet />}
+      {showCancelSheet && <CancelAppointmentBottomSheet />}
     </AppView>
   );
 }

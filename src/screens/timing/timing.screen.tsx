@@ -414,54 +414,98 @@ export function TimingScreen() {
         titleColor={Colors.light.text}
       />
 
-      <FlatList
-        data={organisationlocation}
-        nestedScrollEnabled={true}
-        contentContainerStyle={[$.p_small, $.flex_1]}
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({item}) => (
-          <AppView
-            style={[
-              $.mx_normal,
-              $.mb_small,
-              $.elevation_4,
-              $.border_rounded,
-              $.p_small,
-              $.flex_row,
-            ]}>
-            <AppView style={[$.flex_1]}>
-              <AppText
-                style={[
-                  $.text_tint_2,
-                  $.fw_semibold,
-                  $.fs_medium,
-                  $.text_primary5,
-                ]}>
-                {item.name}
-              </AppText>
-              <AppView style={[$.flex_row, $.justify_content_center, $.mt_small]}>
-                <Button
-                  title="Edit Business Hours"
-                  variant="secondary"
-                  style={[$.flex_1, $.mr_small]}
-                  onPress={() => {
-                    gettimingdata(item.id);
-                    setSelectedOrganisationlocation(item);
-                    setModalVisible(true);
-                  }}
-                />
-                <Button
-                  title="Book Leave"
-                  variant="primary"
-                  style={[$.flex_1]}
-                  onPress={() => handleLocationSelect(item)}
-                />
-              </AppView>
-            </AppView>
-          </AppView>
-        )}
-      />
+<FlatList
+  data={organisationlocation}
+  nestedScrollEnabled
+  contentContainerStyle={{ padding: 16, flexGrow: 1 }}
+  showsHorizontalScrollIndicator={false}
+  keyExtractor={(item, index) => index.toString()}
+  renderItem={({ item }) => (
+    <AppView style={{
+      marginBottom: 16,
+      backgroundColor: '#fff',
+      borderRadius: 12,
+      padding: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 3,
+      borderWidth: 1,
+      borderColor: '#f0f0f0'
+    }}>
+      {/* Header with icon and location name */}
+      <AppView style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+        <AppView style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: '#f8f9fa',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginRight: 12
+        }}>
+          <LucideIcon size={24} color="#4a6da7" name={LucideIcons.Home} />
+        </AppView>
+        <AppText style={{
+          fontWeight: '600',
+          fontSize: 18,
+          color: '#2c3e50'
+        }}>
+          {item.name}
+        </AppText>
+      </AppView>
+
+      {/* Action buttons */}
+      <AppView style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+        {/* Edit Hours Button */}
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            marginRight: 8,
+            backgroundColor: '#f8f9fa',
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: '#e9ecef',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onPress={() => {
+            gettimingdata(item.id);
+            setSelectedOrganisationlocation(item);
+            setModalVisible(true);
+          }}>
+          <LucideIcon size={18} color="#4a6da7" name={LucideIcons.Clock} />
+          <AppText style={{ marginLeft: 8, color: '#4a6da7', fontWeight: '500', fontSize: 14 }}>
+            Edit Hours
+          </AppText>
+        </TouchableOpacity>
+
+        {/* Book Leave Button */}
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: '#4a6da7',
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onPress={() => handleLocationSelect(item)}>
+          <LucideIcon size={18} color="#fff" name={LucideIcons.Calendar} />
+          <AppText style={{ marginLeft: 8, color: '#fff', fontWeight: '500', fontSize: 14 }}>
+            Book Leave
+          </AppText>
+        </TouchableOpacity>
+      </AppView>
+    </AppView>
+  )}
+/>
 
       {/* Leave Management Bottom Sheet */}
       <BottomSheetComponent

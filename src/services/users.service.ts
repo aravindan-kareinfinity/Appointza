@@ -24,6 +24,7 @@ import {store} from '../redux/store.redux';
 import {usercontextactions} from '../redux/usercontext.redux';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
 import {environment} from '../utils/environment';
+import axios from 'axios';
 
 export class UsersService {
   baseurl: string;
@@ -223,5 +224,28 @@ export class UsersService {
     );
 
     return resp.item!;
+  }
+
+  async sendOTP(mobileNumber: string): Promise<boolean> {
+    try {
+      const response = await axios.post('/api/users/send-otp', {
+        mobileNumber,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async verifyOTP(mobileNumber: string, otp: string): Promise<boolean> {
+    try {
+      const response = await axios.post('/api/users/verify-otp', {
+        mobileNumber,
+        otp,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 }

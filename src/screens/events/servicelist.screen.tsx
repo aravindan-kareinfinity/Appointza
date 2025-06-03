@@ -457,6 +457,31 @@ export function ServiceScreen() {
               )}
             />
           )}
+          {(selectedPrimaryType || selectedSecondaryType) && (
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#F8F9FA',
+                padding: 12,
+                marginTop: 16,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: '#E9ECEF',
+                justifyContent: 'center',
+              }}
+              onPress={clearFilters}>
+              <CustomIcon name={CustomIcons.Close} size={16} color="#6C757D" />
+              <AppText style={{
+                marginLeft: 8,
+                color: '#6C757D',
+                fontWeight: '500',
+                fontSize: 14
+              }}>
+                Clear All Filters
+              </AppText>
+            </TouchableOpacity>
+          )}
         </AppView>
       </BottomSheetComponent>
 

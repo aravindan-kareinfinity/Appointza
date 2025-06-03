@@ -52,6 +52,7 @@ import { environment } from '../../utils/environment';
 import { AppTextInput } from '../../components/apptextinput.component';
 import { DatePickerComponent } from '../../components/Datetimepicker.component';
 import {FormSelect} from '../../components/formselect.component';
+import {FormInput} from '../../components/forminput.component';
 
 type BussinessAppoinmentScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'BussinessAppoinment'>,
@@ -74,6 +75,14 @@ export function BussinessAppoinmentScreen() {
   const [selectlocation, Setselectlocation] = useState<OrganisationLocationStaffRes | null>(null);
   const [stafflist, setStafflist] = useState<StaffUser[]>([]);
   const [AppinmentStatuslist, setAppoinmentStatuslist] = useState<ReferenceValue[]>([]);
+  const [updatedAppointmentId, setUpdatedAppointmentId] = useState<number | null>(null);
+  const flatListRef = useRef<FlatList>(null);
+  const itemHeights = useRef<{[key: number]: number}>({});
+  const [selectedPaymentType, setSelectedPaymentType] = useState<string>('Cash');
+  const [paymentAmount, setPaymentAmount] = useState<string>('');
+  const [paymentName, setPaymentName] = useState<string>('');
+  const [paymentCode, setPaymentCode] = useState<string>('');
+  const [seletecedappinmentid, Setselectedappoinmentid] = useState(0);
 
   // Services
   const usercontext = useAppSelector(selectusercontext);
@@ -214,6 +223,43 @@ export function BussinessAppoinmentScreen() {
     Setselectlocation(item);
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return '#2196F3';
+      case 'CANCELLED':
+        return '#F44336';
+      case 'CONFIRMED':
+        return '#4CAF50';
+      default:
+        return '#FFC107';
+    }
+  };
+
+  const scrollToUpdatedAppointment = (appointmentId: number) => {
+    setTimeout(() => {
+      const index = OrganisationApponmentlist.findIndex(item => item.id === appointmentId);
+      if (index !== -1) {
+        // Calculate offset by summing up heights of previous items
+        let offset = 0;
+        for (let i = 0; i < index; i++) {
+          const itemId = OrganisationApponmentlist[i].id;
+          offset += itemHeights.current[itemId] || 250; // Default height if not measured
+        }
+        
+        flatListRef.current?.scrollToOffset({
+          offset: offset,
+          animated: true
+        });
+      }
+    }, 300);
+  };
+
+  const onLayoutItem = (id: number, event: any) => {
+    const { height } = event.nativeEvent.layout;
+    itemHeights.current[id] = height;
+  };
+
   const Assignstaff = async (staffid: number, staffname: string) => {
     try {
       setIsloading(true);
@@ -224,9 +270,19 @@ export function BussinessAppoinmentScreen() {
       req.staffid = staffid
       req.staffname = staffname
       const response = await appoinmentservices.Assignstaff(req);
-      Alert.alert(environment.baseurl, "staff assigned succesfully")
       if (response) {
-        loadInitialData();
+        setOrganisationAppoinmentList(prevList => 
+          prevList.map(appointment => 
+            appointment.id === seletecedappinmentid 
+              ? {...appointment, staffid, staffname}
+              : appointment
+          )
+        );
+        addStaffSheetRef.current?.close();
+        setTimeout(() => {
+          scrollToUpdatedAppointment(seletecedappinmentid);
+          Alert.alert(environment.baseurl, "staff assigned succesfully");
+        }, 100);
       }
     } catch (error) {
       handleError(error);
@@ -247,9 +303,19 @@ export function BussinessAppoinmentScreen() {
       req.statustype = ""
    
       const response = await appoinmentservices.UpdateStatus(req);
-      Alert.alert(environment.baseurl, "status updated successfully")
       if (response) {
-        loadInitialData();
+        setOrganisationAppoinmentList(prevList => 
+          prevList.map(appointment => 
+            appointment.id === seletecedappinmentid 
+              ? {...appointment, statusid, statuscode}
+              : appointment
+          )
+        );
+        statusSheetRef.current?.close();
+        setTimeout(() => {
+          scrollToUpdatedAppointment(seletecedappinmentid);
+          Alert.alert(environment.baseurl, "status updated successfully");
+        }, 100);
       }
     } catch (error) {
       handleError(error);
@@ -262,9 +328,26 @@ export function BussinessAppoinmentScreen() {
     try {
       setIsloading(true);
       const response = await appoinmentservices.UpdatePayment(paymentData);
-      Alert.alert(environment.baseurl, "Payment updated successfully");
       if (response) {
-        loadInitialData();
+        setOrganisationAppoinmentList(prevList => 
+          prevList.map(appointment => 
+            appointment.id === seletecedappinmentid 
+              ? {
+                  ...appointment, 
+                  ispaid: true,
+                  paymenttype: paymentData.paymenttype,
+                  paymentamount: paymentData.amount,
+                  paymentname: paymentData.paymentname,
+                  paymentcode: paymentData.paymentcode
+                }
+              : appointment
+          )
+        );
+        paymentSheetRef.current?.close();
+        setTimeout(() => {
+          scrollToUpdatedAppointment(seletecedappinmentid);
+          Alert.alert(environment.baseurl, "Payment updated successfully");
+        }, 100);
       }
     } catch (error) {
       handleError(error);
@@ -273,28 +356,9 @@ export function BussinessAppoinmentScreen() {
     }
   }
 
-  const [selectedPaymentType, setSelectedPaymentType] = useState<string>('Cash');
-  const [paymentAmount, setPaymentAmount] = useState<string>('');
-  const [paymentName, setPaymentName] = useState<string>('');
-  const [paymentCode, setPaymentCode] = useState<string>('');
-  
-  const [seletecedappinmentid, Setselectedappoinmentid] = useState(0)
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return '#2196F3';
-      case 'CANCELLED':
-        return '#F44336';
-      case 'CONFIRMED':
-        return '#4CAF50';
-      default:
-        return '#FFC107';
-    }
-  };
-
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
+      onLayout={(event) => onLayoutItem(item.id, event)}
       style={{
         marginHorizontal: 8,
         marginBottom: 16,
@@ -566,43 +630,92 @@ export function BussinessAppoinmentScreen() {
         getstafflist();
       }
     }, [seleteddate]);
+
+  // Add useEffect to handle scrolling after updates
+  useEffect(() => {
+    if (updatedAppointmentId) {
+      scrollToUpdatedAppointment(updatedAppointmentId);
+      setUpdatedAppointmentId(null);
+    }
+  }, [updatedAppointmentId, OrganisationApponmentlist]);
+
   return (
-    <AppView style={[$.flex_1, $.bg_tint_11]}>
+    <AppView style={[$.flex_1,{backgroundColor: '#F5F7FA'}]}>
       {/* Header Section */}
       <AppView style={[$.flex_row, $.mb_tiny, $.p_small, $.align_items_center]}>
-     
         <AppText
           style={[
             $.fs_medium,
             $.fw_semibold,
             $.py_small,
-           $.text_primary5,
+            $.text_primary5,
             $.flex_1,
           ]}>
           Appointments
         </AppText>
-         <TouchableOpacity
-                  onPress={() => setshowdatepicker(true)}
-                  style={[
-                    $.border,
-                    $.border_rounded,
-                    $.mr_small,
-                    $.align_items_center,
-                    $.justify_content_center,
-                  
-                    $.border_tint_7,
-                  ]}>
-              
-                  <AppText style={{fontSize: 14, fontWeight: 'bold', color: '#333'}}>
-                    {seleteddate ? seleteddate.toDateString() : 'All Dates'}
-                  </AppText>
-                </TouchableOpacity>
+        <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+          <TouchableOpacity
+            onPress={() => setshowdatepicker(true)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#fff',
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: '#e0e0e0',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 2,
+              elevation: 2,
+            }}>
+            <CustomIcon
+              name={CustomIcons.TimeCard}
+              size={18}
+              color="#4a6da7"
+            />
+            <AppText style={{fontSize: 14, fontWeight: '500', color: '#333', marginLeft: 6}}>
+              {seleteddate ? seleteddate.toDateString() : 'All Dates'}
+            </AppText>
+          </TouchableOpacity>
+
+          {seleteddate && (
+            <TouchableOpacity
+              onPress={() => setselectedate(null)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#f8f9fa',
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: '#e0e0e0',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.1,
+                shadowRadius: 2,
+                elevation: 2,
+              }}>
+              <CustomIcon
+                name={CustomIcons.Refresh}
+                size={18}
+                color="#4a6da7"
+              />
+              <AppText style={{fontSize: 14, fontWeight: '500', color: '#4a6da7'}}>
+                Clear
+              </AppText>
+            </TouchableOpacity>
+          )}
+        </View>
       </AppView>
 
       {/* Location Selector */}
       {locationlist.length > 1 && (
 
-        <AppView style={{marginLeft:10,marginRight:10}}>
+        <AppView style={[$.mb_tiny,{paddingLeft:10,paddingRight:10}]}>
         <FormSelect
      
           label="Select Location"
@@ -635,6 +748,7 @@ export function BussinessAppoinmentScreen() {
           </AppView>
         ) : (
           <FlatList
+            ref={flatListRef}
             data={OrganisationApponmentlist}
             nestedScrollEnabled
             showsVerticalScrollIndicator={false}
@@ -687,70 +801,177 @@ export function BussinessAppoinmentScreen() {
       {/* Bottom Sheets */}
       <BottomSheetComponent
         ref={addStaffSheetRef}
-        screenname="Add Staff"
+        screenname="Assign Staff"
         Save={() => {
           addStaffSheetRef.current?.close();
         }}
         close={() => addStaffSheetRef.current?.close()}>
         <ScrollView
-          contentContainerStyle={[$.p_medium]}
+          contentContainerStyle={[]}
           nestedScrollEnabled={true}>
-          <AppText style={[$.fw_semibold, $.mb_medium]}>
-            Available Staff Members
-          </AppText>
+         
           {stafflist.length > 0 ? (
             stafflist.map(staff => (
               <TouchableOpacity
                 key={staff.id}
-                style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
+                style={{
+                  padding: 16,
+                  marginBottom: 12,
+                  backgroundColor: '#fff',
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#e0e0e0',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 2,
+                  elevation: 2,
+                }}
                 onPress={() => {
                   Assignstaff(staff.id, staff.name)
                   addStaffSheetRef.current?.close();
                 }}>
-                <AppText style={[$.fw_medium]}>{staff.name}</AppText>
-                <AppText style={[$.text_tint_3, $.fs_small]}>
-                  {staff.mobile}
-                </AppText>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <View style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: '#E3F2FD',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 12
+                  }}>
+                    <CustomIcon
+                      name={CustomIcons.Account}
+                      size={24}
+                      color="#1976D2"
+                    />
+                  </View>
+                  <View style={{flex: 1}}>
+                    <AppText style={[$.fw_semibold, {color: '#333', fontSize: 16}]}>
+                      {staff.name}
+                    </AppText>
+                    <AppText style={[$.text_tint_3, $.fs_small, {marginTop: 4}]}>
+                      {staff.mobile}
+                    </AppText>
+                  </View>
+                  <CustomIcon
+                    name={CustomIcons.RightChevron}
+                    size={20}
+                    color="#666"
+                  />
+                </View>
               </TouchableOpacity>
             ))
           ) : (
-            <AppText style={[$.text_tint_3]}>
-              No staff members available
-            </AppText>
+            <View style={{
+              padding: 24,
+              backgroundColor: '#F8F9FA',
+              borderRadius: 12,
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: '#E9ECEF',
+              borderStyle: 'dashed'
+            }}>
+              <CustomIcon
+                name={CustomIcons.Account}
+                size={32}
+                color="#ADB5BD"
+              />
+              <AppText style={[$.text_tint_3, $.mt_small, $.text_center]}>
+                No staff members available
+              </AppText>
+            </View>
           )}
         </ScrollView>
       </BottomSheetComponent>
 
       <BottomSheetComponent
         ref={statusSheetRef}
-        screenname="Change Status"
+        screenname="Select Appointment Status"
         Save={() => {
           statusSheetRef.current?.close();
         }}
         showbutton={false}
         close={() => statusSheetRef.current?.close()}>
         <ScrollView
-          contentContainerStyle={[$.p_medium]}
+          contentContainerStyle={[]}
           nestedScrollEnabled={true}>
-          <AppText style={[$.fw_semibold, $.mb_medium]}>
-            Select Appointment Status
-          </AppText>
+        
           {AppinmentStatuslist.length > 0 ? (
             AppinmentStatuslist.map(status => (
               <TouchableOpacity
                 key={status.id}
-                style={[$.p_small, $.mb_small, $.bg_tint_10, $.border_rounded]}
+                style={{
+                  padding: 16,
+                  marginBottom: 12,
+                  backgroundColor: '#fff',
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#e0e0e0',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 2,
+                  elevation: 2,
+                }}
                 onPress={() => {
                   Updatestatus(status.id, status.identifier)
                   statusSheetRef.current?.close();
                 }}>
-                <AppText style={[$.fw_medium]}>{status.displaytext}</AppText>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <View style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: getStatusColor(status.identifier) + '20',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 12
+                  }}>
+                    <CustomIcon
+                      name={
+                        status.identifier === 'COMPLETED' ? CustomIcons.OnlinePayment :
+                        status.identifier === 'CANCELLED' ? CustomIcons.CashPayment :
+                        status.identifier === 'CONFIRMED' ? CustomIcons.StatusIndicator :
+                        CustomIcons.TimeCard
+                      }
+                      size={24}
+                      color={getStatusColor(status.identifier)}
+                    />
+                  </View>
+                  <View style={{flex: 1}}>
+                    <AppText style={[$.fw_semibold, {color: '#333', fontSize: 16}]}>
+                      {status.displaytext}
+                    </AppText>
+                  </View>
+                  <CustomIcon
+                    name={CustomIcons.RightChevron}
+                    size={20}
+                    color="#666"
+                  />
+                </View>
               </TouchableOpacity>
             ))
           ) : (
-            <AppText style={[$.text_tint_3]}>
-              No status options available
-            </AppText>
+            <View style={{
+              padding: 24,
+              backgroundColor: '#F8F9FA',
+              borderRadius: 12,
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: '#E9ECEF',
+              borderStyle: 'dashed'
+            }}>
+              <CustomIcon
+                name={CustomIcons.StatusIndicator}
+                size={32}
+                color="#ADB5BD"
+              />
+              <AppText style={[$.text_tint_3, $.mt_small, $.text_center]}>
+                No status options available
+              </AppText>
+            </View>
           )}
         </ScrollView>
       </BottomSheetComponent>
@@ -770,7 +991,7 @@ export function BussinessAppoinmentScreen() {
 
       <BottomSheetComponent
         ref={paymentSheetRef}
-        screenname="Payment Options"
+        screenname="Payment Details"
         Save={() => {
           const paymentReq = new UpdatePaymentReq();
           paymentReq.appoinmentid = seletecedappinmentid;
@@ -780,70 +1001,97 @@ export function BussinessAppoinmentScreen() {
           paymentReq.amount = Number(paymentAmount) || 0;
           paymentReq.paymentname = paymentName;
           paymentReq.paymentcode = paymentCode;
-          paymentReq.statusid = 1; // Assuming 1 is for completed payment
-          paymentReq.customername = ''; // Set if needed
-          paymentReq.customerid = 0; // Set if needed
+          paymentReq.statusid = 1;
+          paymentReq.customername = '';
+          paymentReq.customerid = 0;
           paymentReq.organisationid = selectlocation?.organisationid ?? 0;
           paymentReq.organisationlocationid = selectlocation?.organisationlocationid ?? 0;
           
           Updatepayment(paymentReq);
           paymentSheetRef.current?.close();
-          paymentSheetRef.current?.close();
         }}
         close={() => paymentSheetRef.current?.close()}>
         <ScrollView
-          contentContainerStyle={[$.p_medium]}
+          contentContainerStyle={[]}
           nestedScrollEnabled={true}>
-          <AppText style={[$.fw_semibold, $.mb_medium]}>
-            Payment Details
-          </AppText>
+        
           
           {/* Payment Type Selection */}
-          <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Type</AppText>
-          <FormSelect
-            label=""
-            options={[
-              { id: 1, name: 'Cash' },
-              { id: 2, name: 'Card' },
-              { id: 3, name: 'Online' }
-            ]}
-            selectedId={selectedPaymentType === 'Cash' ? 1 : 
-                       selectedPaymentType === 'Card' ? 2 : 3}
-            onSelect={(option) => {
-              setSelectedPaymentType(option.name);
-            }}
-            containerStyle={{ marginBottom: 16 }}
-          />
+          <View style={{marginBottom: 20}}>
+            <AppText style={[$.fw_medium, $.mb_small, {color: '#495057'}]}>
+              Payment Method
+            </AppText>
+            <View style={{
+              flexDirection: 'row',
+              gap: 12,
+              marginBottom: 16
+            }}>
+              {['Cash', 'Card', 'Online'].map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={{
+                    flex: 1,
+                    padding: 12,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: selectedPaymentType === type ? '#1976D2' : '#E0E0E0',
+                    backgroundColor: selectedPaymentType === type ? '#E3F2FD' : '#FFFFFF',
+                    alignItems: 'center',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 2,
+                    elevation: 2,
+                  }}
+                  onPress={() => setSelectedPaymentType(type)}>
+                  <CustomIcon
+                    name={
+                      type === 'Cash' ? CustomIcons.CashPayment :
+                      type === 'Card' ? CustomIcons.OnlinePayment :
+                      CustomIcons.OnlinePayment
+                    }
+                    size={24}
+                    color={selectedPaymentType === type ? '#1976D2' : '#666666'}
+                  />
+                  <AppText style={{
+                    marginTop: 8,
+                    color: selectedPaymentType === type ? '#1976D2' : '#666666',
+                    fontWeight: '500'
+                  }}>
+                    {type}
+                  </AppText>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
           {/* Amount Input */}
-          <AppText style={[$.fw_medium, $.mb_tiny]}>Amount</AppText>
-          <AppTextInput
-            style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
-            placeholder="Enter amount"
-            keyboardtype="numeric"
+          <FormInput
+            label="Amount"
             value={paymentAmount}
             onChangeText={setPaymentAmount}
+            placeholder="Enter amount"
+            keyboardType="numeric"
+            containerStyle={{marginBottom: 16}}
           />
 
-          {/* Payment Name (Optional) */}
-          <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Name (Optional)</AppText>
-          <AppTextInput
-            style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
-            placeholder="e.g., Credit Card, UPI, etc."
+          {/* Payment Name */}
+          <FormInput
+            label="Payment Name (Optional)"
             value={paymentName}
             onChangeText={setPaymentName}
+            placeholder="e.g., Credit Card, UPI, etc."
+            containerStyle={{marginBottom: 16}}
           />
 
-          {/* Payment Code (Optional) */}
-          <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Code/Reference</AppText>
-          <AppTextInput
-            style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
-            placeholder="Transaction ID or Reference"
+          {/* Payment Code */}
+          <FormInput
+            label="Payment Code/Reference"
             value={paymentCode}
             onChangeText={setPaymentCode}
+            placeholder="Transaction ID or Reference"
+            containerStyle={{marginBottom: 16}}
           />
-
-         
         </ScrollView>
       </BottomSheetComponent>
     </AppView>

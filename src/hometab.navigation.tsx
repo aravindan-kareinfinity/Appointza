@@ -166,7 +166,7 @@ const TabBarIcon = (props: {focused: boolean; icon: LucideIcons}) => {
     <AppView style={[$.align_items_center, $.justify_content_center]}>
       <LucideIcon
         name={props.icon}
-        color={props.focused ? colors.tint_3 : colors.tint_1}
+        color={props.focused ? colors.tint_1 : colors.tint_3}
         size={24}
         stroke={2}
       />

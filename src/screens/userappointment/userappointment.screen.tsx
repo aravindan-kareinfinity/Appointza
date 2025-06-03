@@ -50,6 +50,7 @@ import {HomeTabParamList} from '../../hometab.navigation';
 import {AppStackParamList} from '../../appstack.navigation';
 import {environment} from '../../utils/environment';
 import {AppTextInput} from '../../components/apptextinput.component';
+import {FormInput} from '../../components/forminput.component';
 
 type UserAppoinmentScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'UserAppoinment'>,
@@ -79,10 +80,17 @@ export function UserAppoinmentScreen() {
   const [upcomingAppointments, setUpcomingAppointments] = useState<BookedAppoinmentRes[]>([]);
   const [previousAppointments, setPreviousAppointments] = useState<BookedAppoinmentRes[]>([]);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'previous'>('upcoming');
+  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
 
   // Refs
   const cancelSheetRef = useRef<any>(null);
   const paymentSheetRef = useRef<any>(null);
+  const filterSheetRef = useRef<any>(null);
+  const [dateRange, setDateRange] = useState<{start: Date | null; end: Date | null}>({
+    start: null,
+    end: null
+  });
 
   // Services
   const usercontext = useAppSelector(selectusercontext);
@@ -121,13 +129,17 @@ export function UserAppoinmentScreen() {
       
       // Separate appointments into upcoming and previous
       const now = new Date();
+      now.setHours(0, 0, 0, 0); // Set to start of today
+      
       const upcoming = res?.filter(appointment => {
         const appointmentDate = new Date(appointment.appoinmentdate);
+        appointmentDate.setHours(0, 0, 0, 0);
         return appointmentDate >= now;
       }) || [];
       
       const previous = res?.filter(appointment => {
         const appointmentDate = new Date(appointment.appoinmentdate);
+        appointmentDate.setHours(0, 0, 0, 0);
         return appointmentDate < now;
       }) || [];
 
@@ -142,34 +154,83 @@ export function UserAppoinmentScreen() {
 
   const handleCancelAppointment = async () => {
     if (!selectedAppointment || !cancelReason) {
-      AppAlert({ message: 'Please select a cancellation reason' });
+      AppAlert({ message: 'Please provide a reason for cancellation' });
       return;
     }
 
-    try {
-      setIsloading(true);
-      const req = new UpdateStatusReq();
-      req.appoinmentid = selectedAppointment.id;
-      req.statuscode = 'CANCELLED';
-      // req.cancelreason = cancelReason;
-      
-      await appoinmentservices.UpdateStatus(req);
-      
-      // Refresh the appointments list
-      await getuserappoinment();
-      
-      // Close the bottom sheet
-      cancelSheetRef.current?.close();
-      
-      // Reset states
-      setSelectedAppointment(null);
-      setCancelReason('');
-      
-      AppAlert({ message: 'Appointment cancelled successfully' });
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setIsloading(false);
+    // Check if appointment is within 24 hours
+    const appointmentDate = new Date(selectedAppointment.appoinmentdate);
+    const currentDate = new Date();
+    const hoursDifference = (appointmentDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60);
+
+    if (hoursDifference < 24) {
+      Alert.alert(
+        'Late Cancellation',
+        'This appointment is within 24 hours. You may be subject to a cancellation fee. Do you want to proceed?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Proceed',
+            onPress: async () => {
+              try {
+                setIsloading(true);
+                const req = new UpdateStatusReq();
+                req.appoinmentid = selectedAppointment.id;
+                req.statuscode = 'CANCELLED';
+                // req.cancelreason = cancelReason;
+                
+                await appoinmentservices.UpdateStatus(req);
+                
+                // Refresh the appointments list
+                await getuserappoinment();
+                
+                // Close the bottom sheet
+                cancelSheetRef.current?.close();
+                
+                // Reset states
+                setSelectedAppointment(null);
+                setCancelReason('');
+                
+                AppAlert({ message: 'Appointment cancelled successfully' });
+              } catch (error) {
+                handleError(error);
+              } finally {
+                setIsloading(false);
+              }
+            },
+          },
+        ],
+      );
+    } else {
+      // Proceed with cancellation if more than 24 hours
+      try {
+        setIsloading(true);
+        const req = new UpdateStatusReq();
+        req.appoinmentid = selectedAppointment.id;
+        req.statuscode = 'CANCELLED';
+        // req.cancelreason = cancelReason;
+        
+        await appoinmentservices.UpdateStatus(req);
+        
+        // Refresh the appointments list
+        await getuserappoinment();
+        
+        // Close the bottom sheet
+        cancelSheetRef.current?.close();
+        
+        // Reset states
+        setSelectedAppointment(null);
+        setCancelReason('');
+        
+        AppAlert({ message: 'Appointment cancelled successfully' });
+      } catch (error) {
+        handleError(error);
+      } finally {
+        setIsloading(false);
+      }
     }
   };
 
@@ -249,119 +310,258 @@ export function UserAppoinmentScreen() {
     }
   };
 
+  const getFilteredAppointments = (appointments: BookedAppoinmentRes[]) => {
+    return appointments.filter(appointment => {
+      // Status filter
+      if (selectedStatus !== 'ALL' && appointment.statuscode !== selectedStatus) {
+        return false;
+      }
+
+      // Date range filter
+      if (dateRange.start && dateRange.end) {
+        const appointmentDate = new Date(appointment.appoinmentdate);
+        appointmentDate.setHours(0, 0, 0, 0);
+        const startDate = new Date(dateRange.start);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(dateRange.end);
+        endDate.setHours(23, 59, 59, 999);
+
+        if (appointmentDate < startDate || appointmentDate > endDate) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
     <TouchableOpacity
-      style={[
-        styles.appointmentCard,
-        {
-          borderLeftColor: getStatusColor(item.statuscode) || $.tint_3,
-        },
-      ]}
+      style={{
+        marginHorizontal: 8,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        borderRadius: 8,
+        backgroundColor: '#f8f9fa',
+        padding: 16,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        borderLeftWidth: 4,
+        borderLeftColor: getStatusColor(item.statuscode) || $.tint_3
+      }}
+      activeOpacity={0.9}
       onPress={() => {}}>
-      {/* Header with date and status */}
-      <View style={styles.cardHeader}>
-        <AppText style={styles.dateText}>
+      
+      {/* Header with Date and Time */}
+      <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 16}}>
+        <AppText style={{fontWeight: 'bold', fontSize: 16, color: '#333', flex: 1}}>
           {new Date(item.appoinmentdate).toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',
             day: 'numeric',
           })}
         </AppText>
-        <View
-          style={[
-            styles.statusBadge,
-            {backgroundColor: getStatusColor(item.statuscode) || $.tint_3},
-          ]}>
-          <AppText style={styles.statusText}>
+        
+        <View style={{flexDirection: 'row', alignItems: 'center', backgroundColor: '#e9ecef', padding: 4, borderRadius: 4}}>
+          <AppText style={{fontWeight: '500', fontSize: 12, color: '#495057', marginRight: 4}}>
+            {item.fromtime.toString().substring(0, 5)}
+          </AppText>
+          <AppText style={{fontWeight: '300', fontSize: 12, color: '#adb5bd'}}>-</AppText>
+          <AppText style={{fontWeight: '500', fontSize: 12, color: '#495057', marginLeft: 4}}>
+            {item.totime.toString().substring(0, 5)}
+          </AppText>
+        </View>
+      </View>
+
+      {/* Location Info */}
+      <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 16}}>
+        <View style={{
+          backgroundColor: '#e9ecef', 
+          padding: 8, 
+          borderRadius: 4,
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: 40, 
+          height: 40
+        }}>
+          <CustomIcon
+            size={24}
+            color="#4a6da7"
+            name={CustomIcons.Shop}
+          />
+        </View>
+        
+        <View style={{marginLeft: 16, flex: 1}}>
+          <AppText style={{fontWeight: '600', fontSize: 16, color: '#333'}}>
+            {item.organisationname}
+          </AppText>
+          <AppText style={{fontWeight: '400', fontSize: 12, color: '#6c757d'}}>
+            {item.city || 'No location specified'}
+          </AppText>
+        </View>
+      </View>
+
+      {/* Status and Staff Info */}
+      <View style={{flexDirection: 'row', marginBottom: 16, gap: 8, flexWrap: 'wrap'}}>
+        {/* Status Badge */}
+        <View style={{
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          backgroundColor: '#e9ecef', 
+          padding: 4, 
+          borderRadius: 4,
+          paddingHorizontal: 8
+        }}>
+          <CustomIcon
+            name={
+              item.statuscode === 'COMPLETED' ? CustomIcons.OnlinePayment :
+              item.statuscode === 'CANCELLED' ? CustomIcons.CashPayment :
+              item.statuscode === 'CONFIRMED' ? CustomIcons.StatusIndicator :
+              CustomIcons.TimeCard
+            }
+            size={20}
+            color={getStatusColor(item.statuscode)}
+          />
+          <AppText style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#495057'}}>
             {item.statuscode || 'PENDING'}
           </AppText>
         </View>
-      </View>
 
-      {/* Time slot */}
-      <View style={styles.timeContainer}>
-        <CustomIcon
-          name={
-            item.statuscode === 'COMPLETED' ? CustomIcons.OnlinePayment :
-            item.statuscode === 'CANCELLED' ? CustomIcons.CashPayment :
-            item.statuscode === 'CONFIRMED' ? CustomIcons.StatusIndicator :
-            CustomIcons.TimeCard
-          }
-          size={20}
-          color={getStatusColor(item.statuscode)}
-        />
-        <AppText style={styles.timeText}>
-          {item.fromtime.toString().substring(0, 5)}-{' '}
-          {item.totime.toString().substring(0, 5)}
-        </AppText>
-      </View>
-
-      {/* Staff and location */}
-      <View style={styles.infoContainer}>
-        <View style={styles.infoRow}>
-          <CustomIcon size={20} color={$.tint_3} name={CustomIcons.Account} />
-          <AppText style={styles.infoText}>
-            {item.staffname || 'Not assigned'}
+        {/* Staff Badge */}
+        <View style={{
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          backgroundColor: '#e9ecef', 
+          padding: 4, 
+          borderRadius: 4,
+          paddingHorizontal: 8
+        }}>
+          <CustomIcon
+            size={14}
+            color="#4a6da7"
+            name={CustomIcons.Account}
+          />
+          <AppText style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#495057'}}>
+            {item.staffname || 'Unassigned'}
           </AppText>
         </View>
 
-        <View style={styles.infoRow}>
-          <CustomIcon size={20} color={$.tint_3} name={CustomIcons.Shop} />
-          <View style={styles.locationTextContainer}>
-            <AppText style={styles.organisationText}>
-              {item.organisationname}
-            </AppText>
-            <AppText style={styles.locationText}>
-              {item.city || 'No location specified'}
+        {/* Payment Status Badge */}
+        {item.ispaid && (
+          <View style={{
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            borderWidth: 1,
+            borderColor: '#28a745',
+            padding: 4, 
+            borderRadius: 4,
+            paddingHorizontal: 8
+          }}>
+            <CustomIcon
+              size={14}
+              color="#28a745"
+              name={CustomIcons.Circle}
+            />
+            <AppText style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#28a745'}}>
+              Paid
             </AppText>
           </View>
-        </View>
+        )}
       </View>
 
-      {/* Services list */}
+      {/* Services List */}
       {item.attributes?.servicelist?.length > 0 && (
-        <View style={styles.servicesContainer}>
-          <AppText style={styles.servicesTitle}>Services</AppText>
-
-          {item.attributes.servicelist.map((service, index) => (
-            <View key={index} style={styles.serviceItem}>
-              <AppText style={styles.serviceName}>
-                {service.servicename}
+        <View style={{marginBottom: 16}}>
+          <AppText style={{fontWeight: '600', fontSize: 12, color: '#6c757d', marginBottom: 8}}>
+            SERVICES
+          </AppText>
+          
+          <View style={{borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 4}}>
+            {item.attributes.servicelist.map((service, index) => (
+              <View 
+                key={index}
+                style={{
+                  flexDirection: 'row', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  padding: 8,
+                  backgroundColor: index % 2 === 0 ? '#f1f3f5' : '#f8f9fa',
+                  borderBottomWidth: index === item.attributes.servicelist.length - 1 ? 0 : 1,
+                  borderBottomColor: '#e0e0e0'
+                }}>
+                <AppText style={{fontWeight: '400', fontSize: 12, color: '#6c757d'}}>
+                  {service.servicename}
+                </AppText>
+                <AppText style={{fontWeight: '600', fontSize: 12, color: '#4a6da7'}}>
+                  ₹{service.serviceprice}
+                </AppText>
+              </View>
+            ))}
+            
+            {/* Total Price */}
+            <View style={{
+              flexDirection: 'row', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              padding: 8,
+              backgroundColor: '#e9ecef'
+            }}>
+              <AppText style={{fontWeight: '600', fontSize: 12, color: '#333'}}>
+                Total
               </AppText>
-              <AppText style={styles.servicePrice}>
-                ₹{service.serviceprice}
+              <AppText style={{fontWeight: '700', fontSize: 12, color: '#4a6da7'}}>
+                ₹{item.attributes.servicelist
+                  .reduce((total, service) => total + (Number(service.serviceprice) || 0), 0)
+                  .toLocaleString('en-IN')}
               </AppText>
             </View>
-          ))}
-
-          <View style={styles.totalContainer}>
-            <AppText style={styles.totalText}>Total</AppText>
-            <AppText style={styles.totalAmount}>
-              ₹
-              {item.attributes.servicelist.reduce(
-                (total, service) => total + (Number(service.serviceprice) || 0),
-                0,
-              )}
-            </AppText>
           </View>
         </View>
       )}
 
-      <View style={styles.actionContainer}>
+      {/* Action Buttons */}
+      <View style={{flexDirection: 'row', justifyContent: 'flex-end', gap: 8}}>
         {item.statuscode !== 'CANCELLED' && item.statuscode !== 'COMPLETED' && (
           <TouchableOpacity
-            style={[styles.cancelButton, $.bg_danger]}
+            style={{
+              flexDirection: 'row', 
+              alignItems: 'center',
+              padding: 8,
+              borderWidth: 1,
+              borderColor: '#dc3545',
+              borderRadius: 4,
+              backgroundColor: '#f1f3f5'
+            }}
             onPress={() => {
               setSelectedAppointment(item);
               cancelSheetRef.current?.open();
             }}>
-            <AppText style={styles.cancelButtonText}>Cancel</AppText>
+            <CustomIcon
+              size={16}
+              color="#dc3545"
+              name={CustomIcons.Delete}
+            />
+            <AppText style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#dc3545'}}>
+              Cancel
+            </AppText>
           </TouchableOpacity>
         )}
 
         {!item.ispaid && item.statuscode !== 'CANCELLED' && (
           <TouchableOpacity
-            style={[styles.payButton, $.bg_success]}
+            style={{
+              flexDirection: 'row', 
+              alignItems: 'center',
+              padding: 8,
+              borderWidth: 1,
+              borderColor: '#28a745',
+              borderRadius: 4,
+              backgroundColor: '#f1f3f5'
+            }}
             onPress={() => {
               setSelectedAppointment(item);
               setPaymentAmount(item.attributes?.servicelist?.reduce(
@@ -370,21 +570,135 @@ export function UserAppoinmentScreen() {
               ).toString() || '');
               paymentSheetRef.current?.open();
             }}>
-            <AppText style={styles.payButtonText}>Pay Now</AppText>
+            <CustomIcon
+              size={16}
+              color="#28a745"
+              name={CustomIcons.Save}
+            />
+            <AppText style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#28a745'}}>
+              Pay Now
+            </AppText>
           </TouchableOpacity>
-        )}
-
-        {item.ispaid && (
-          <View
-            style={[
-              styles.paymentBadge,
-              styles.paidBadge,
-            ]}>
-            <AppText style={styles.paymentText}>PAID</AppText>
-          </View>
         )}
       </View>
     </TouchableOpacity>
+  );
+
+  const statusOptions = [
+    { label: 'All', value: 'ALL' },
+    { label: 'Confirmed', value: 'CONFIRMED' },
+    { label: 'Pending', value: 'PENDING' },
+    { label: 'Cancelled', value: 'CANCELLED' },
+    { label: 'Completed', value: 'COMPLETED' },
+  ];
+
+  const FilterBottomSheet = () => (
+    <BottomSheetComponent
+      ref={filterSheetRef}
+      screenname="Filter Appointments"
+      Save={() => {
+        filterSheetRef.current?.close();
+      }}
+      showbutton={false}
+      close={() => {
+        filterSheetRef.current?.close();
+      }}>
+      <ScrollView contentContainerStyle={[]} nestedScrollEnabled={true}>
+        <AppText style={[$.fw_semibold, $.mb_medium]}>Filter By Status</AppText>
+        
+        <AppView style={[$.mb_medium]}>
+          {statusOptions.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: 12,
+                backgroundColor: selectedStatus === option.value ? '#F0F7FF' : '#FFFFFF',
+                borderRadius: 8,
+                marginBottom: 8,
+                borderWidth: 1,
+                borderColor: selectedStatus === option.value ? '#4A90E2' : '#E9ECEF',
+              }}
+              onPress={() => setSelectedStatus(option.value)}>
+              <CustomIcon
+                name={
+                  option.value === 'CONFIRMED' ? CustomIcons.StatusIndicator :
+                  option.value === 'PENDING' ? CustomIcons.TimeCard :
+                  option.value === 'CANCELLED' ? CustomIcons.Delete :
+                  option.value === 'COMPLETED' ? CustomIcons.OnlinePayment :
+                  CustomIcons.Scheduled
+                }
+                size={20}
+                color={selectedStatus === option.value ? '#4A90E2' : '#6C757D'}
+              />
+              <AppText
+                style={{
+                  marginLeft: 12,
+                  color: selectedStatus === option.value ? '#4A90E2' : '#6C757D',
+                  fontWeight: selectedStatus === option.value ? '600' : '400',
+                }}>
+                {option.label}
+              </AppText>
+            </TouchableOpacity>
+          ))}
+        </AppView>
+
+        <AppText style={[$.fw_semibold, $.mb_medium]}>Filter By Date Range</AppText>
+        
+        <AppView style={[$.mb_medium]}>
+          <TouchableOpacity
+            style={{
+              padding: 12,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: '#E9ECEF',
+              marginBottom: 8,
+            }}
+            onPress={() => {
+              // Show date picker for start date
+              // You can use your DatePickerComponent here
+            }}>
+            <AppText style={{ color: '#6C757D' }}>
+              Start Date: {dateRange.start ? dateRange.start.toLocaleDateString() : 'Select'}
+            </AppText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              padding: 12,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: '#E9ECEF',
+            }}
+            onPress={() => {
+              // Show date picker for end date
+              // You can use your DatePickerComponent here
+            }}>
+            <AppText style={{ color: '#6C757D' }}>
+              End Date: {dateRange.end ? dateRange.end.toLocaleDateString() : 'Select'}
+            </AppText>
+          </TouchableOpacity>
+        </AppView>
+
+        <TouchableOpacity
+          style={{
+            padding: 12,
+            backgroundColor: '#F8F9FA',
+            borderRadius: 8,
+            alignItems: 'center',
+            marginTop: 16,
+          }}
+          onPress={() => {
+            setSelectedStatus('ALL');
+            setDateRange({ start: null, end: null });
+          }}>
+          <AppText style={{ color: '#6C757D' }}>Reset Filters</AppText>
+        </TouchableOpacity>
+      </ScrollView>
+    </BottomSheetComponent>
   );
 
   return (
@@ -392,9 +706,18 @@ export function UserAppoinmentScreen() {
       {/* Header Section */}
       <View style={styles.header}>
         <AppText style={styles.headerTitle}>My Appointments</AppText>
-        <TouchableOpacity onPress={handleRefresh}>
-          <CustomIcon name={CustomIcons.Refresh} size={24} color={$.tint_3} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity 
+            style={{ marginRight: 16 }}
+            onPress={() => {
+              filterSheetRef.current?.open();
+            }}>
+            <CustomIcon name={CustomIcons.Filter} size={24} color={$.tint_3} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleRefresh}>
+            <CustomIcon name={CustomIcons.Refresh} size={24} color={$.tint_3} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tab Buttons */}
@@ -437,7 +760,7 @@ export function UserAppoinmentScreen() {
         </View>
       ) : (
         <FlatList
-          data={activeTab === 'upcoming' ? upcomingAppointments : previousAppointments}
+          data={getFilteredAppointments(activeTab === 'upcoming' ? upcomingAppointments : previousAppointments)}
           nestedScrollEnabled
           showsVerticalScrollIndicator={false}
           keyExtractor={item => item.id.toString()}
@@ -473,10 +796,13 @@ export function UserAppoinmentScreen() {
         />
       )}
 
+      {/* Filter Bottom Sheet */}
+      <FilterBottomSheet />
+
       {/* Payment Bottom Sheet */}
       <BottomSheetComponent
         ref={paymentSheetRef}
-        screenname="Payment Options"
+        screenname="Payment Details"
         Save={handlePayment}
         close={() => {
           paymentSheetRef.current?.close();
@@ -487,58 +813,132 @@ export function UserAppoinmentScreen() {
         }}
         showbutton={true}>
         <ScrollView
-          contentContainerStyle={[$.p_medium]}
+          contentContainerStyle={[]}
           nestedScrollEnabled={true}>
           <AppText style={[$.fw_semibold, $.mb_medium]}>
             Payment Details
           </AppText>
           
           {/* Payment Type Selection */}
-          <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Type</AppText>
-          <AppView style={[$.flex_row, $.mb_small]}>
+          <FormInput
+            label="Payment Method"
+            value={selectedPaymentType}
+            onChangeText={() => {}}
+            placeholder="Select payment method"
+            editable={false}
+            containerStyle={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 12,
+             
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+            
+            }}
+          />
+
+          <AppView style={[$.flex_row, {justifyContent: 'space-between'}, $.mb_medium]}>
             <TouchableOpacity
-              style={[$.p_small, $.mr_small, $.bg_tint_10, $.border_rounded]}
+              style={{
+                flex: 1,
+                marginRight: 8,
+                backgroundColor: '#F8F9FA',
+               
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: selectedPaymentType === 'Cash' ? '#4A90E2' : '#E9ECEF',
+                alignItems: 'center',
+              }}
               onPress={() => setSelectedPaymentType('Cash')}>
-              <AppText style={[$.fw_medium, selectedPaymentType === 'Cash' && $.text_success]}>Cash</AppText>
+              <CustomIcon
+                name={CustomIcons.CashPayment}
+                size={24}
+                color={selectedPaymentType === 'Cash' ? '#4A90E2' : '#6C757D'}
+              />
+              <AppText
+                style={{
+                  marginTop: 8,
+                  color: selectedPaymentType === 'Cash' ? '#4A90E2' : '#6C757D',
+                  fontWeight: '500',
+                }}>
+                Cash
+              </AppText>
             </TouchableOpacity>
+
             <TouchableOpacity
-              style={[$.p_small, $.mr_small, $.bg_tint_10, $.border_rounded]}
+              style={{
+                flex: 1,
+                marginLeft: 8,
+                backgroundColor: '#F8F9FA',
+               
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: selectedPaymentType === 'Card' ? '#4A90E2' : '#E9ECEF',
+                alignItems: 'center',
+              }}
               onPress={() => setSelectedPaymentType('Card')}>
-              <AppText style={[$.fw_medium, selectedPaymentType === 'Card' && $.text_success]}>Card</AppText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[$.p_small, $.bg_tint_10, $.border_rounded]}
-              onPress={() => setSelectedPaymentType('Online')}>
-              <AppText style={[$.fw_medium, selectedPaymentType === 'Online' && $.text_success]}>Online</AppText>
+              <CustomIcon
+                name={CustomIcons.OnlinePayment}
+                size={24}
+                color={selectedPaymentType === 'Card' ? '#4A90E2' : '#6C757D'}
+              />
+              <AppText
+                style={{
+                  marginTop: 8,
+                  color: selectedPaymentType === 'Card' ? '#4A90E2' : '#6C757D',
+                  fontWeight: '500',
+                }}>
+                Card
+              </AppText>
             </TouchableOpacity>
           </AppView>
 
           {/* Amount Input */}
-          <AppText style={[$.fw_medium, $.mb_tiny]}>Amount</AppText>
-          <AppTextInput
-            style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
-            placeholder="Enter amount"
-            keyboardtype="numeric"
+          <FormInput
+            label="Amount"
             value={paymentAmount}
             onChangeText={setPaymentAmount}
+            placeholder="Enter amount"
+            keyboardType="numeric"
+            containerStyle={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 12,
+             
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+             
+            }}
           />
 
-          {/* Payment Name (Optional) */}
-          <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Name (Optional)</AppText>
-          <AppTextInput
-            style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
-            placeholder="e.g., Credit Card, UPI, etc."
+          {/* Payment Name */}
+          <FormInput
+            label="Payment Name (Optional)"
             value={paymentName}
             onChangeText={setPaymentName}
+            placeholder="e.g., Credit Card, UPI, etc."
+            containerStyle={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 12,
+             
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+           
+            }}
           />
 
-          {/* Payment Code (Optional) */}
-          <AppText style={[$.fw_medium, $.mb_tiny]}>Payment Code/Reference</AppText>
-          <AppTextInput
-            style={[$.p_small, $.border, $.border_tint_7, $.border_rounded, $.mb_small]}
-            placeholder="Transaction ID or Reference"
+          {/* Payment Code */}
+          <FormInput
+            label="Payment Code/Reference"
             value={paymentCode}
             onChangeText={setPaymentCode}
+            placeholder="Transaction ID or Reference"
+            containerStyle={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 12,
+             
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+           
+            }}
           />
         </ScrollView>
       </BottomSheetComponent>
@@ -552,44 +952,65 @@ export function UserAppoinmentScreen() {
           cancelSheetRef.current?.close();
           setCancelReason('');
         }}
-        showbutton={true}
-        // saveButtonDisabled={!cancelReason}
-        >
-        <ScrollView contentContainerStyle={[$.p_medium]} nestedScrollEnabled={true}>
-          <AppText style={[$.text_danger, $.mb_medium, $.text_center, ]}>
+        showbutton={true}>
+        <ScrollView contentContainerStyle={[]} nestedScrollEnabled={true}>
+          {/* <AppText style={[$.fw_semibold, $.fs_large, $.mb_medium, $.text_danger]}>
             Cancel Appointment
-          </AppText>
+          </AppText> */}
           
-          <AppText style={[{ color: '#666' }, $.mb_small]}>
-            <AppText style={[]}>Date: </AppText>
-            {selectedAppointment && new Date(selectedAppointment.appoinmentdate).toLocaleDateString()}
-          </AppText>
+          {/* Appointment Details */}
+          <AppView style={[$.mb_medium, {
+            backgroundColor: '#F8F9FA',
+            padding: 16,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: '#E9ECEF',
+          }]}>
+            <AppText style={[$.fw_medium, $.mb_small]}>Appointment Details</AppText>
+            <AppText style={{ color: '#666', marginBottom: 4 }}>
+              Date: {selectedAppointment && new Date(selectedAppointment.appoinmentdate).toLocaleDateString()}
+            </AppText>
+            <AppText style={{ color: '#666' }}>
+              Time: {selectedAppointment?.fromtime.toString().substring(0, 5)} - {selectedAppointment?.totime.toString().substring(0, 5)}
+            </AppText>
+          </AppView>
           
-          <AppText style={[ $.mb_medium]}>
-            <AppText style={[]}>Time: </AppText>
-            {selectedAppointment?.fromtime.toString().substring(0, 5)} - {selectedAppointment?.totime.toString().substring(0, 5)}
-          </AppText>
-          
-          {/* <AppSingleSelect
-            label="Reason for cancellation"
-            placeholder="Select a reason"
-            value={cancelReason}
-            onChange={setCancelReason}
-            options={reasonsList.map(reason => ({
-              label: reason.valuename,
-              value: reason.valuename,
-            }))}
-          /> */}
-          
-          <AppTextInput
-            // label="Additional notes (optional)"
-            placeholder="Enter any additional details"
+          {/* Cancellation Reason */}
+          <FormInput
+            label="Reason for Cancellation"
             value={cancelReason}
             onChangeText={setCancelReason}
-            // multiline
-            // numberOfLines={3}
-            style={[$.mb_medium]}
+            placeholder="Please provide a reason for cancellation"
+            multiline={true}
+            numberOfLines={4}
+            containerStyle={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 12,
+           
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+            
+            }}
           />
+
+          {/* Cancellation Policy */}
+          <AppView style={[$.mb_medium]}>
+            <AppText style={[$.fw_medium, $.mb_small]}>Cancellation Policy</AppText>
+            <AppView
+              style={{
+                backgroundColor: '#F8F9FA',
+                padding: 16,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: '#E9ECEF',
+              }}>
+              <AppText style={{ color: '#6C757D', lineHeight: 20 }}>
+                • Cancellations made 24 hours before the appointment are fully refundable{'\n'}
+                • Cancellations made within 24 hours may be subject to a cancellation fee{'\n'}
+                • No-shows will be charged the full appointment fee
+              </AppText>
+            </AppView>
+          </AppView>
         </ScrollView>
       </BottomSheetComponent>
     </AppView>

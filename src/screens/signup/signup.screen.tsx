@@ -44,6 +44,7 @@ import { ReferenceValueService } from '../../services/referencevalue.service';
 import { ReferenceValue, ReferenceValueSelectReq } from '../../models/referencevalue.model';
 import { LocationPicker } from '../../components/LocationPicker';
 import { DefaultColor } from '../../styles/default-color.style';
+import { OTPInput } from '../../components/otpinput.component';
 
 // type SignUpScreenProp = CompositeScreenProps<
 //   BottomTabScreenProps<HomeTabParamList>,
@@ -71,6 +72,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
   const filesService = useMemo(() => new FilesService(), []);
   const referenceTypeService = useMemo(() => new ReferenceTypeService(), []);
   const referenceValueService = useMemo(() => new ReferenceValueService(), []);
+  const usersService = useMemo(() => new UsersService(), []);
 
   const isOrganization = props.route.params.isorganization;
 
@@ -160,6 +162,10 @@ export function SignUpScreen(props: SignUpScreenProp) {
       AppAlert({ message: 'Please enter mobile number' });
       return false;
     }
+    if (signUpModel.usermobile.length !== 10) {
+      AppAlert({ message: 'Please enter a valid 10-digit mobile number' });
+      return false;
+    }
     if (isOrganization && !signUpModel.organisationname) {
       AppAlert({ message: 'Please enter organization name' });
       return false;
@@ -176,44 +182,17 @@ export function SignUpScreen(props: SignUpScreenProp) {
     
     setIsLoading(true);
     try {
-      const userService = new UsersService();
-      console.log("signUpModel",signUpModel);
-      
-      const response = await userService.register(signUpModel);
+      const response = await usersService.register(signUpModel);
       
       if (response) {
         dispatch(usercontextactions.set(response));
         AppAlert({ message: 'Registration successful' });
         
-        if (signUpModel.primarytype !== 0) {
-
-           navigation.dispatch(
-                  CommonActions.reset({
-                    index: 0,
-                    routes: [
-                      {
-                        name: 'ServiceAvailable',
-                        params: { fromSignup: true }
-                      },
-                    ],
-                  }),
-                );
-         
-        } else {
-
-          navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [
-                {
-                  name: 'HomeTab',
-                },
-              ],
-            }),
-          );
-      
-          // Navigate to appropriate screen for non-org users
-        }
+        // Navigate to OTP verification screen
+        navigation.navigate('OTPVerification', {
+          mobileNumber: signUpModel.usermobile,
+          fromSignup: true
+        });
       }
     } catch (error) {
       handleError(error, 'Registration failed');

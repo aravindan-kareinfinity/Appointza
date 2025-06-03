@@ -24,6 +24,9 @@ import {
   PaymentSummary,
 } from '../../models/organisationlocation.model';
 import {useFocusEffect} from '@react-navigation/native';
+import {FormSelect} from '../../components/formselect.component';
+import {CustomHeader} from '../../components/customheader.component';
+import {Colors} from '../../constants/colors';
 
 type DashboardScreenProps = {
   // Add any props if needed
@@ -168,9 +171,9 @@ export function BussinessDashboardScreen() {
     icon: CustomIcons,
     color: string,
   ) => (
-    <View style={[styles.statCard, {backgroundColor: color}]}>
+    <View style={[styles.statCard, {borderLeftColor: color}]}>
       <View style={styles.statIconContainer}>
-        <CustomIcon name={icon} size={24} color="#FFF" />
+        <CustomIcon name={icon} size={24} color={color} />
       </View>
       <View style={styles.statTextContainer}>
         <AppText style={styles.statValue}>{value}</AppText>
@@ -180,47 +183,47 @@ export function BussinessDashboardScreen() {
   );
 
   return (
-    <AppView style={[$.flex_1]}>
-      <View >
-        <AppView style={[$.flex_row, $.m_small,$.px_small]}>
+    <AppView style={[$.flex_1, {backgroundColor: '#F5F7FA'}]}>
+      <CustomHeader
+        title="Dashboard"
+        backgroundColor={Colors.light.background}
+        titleColor={Colors.light.text}
+        rightComponent={
+          <TouchableOpacity
+            onPress={() =>
+              selectlocation &&
+              getLocationDetail(selectlocation.organisationlocationid)
+            }
+            style={styles.refreshButton}>
+            <CustomIcon name={CustomIcons.Refresh} size={20} color={$.tint_3} />
+          </TouchableOpacity>
+        }
+      />
 
-        <AppText style={[$.fs_regular,$.fw_bold,$.flex_1,$.text_tint_1]}>Dashboard</AppText>
-        <TouchableOpacity
-          onPress={() =>
-            selectlocation &&
-            getLocationDetail(selectlocation.organisationlocationid)
-          }>
-          <CustomIcon name={CustomIcons.Clock} size={24} color={$.tint_3} />
-        </TouchableOpacity>
-        </AppView>
-
-        {locationlist.length > 1 && (
-          <View style={[ ]}>
-            <AppSingleSelect
-              data={locationlist}
-              keyExtractor={e => e.organisationlocationid.toString()}
-              searchKeyExtractor={e => e.name}
-              renderItemLabel={item => (
-                <AppText style={styles.locationItemText}>{item.name}</AppText>
-              )}
-              selecteditemid={
-                selectlocation?.organisationlocationid.toString() || ''
+      {locationlist.length > 1 && (
+        <View style={styles.locationSelectorContainer}>
+          <FormSelect
+            label="Select Location"
+            options={locationlist.map(loc => ({
+              id: loc.organisationlocationid,
+              name: loc.name
+            }))}
+            selectedId={selectlocation?.organisationlocationid || 0}
+            onSelect={(option) => {
+              const selectedLocation = locationlist.find(
+                loc => loc.organisationlocationid === option.id
+              );
+              if (selectedLocation) {
+                handleLocationChange(selectedLocation);
               }
-              onSelect={handleLocationChange}
-              title="Select Location"
-             
-            />
-          </View>
-        )}
+            }}
+          />
+        </View>
+      )}
 
-        
-      </View>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.scrollContainer}>
-        {/* Location Selector */}
-     
-
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={$.tint_3} />
@@ -230,33 +233,37 @@ export function BussinessDashboardScreen() {
           <>
             {/* Stats Overview */}
             <View style={styles.statsContainer}>
-              {renderStatCard(
-                'Total',
-                paymentSummary.totalappointments,
-                CustomIcons.Dashboard,
-                $.primary2,
-              )}
-              {renderStatCard(
-                'Confirmed',
-                paymentSummary.confirmedcount,
-                CustomIcons.StatusIndicator,
-                '#4CAF50',
-              )}
-              {renderStatCard(
-                'Completed',
-                paymentSummary.completedcount,
-                CustomIcons.OnlinePayment,
-                '#2196F3',
-              )}
-              {renderStatCard(
-                'Revenue',
-                paymentSummary.paymentsummary.reduce(
-                  (sum, item) => sum + item.totalamount,
-                  0,
-                ),
-                CustomIcons.TimeCard,
-                '#FFC107',
-              )}
+              <View style={styles.statsRow}>
+                {renderStatCard(
+                  'Total Appointments',
+                  paymentSummary.totalappointments,
+                  CustomIcons.Dashboard,
+                  '#4A6DA7',
+                )}
+                {renderStatCard(
+                  'Confirmed',
+                  paymentSummary.confirmedcount,
+                  CustomIcons.StatusIndicator,
+                  '#4CAF50',
+                )}
+              </View>
+              <View style={styles.statsRow}>
+                {renderStatCard(
+                  'Completed',
+                  paymentSummary.completedcount,
+                  CustomIcons.OnlinePayment,
+                  '#2196F3',
+                )}
+                {renderStatCard(
+                  'Total Revenue',
+                  paymentSummary.paymentsummary.reduce(
+                    (sum, item) => sum + item.totalamount,
+                    0,
+                  ),
+                  CustomIcons.TimeCard,
+                  '#FF9800',
+                )}
+              </View>
             </View>
 
             {/* Payment Summary */}
@@ -293,9 +300,14 @@ export function BussinessDashboardScreen() {
 
               {/* Total Revenue */}
               <View style={styles.totalRevenueCard}>
-                <AppText style={styles.totalRevenueLabel}>
-                  Total Revenue
-                </AppText>
+                <View style={styles.totalRevenueLeft}>
+                  <AppText style={styles.totalRevenueLabel}>
+                    Total Revenue
+                  </AppText>
+                  <AppText style={styles.totalRevenueSubLabel}>
+                    All payment methods
+                  </AppText>
+                </View>
                 <AppText style={styles.totalRevenueAmount}>
                   ₹
                   {paymentSummary.paymentsummary
@@ -304,8 +316,6 @@ export function BussinessDashboardScreen() {
                 </AppText>
               </View>
             </View>
-
-            {/* Refresh Button */}
           </>
         )}
       </ScrollView>
@@ -314,40 +324,27 @@ export function BussinessDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
+  locationSelectorContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.light.background,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F7FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F5F7FA',
   },
   scrollContainer: {
     paddingBottom: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-  },
-  locationSelectorContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  locationSelector: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    elevation: 2,
-  },
-  locationItemText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
   },
   loadingContainer: {
     flex: 1,
@@ -361,25 +358,32 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   statsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
     padding: 16,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   statCard: {
     width: '48%',
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
     padding: 16,
-    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    borderLeftWidth: 4,
   },
   statIconContainer: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 50,
     width: 40,
     height: 40,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -390,27 +394,30 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#333333',
     marginBottom: 4,
   },
   statTitle: {
-    fontSize: 14,
-    color: 'white',
-    opacity: 0.9,
+    fontSize: 13,
+    color: '#666666',
   },
   section: {
     backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 16,
     marginHorizontal: 16,
     marginBottom: 16,
-    padding: 16,
+    padding: 20,
     elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -418,73 +425,74 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   paymentList: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   paymentMethodCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    marginBottom: 8,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
   },
   paymentMethodLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   paymentMethodName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     color: '#333',
-    marginLeft: 8,
+    marginLeft: 12,
   },
   paymentMethodAmount: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: $.primary2,
+    color: '#4A6DA7',
   },
   totalRevenueCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: $.tint_10,
-    borderRadius: 8,
-    marginTop: 8,
+    padding: 20,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  totalRevenueLeft: {
+    flex: 1,
   },
   totalRevenueLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
+    marginBottom: 4,
+  },
+  totalRevenueSubLabel: {
+    fontSize: 13,
+    color: '#666',
   },
   totalRevenueAmount: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: $.primary2,
+    color: '#4A6DA7',
   },
   emptyState: {
     alignItems: 'center',
-    padding: 16,
+    padding: 24,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    borderStyle: 'dashed',
   },
   emptyText: {
-    marginTop: 8,
+    marginTop: 12,
     fontSize: 14,
     color: '#666',
-  },
-  refreshButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: $.primary2,
-    padding: 12,
-    borderRadius: 8,
-    marginHorizontal: 16,
-    elevation: 2,
-  },
-  refreshButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    marginLeft: 8,
   },
 });

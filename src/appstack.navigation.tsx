@@ -24,6 +24,7 @@ import { TimingScreen } from './screens/timing/timing.screen';
 import { AppoinmentBookingScreen } from './screens/appoinmentfixing/appoinmentbooking.screen';
 import { AppointmentTimelineScreen } from './screens/appointmentimeline/appointmenttimeline.screen';
 import { LucideIcon, LucideIcons } from './components/LucideIcons.component';
+import { OTPVerificationScreen } from './screens/otpverification/otpverification.screen';
 
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
@@ -49,6 +50,10 @@ export type AppStackParamList = {
   }
   AppoinmentFixing:{organisationid:number,organisationlocationid:number}
   AppointmentTimeline: {appointmentid:number};
+  OTPVerification: {
+    mobileNumber: string;
+    fromSignup: boolean;
+  };
 };
 const colors = DefaultColor.instance.colors;
 const AppTheme = {
@@ -183,7 +188,7 @@ function AppStackNavigation() {
             headerShown: false,
           }}
         />
-    
+        <AppStack.Screen name="OTPVerification" component={OTPVerificationScreen} />
   
        
   

@@ -41,6 +41,7 @@ type ServiceAvailableScreenProp = CompositeScreenProps<
 
 type ServiceAvailableRouteParams = {
   fromSignup?: boolean;
+  fromOTPVerification?: boolean;
 };
 
 export function ServiceAvailableScreen() {
@@ -54,8 +55,9 @@ export function ServiceAvailableScreen() {
   );
   const bottomSheetRef = useRef<any>(null);
 
-  // Check if coming from signup
+  // Check if coming from signup or OTP verification
   const isFromSignup = route.params?.fromSignup === true;
+  const isFromOTPVerification = route.params?.fromOTPVerification === true;
 
   // State management
   const [service, setService] = useState<OrganisationServices>(
@@ -306,21 +308,29 @@ export function ServiceAvailableScreen() {
               No services available. Add your first service!
             </AppText>
 
-            <Button title={'Add Service'} onPress={  ()=>{ openServiceForm(undefined, false)
-            } }/>
-              
-      
+            <Button title={'Add Service'} onPress={() => openServiceForm(undefined, false)}/>
           </AppView>
         }
       />
 
       <AppView style={[$.mx_normal,$.mb_normal,$.flex_row]}>
-      {serviceList.length >= 2 && (  <Button title={'Combo'} variant='save' style={[$.flex_1,$.mr_small]}  onPress={() => openServiceForm(undefined, true)}/>
-          )}
-          <Button title={'New Service'} style={[$.flex_1]} variant='secondary' onPress={() => openServiceForm(undefined, false)}/>
+        {serviceList.length >= 2 && (
+          <Button 
+            title={'Combo'} 
+            variant='save' 
+            style={[$.flex_1,$.mr_small]}  
+            onPress={() => openServiceForm(undefined, true)}
+          />
+        )}
+        <Button 
+          title={'New Service'} 
+          style={[$.flex_1]} 
+          variant='secondary' 
+          onPress={() => openServiceForm(undefined, false)}
+        />
       </AppView>
 
-      {isFromSignup && (
+      {(isFromSignup || isFromOTPVerification) && (
         <Button 
           title={'Save'} 
           variant='secondary' 
