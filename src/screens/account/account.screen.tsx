@@ -82,7 +82,7 @@ export function AccountScreen() {
           {
             icon: CustomIcons.Clock,
             label: 'Services Timing',
-            onPress: () => navigation.navigate('Timing'),
+            onPress: () => navigation.navigate('Timing', { fromService: false }),
             showChevron: true,
           },
           {

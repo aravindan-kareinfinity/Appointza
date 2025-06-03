@@ -188,7 +188,13 @@ function AppStackNavigation() {
             headerShown: false,
           }}
         />
-        <AppStack.Screen name="OTPVerification" component={OTPVerificationScreen} />
+        <AppStack.Screen 
+          name="OTPVerification" 
+          component={OTPVerificationScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
   
        
   

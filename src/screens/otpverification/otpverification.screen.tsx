@@ -1,11 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image, Dimensions } from 'react-native';
 import { AppView } from '../../components/appview.component';
 import { AppText } from '../../components/apptext.component';
 import { $ } from '../../styles';
 import { Button } from '../../components/button.component';
 import { OTPInput } from '../../components/otpinput.component';
-import { CustomHeader } from '../../components/customheader.component';
 import { UsersService } from '../../services/users.service';
 import { AppAlert } from '../../components/appalert.component';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -114,13 +113,38 @@ export function OTPVerificationScreen({ navigation, route }: OTPVerificationScre
     }
   };
 
+  const screenWidth = Dimensions.get('window').width;
+  const imageSize = screenWidth * 0.4;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <CustomHeader 
-        title="Verify OTP"
-        showBackButton={true}
-      />
-      
+      <AppView style={[$.align_items_center]}>
+        <AppView style={[$.align_items_center]}>
+          <Image
+            source={require('../../assert/A1.png')}
+            style={{
+              width: imageSize,
+              height: imageSize,
+              marginBottom: 24,
+            }}
+            resizeMode="contain"
+          />
+          <AppText style={[$.fw_bold, $.fs_enormous, $.text_primary5]}>
+            Appointza
+          </AppText>
+          <AppText
+            style={{
+              fontSize: 16,
+              color: '#666666',
+              textAlign: 'center',
+              marginTop: 8,
+              lineHeight: 24,
+            }}>
+            Book. Manage. Meet.{'\n'}
+            All in One Place
+          </AppText>
+        </AppView>
+      </AppView>
       <AppView style={[$.p_medium, $.flex_1]}>
         <AppText style={[$.fs_large, $.fw_bold, $.mb_medium, { color: colors.text }]}>
           Enter Verification Code
@@ -163,4 +187,4 @@ const styles = StyleSheet.create({
   otpInput: {
     marginBottom: 24,
   },
-}); ''
+});
