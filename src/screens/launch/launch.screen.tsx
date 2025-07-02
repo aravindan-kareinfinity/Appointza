@@ -14,6 +14,7 @@ import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
 import {useAppSelector} from '../../redux/hooks.redux';
 import {selectusercontext} from '../../redux/usercontext.redux';
+import {pushnotification_utils} from '../../utils/pushnotification';
 
 type LaunchScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Launch'>,
@@ -25,6 +26,27 @@ export function LaunchScreen() {
   const usercontext = useAppSelector(selectusercontext);
 
   useEffect(() => {
+    const initializePushNotifications = async () => {
+      try {
+        // Register push notifications
+        pushnotification_utils.registerPushNotification({});
+        
+        // Get push notification token
+        const token = await pushnotification_utils.getPushNotificationToken();
+        console.log('Push notification token:', token);
+        
+        // You can store this token in your Redux store or send it to your backend
+        // For example: dispatch(savePushToken(token));
+        
+      } catch (error) {
+        console.error('Error initializing push notifications:', error);
+      }
+    };
+
+    // Initialize push notifications
+    initializePushNotifications();
+
+    // Navigate to home after a short delay
     setTimeout(() => {
       navigation.dispatch(
         CommonActions.reset({
