@@ -80,7 +80,7 @@ function HomeTabNavigation() {
           </AppView>
         );
       }}
-      initialRouteName= {usercontext.isCustomer ? "Service" :"BussinessAppoinment"}
+      initialRouteName= {!usercontext.isCustomer ? "Service" :"BussinessAppoinment"}
       screenOptions={{
         headerShown: false,
       }}>
@@ -93,7 +93,7 @@ function HomeTabNavigation() {
           ),
         }}
       /> */}
- {usercontext.isCustomer && 
+ {!usercontext.isCustomer && 
       <HomeTab.Screen
         name="UserDashboard"
         component={UserDashboardScreen}
@@ -103,7 +103,7 @@ function HomeTabNavigation() {
           ),
         }}
       />}
- {!usercontext.isCustomer && 
+ {usercontext.isCustomer && 
       <HomeTab.Screen
         name="BussinessDashboard"
         component={BussinessDashboardScreen}
@@ -114,7 +114,7 @@ function HomeTabNavigation() {
         }}
       />}
 
-{usercontext.isCustomer &&  <HomeTab.Screen
+{!usercontext.isCustomer &&  <HomeTab.Screen
         name="Service"
         component={ServiceScreen}
         options={{
@@ -125,7 +125,7 @@ function HomeTabNavigation() {
       />
 }
 
-      {usercontext.isCustomer && (
+      {!usercontext.isCustomer && (
         <HomeTab.Screen
           name="UserAppoinment"
           component={UserAppoinmentScreen}
@@ -137,7 +137,7 @@ function HomeTabNavigation() {
         />
       )}
 
-      {!usercontext.isCustomer && (
+      {usercontext.isCustomer && (
         <HomeTab.Screen
           name="BussinessAppoinment"
           component={BussinessAppoinmentScreen}

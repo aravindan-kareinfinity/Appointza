@@ -49,7 +49,7 @@ export function AccountScreen() {
   const logout = () => {
     dispatch(usercontextactions.clear());
     dispatch(usercontextactions.set(new UsersContext()));
-    dispatch(iscustomeractions.setIsCustomer(true));
+    dispatch(iscustomeractions.setIsCustomer(false));
   };
 
   const isLoggedIn = usercontext && usercontext.value.userid > 0;
@@ -65,7 +65,7 @@ export function AccountScreen() {
 
   const menuItems: MenuItem[] = [
     // Business items
-    ...(hasBusiness && !isCustomer
+    ...(isCustomer && usercontext.value.userid > 0
       ? [
           {
             icon: CustomIcons.Shop,

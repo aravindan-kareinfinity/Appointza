@@ -22,6 +22,7 @@ import {
   usercontextactions,
 } from '../../redux/usercontext.redux';
 import {ViewStyle, Image, Dimensions, TouchableOpacity} from 'react-native';
+import { iscustomeractions } from '../../redux/iscustomer.redux';
 
 type LoginScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList>,
@@ -48,6 +49,9 @@ export function LoginScreen() {
       loginreq.otp = otp;
       let loginresp = await usersservice.login(loginreq);
       dispatch(usercontextactions.set(loginresp!));
+      console.log("resp", loginresp,loginresp.organisationlocationid > 0);
+      
+      dispatch(iscustomeractions.setIsCustomer(loginresp.organisationlocationid > 0));
       navigation.navigate('HomeTab');
     } catch (error: any) {
       var message = error?.response?.data?.message;

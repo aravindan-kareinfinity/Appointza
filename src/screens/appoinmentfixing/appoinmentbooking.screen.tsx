@@ -313,6 +313,21 @@ const [openbefore, setopenbefore] = useState(0);
   };
 
   const save = async () => {
+       if (usercontext.value.userid <= 0) {
+        Alert.alert(
+          environment.baseurl,"Please log in before booking an appointment",
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                navigation.navigate('Login');
+              },
+            },
+          ],
+        );
+        return;
+      }
+
     try {
       if (selectedService.length === 0) {
         Alert.alert(
