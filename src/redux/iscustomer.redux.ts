@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from './store.redux';
 
 const initialState = {
-  isCustomer: true, // or false, depending on your default
+  isCustomer: false, // or false, depending on your default
 };
 
 const isCustomerSlice = createSlice({

@@ -12,9 +12,10 @@ import {useEffect} from 'react';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
-import {useAppSelector} from '../../redux/hooks.redux';
+import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
 import {selectusercontext} from '../../redux/usercontext.redux';
 import {pushnotification_utils} from '../../utils/pushnotification';
+import { iscustomeractions } from '../../redux/iscustomer.redux';
 
 type LaunchScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Launch'>,
@@ -24,7 +25,7 @@ export function LaunchScreen() {
   const navigation = useNavigation<LaunchScreenProp['navigation']>();
   const route = useRoute<LaunchScreenProp['route']>();
   const usercontext = useAppSelector(selectusercontext);
-
+  const dispatch = useAppDispatch();
   useEffect(() => {
     const initializePushNotifications = async () => {
       try {
@@ -42,7 +43,13 @@ export function LaunchScreen() {
         console.error('Error initializing push notifications:', error);
       }
     };
-
+   console.log('User is logged in, setting isCustomer to true',usercontext.value.userid );
+      
+    if(usercontext.value.userid >0){
+      console.log('User is logged in, setting isCustomer to true',usercontext.value.userid );
+      
+         dispatch(iscustomeractions.setIsCustomer(false));
+    }
     // Initialize push notifications
     initializePushNotifications();
 
@@ -58,7 +65,7 @@ export function LaunchScreen() {
           ],
         }),
       );
-    }, 100);
+    }, 1000);
   }, []);
   return (
     <AppView style={[$.flex_1, $.justify_content_center, $.align_items_center]}>

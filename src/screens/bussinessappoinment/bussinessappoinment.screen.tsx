@@ -594,7 +594,7 @@ export function BussinessAppoinmentScreen() {
           </Text>
         </TouchableOpacity>
         
-        <TouchableOpacity
+     {item.ispaid &&   <TouchableOpacity
           style={{
             flexDirection: 'row', 
             alignItems: 'center',
@@ -616,7 +616,7 @@ export function BussinessAppoinmentScreen() {
           <Text style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#4a6da7'}}>
             Payment
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity>}
       </View>
     </TouchableOpacity>
   );
