@@ -10,7 +10,7 @@ import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
 import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {ScrollView, TouchableOpacity, Alert} from 'react-native';
+import {ScrollView, TouchableOpacity, Alert, SafeAreaView} from 'react-native';
 import {
   Organisationdeletereq,
   Users,
@@ -128,7 +128,8 @@ export function ProfileScreen() {
   };
 
   return (
-    <AppView style={[$.pt_normal, $.flex_1]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[$.pt_normal, $.flex_1]}>
       <AppView style={[$.flex_1]}>
         {/* Header */}
         <AppView
@@ -238,6 +239,7 @@ export function ProfileScreen() {
           />
         </ScrollView>
       </BottomSheetComponent>
-    </AppView>
+      </AppView>
+    </SafeAreaView>
   );
 }

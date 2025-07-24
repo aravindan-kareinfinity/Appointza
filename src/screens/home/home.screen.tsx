@@ -17,7 +17,7 @@ import {$} from '../../styles';
 import {AppTextInput} from '../../components/apptextinput.component';
 import {CustomIcons} from '../../components/customicons.component';
 import {AppSwitch} from '../../components/appswitch.component';
-import {ScrollView} from 'react-native';
+import {ScrollView, SafeAreaView} from 'react-native';
 
 type HomeScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Home'>,
@@ -35,7 +35,8 @@ export function HomeScreen() {
   const [textinputwithiconvalue, setTextinputwithiconvalue] = useState('');
   const [switchvalue, setSwitchvalue] = useState(false);
   return (
-    <ScrollView>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView>
       <AppView style={$.p_compact}>
         <AppText style={[$.mb_compact, $.fs_tiny]}>Tiny</AppText>
         <AppText style={[$.mb_compact, $.fs_extrasmall]}>Extrasmall</AppText>
@@ -86,7 +87,8 @@ export function HomeScreen() {
           />
           <AppText style={[$.pl_compact]}>Switch</AppText>
         </AppView>
-      </AppView>
-    </ScrollView>
+              </AppView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

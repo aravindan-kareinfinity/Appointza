@@ -1,14 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  RefreshControl,
-  TouchableOpacity,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import {ActivityIndicator, Alert, FlatList, RefreshControl, TouchableOpacity, ScrollView, Text, View, SafeAreaView} from 'react-native';
 import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import {
   CompositeScreenProps,
@@ -639,8 +630,10 @@ export function BussinessAppoinmentScreen() {
     }
   }, [updatedAppointmentId, OrganisationApponmentlist]);
 
+  
   return (
-    <AppView style={[$.flex_1,{backgroundColor: '#F5F7FA'}]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[$.flex_1,{backgroundColor: '#F5F7FA'}]}>
       {/* Header Section */}
       <AppView style={[$.flex_row, $.mb_tiny, $.p_small, $.align_items_center]}>
         <AppText
@@ -1095,5 +1088,6 @@ export function BussinessAppoinmentScreen() {
         </ScrollView>
       </BottomSheetComponent>
     </AppView>
+    </SafeAreaView>
   );
 }

@@ -27,6 +27,7 @@ import {
   Touchable,
   TouchableOpacity,
   View,
+  SafeAreaView,
 } from 'react-native';
 
 import { CustomIcon, CustomIcons } from '../../components/customicons.component';
@@ -226,7 +227,7 @@ export function SignUpScreen(props: SignUpScreenProp) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <CustomHeader 
         title="Sign Up"
         showBackButton={true}
@@ -329,7 +330,14 @@ export function SignUpScreen(props: SignUpScreenProp) {
         {/* Location Picker */}
         <HeaderButton
           title={signUpModel.googlelocation || 'Select Location on Map'}
-          onPress={() => setShowLocationPicker(true)}
+          onPress={() => {
+            try {
+              setShowLocationPicker(true);
+            } catch (error) {
+              console.error('Error opening location picker:', error);
+              AppAlert({ message: 'Failed to open location picker. Please try again.' });
+            }
+          }}
           style={[
             $.mb_normal,
             $.p_small,
@@ -448,11 +456,25 @@ export function SignUpScreen(props: SignUpScreenProp) {
         {showLocationPicker && (
           <LocationPicker
             visible={showLocationPicker}
-            onClose={() => setShowLocationPicker(false)}
-            onLocationSelect={handleLocationSelect}
+            onClose={() => {
+              try {
+                setShowLocationPicker(false);
+              } catch (error) {
+                console.error('Error closing location picker:', error);
+                setShowLocationPicker(false);
+              }
+            }}
+            onLocationSelect={(location) => {
+              try {
+                handleLocationSelect(location);
+              } catch (error) {
+                console.error('Error selecting location:', error);
+                AppAlert({ message: 'Failed to select location. Please try again.' });
+              }
+            }}
           />
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }

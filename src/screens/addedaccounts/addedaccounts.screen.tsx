@@ -9,16 +9,7 @@ import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AppStackParamList} from '../../appstack.navigation';
 import {AppView} from '../../components/appview.component';
 import {$} from '../../styles';
-import {
-  Alert,
-  FlatList,
-  Image,
-  Modal,
-  Platform,
-  ScrollView,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-} from 'react-native';
+import {Alert, FlatList, Image, Modal, Platform, ScrollView, TouchableOpacity, TouchableWithoutFeedback, SafeAreaView} from 'react-native';
 import {AppText} from '../../components/apptext.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {useCallback, useContext, useEffect, useMemo, useState} from 'react';
@@ -192,8 +183,10 @@ export function AddedAccountsScreen() {
     navigation.navigate('AddedAccountsDetails', {mobile: mobile});
   };
 
+
   return (
-    <ScrollView style={{ }}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView style={{ }}>
       <AppView style={[$.pt_medium,{ }]}>
         <CustomHeader
           title="Added Accounts"
@@ -325,6 +318,6 @@ export function AddedAccountsScreen() {
           />
         )}
       </AppView>
-    </ScrollView>
+    </ScrollView>    </SafeAreaView>
   );
 }

@@ -14,7 +14,7 @@ import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
 import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {FlatList, TouchableOpacity, ViewStyle} from 'react-native';
+import {FlatList, TouchableOpacity, ViewStyle, SafeAreaView} from 'react-native';
 
 import {
   OrganisationLocation,
@@ -108,8 +108,10 @@ export function OrganisationScreen() {
     }
   };
 
+   
   return (
-    <AppView style={[$.pt_normal, $.flex_1]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[$.pt_normal, $.flex_1]}>
       <AppView style={[$.flex_1]}>
         <AppView
           style={[$.flex_row, $.ml_regular, $.align_items_center, $.mb_medium]}>
@@ -303,5 +305,6 @@ export function OrganisationScreen() {
         />
       </AppView>
     </AppView>
+    </SafeAreaView>
   );
 }

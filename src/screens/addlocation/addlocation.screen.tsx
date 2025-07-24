@@ -10,7 +10,7 @@ import {Button} from '../../components/button.component';
 import {$} from '../../styles';
 import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {ScrollView, TouchableOpacity, ActivityIndicator, ViewStyle} from 'react-native';
+import {ScrollView, TouchableOpacity, ActivityIndicator, ViewStyle, SafeAreaView} from 'react-native';
 import {
   OrganisationLocation,
   OrganisationLocationSelectReq,
@@ -181,8 +181,10 @@ export function LocationScreen(props: LocationScreenProp) {
     marginBottom: 16,
   };
 
+   
   return (
-    <AppView style={[$.pt_normal, $.flex_1]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[$.pt_normal, $.flex_1]}>
       {/* Header */}
       <AppView style={[$.flex_row, $.ml_regular, $.align_items_center, $.mb_medium]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -301,5 +303,6 @@ export function LocationScreen(props: LocationScreenProp) {
         />
       </AppView>
     </AppView>
+    </SafeAreaView>
   );
 }

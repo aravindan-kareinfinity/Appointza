@@ -15,13 +15,7 @@ import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
 import {AppTextInput} from '../../components/apptextinput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {
-  Alert,
-  FlatList,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-} from 'react-native';
+import {Alert, FlatList, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView} from 'react-native';
 
 import {
   OrganisationLocation,
@@ -595,8 +589,10 @@ const [openbefore, setopenbefore] = useState(0);
     </BottomSheetComponent>
   );
 
+ 
   return (
-    <AppView style={[$.flex_1, $.bg_tint_11]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[$.flex_1, $.bg_tint_11]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.container}>
@@ -866,6 +862,7 @@ const [openbefore, setopenbefore] = useState(0);
       {showPaymentSheet && <PaymentBottomSheet />}
       {showCancelSheet && <CancelAppointmentBottomSheet />}
     </AppView>
+       </SafeAreaView>
   );
 }
 

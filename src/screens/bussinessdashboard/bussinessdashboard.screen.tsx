@@ -1,12 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  ScrollView,
-  TouchableOpacity,
-  View,
-  StyleSheet,
-} from 'react-native';
+import {ActivityIndicator, FlatList, ScrollView, TouchableOpacity, View, StyleSheet , SafeAreaView} from 'react-native';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
@@ -182,8 +175,10 @@ export function BussinessDashboardScreen() {
     </View>
   );
 
+  
   return (
-    <AppView style={[$.flex_1, {backgroundColor: '#F5F7FA'}]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[$.flex_1, {backgroundColor: '#F5F7FA'}]}>
       <CustomHeader
         title="Dashboard"
         backgroundColor={Colors.light.background}
@@ -320,6 +315,7 @@ export function BussinessDashboardScreen() {
         )}
       </ScrollView>
     </AppView>
+      </SafeAreaView>
   );
 }
 

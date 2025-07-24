@@ -9,6 +9,7 @@ import {
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AppStackParamList} from '../../appstack.navigation';
 import {useEffect} from 'react';
+import {SafeAreaView} from 'react-native';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
@@ -67,9 +68,12 @@ export function LaunchScreen() {
       );
     }, 1000);
   }, []);
+  
   return (
-    <AppView style={[$.flex_1, $.justify_content_center, $.align_items_center]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[$.flex_1, $.justify_content_center, $.align_items_center]}>
       <AppText>Launch</AppText>
     </AppView>
+    </SafeAreaView>
   );
 }

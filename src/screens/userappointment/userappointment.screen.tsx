@@ -1,14 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  RefreshControl,
-  TouchableOpacity,
-  ScrollView,
-  View,
-  StyleSheet,
-} from 'react-native';
+import {ActivityIndicator, Alert, FlatList, RefreshControl, TouchableOpacity, ScrollView, View, StyleSheet, SafeAreaView} from 'react-native';
 import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import {
   CompositeScreenProps,
@@ -701,8 +692,10 @@ export function UserAppoinmentScreen() {
     </BottomSheetComponent>
   );
 
+   
   return (
-    <AppView style={styles.container}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
         <AppText style={styles.headerTitle}>My Appointments</AppText>
@@ -1014,6 +1007,7 @@ export function UserAppoinmentScreen() {
         </ScrollView>
       </BottomSheetComponent>
     </AppView>
+    </SafeAreaView>
   );
 }
 

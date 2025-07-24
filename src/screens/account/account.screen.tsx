@@ -7,7 +7,7 @@ import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {Dimensions, FlatList, Image, ScrollView, TouchableOpacity} from 'react-native';
+import {Dimensions, FlatList, Image, ScrollView, TouchableOpacity, SafeAreaView} from 'react-native';
 import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
 import {
   selectusercontext,
@@ -204,8 +204,10 @@ export function AccountScreen() {
   const imageSize = screenWidth * 0.4;
 
 
+ 
   return (
-    <ScrollView style={[$.flex_1, {backgroundColor: '#F5F7FA'}]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView style={[$.flex_1, {backgroundColor: '#F5F7FA'}]}>
       {/* Profile Header */}
       <AppView style={[$.mx_normal, $.border_rounded2, $.m_small, $.p_big]}>
         {isLoggedIn && (
@@ -336,6 +338,6 @@ export function AccountScreen() {
           App Version 1.0.0
         </AppText>
       </AppView>
-    </ScrollView>
+    </ScrollView>   </SafeAreaView>
   );
 }

@@ -8,6 +8,7 @@ import {
   ScrollView,
   View,
   StyleSheet,
+  SafeAreaView,
 } from 'react-native';
 import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import {
@@ -217,7 +218,8 @@ export function UserDashboardScreen() {
   );
 
   return (
-    <AppView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+      <AppView style={styles.container}>
       <CustomHeader
         title="Dashboard"
         backgroundColor={Colors.light.background}
@@ -365,7 +367,8 @@ export function UserDashboardScreen() {
           </View>
         </ScrollView>
       )}
-    </AppView>
+      </AppView>
+    </SafeAreaView>
   );
 }
 

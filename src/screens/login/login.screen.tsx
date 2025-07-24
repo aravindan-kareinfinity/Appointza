@@ -21,7 +21,7 @@ import {
   selectusercontext,
   usercontextactions,
 } from '../../redux/usercontext.redux';
-import {ViewStyle, Image, Dimensions, TouchableOpacity} from 'react-native';
+import {ViewStyle, Image, Dimensions, TouchableOpacity, SafeAreaView} from 'react-native';
 import { iscustomeractions } from '../../redux/iscustomer.redux';
 
 type LoginScreenProp = CompositeScreenProps<
@@ -90,7 +90,7 @@ export function LoginScreen() {
   const imageSize = screenWidth * 0.4;
 
   return (
-    <AppView style={[$.flex_1, { backgroundColor: '#F8F9FA' }]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
       {/* Header Section */}
       <AppView style={[$.align_items_center, { paddingTop: 60, paddingBottom: 40 }]}>
         <Image 
@@ -187,6 +187,6 @@ export function LoginScreen() {
         <TouchableOpacity onPress={() => gotoSignUp(false)}><AppText>Sighn up</AppText></TouchableOpacity>
        
       </AppView>
-    </AppView>
+    </SafeAreaView>
   );
 }

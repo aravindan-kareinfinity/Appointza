@@ -13,13 +13,7 @@ import {AppStackParamList} from '../../appstack.navigation';
 import {useMemo, useRef, useState} from 'react';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
-import {
-  Alert,
-  FlatList,
-  Modal,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import {Alert, FlatList, Modal, ScrollView, TouchableOpacity,  SafeAreaView} from 'react-native';
 import {
   OrganisationLocation,
   OrganisationLocationSelectReq,
@@ -405,8 +399,10 @@ export function TimingScreen() {
     setLeaveRequest(newLeaveRequest);
   };
 
+  
   return (
-    <AppView style={[$.flex_1]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[$.flex_1]}>
       <CustomHeader
         title="Business Hours"
         showBackButton
@@ -809,5 +805,6 @@ export function TimingScreen() {
         </AppView>
       </Modal>
     </AppView>
+    </SafeAreaView>
   );
 }

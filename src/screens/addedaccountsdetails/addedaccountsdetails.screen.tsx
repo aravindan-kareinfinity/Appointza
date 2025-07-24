@@ -5,7 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../appstack.navigation';
 import { AppView } from '../../components/appview.component';
 import { $ } from '../../styles';
-import { Alert, ScrollView } from 'react-native';
+import {Alert, ScrollView, SafeAreaView} from 'react-native';
 import { AppText } from '../../components/apptext.component';
 import { FormInput } from '../../components/forminput.component';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -243,8 +243,10 @@ export function AddedAccountsDetailsScreen({ route }: AddedAccountsDetailsScreen
     }, [fetchOrganizationLocations])
   );
 
+
   return (
-    <AppView style={[$.flex_1, $.m_small, { backgroundColor: '#F8F9FA' }]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[$.flex_1, $.m_small, { backgroundColor: '#F8F9FA' }]}>
       {/* Search Section (only shown in create mode) */}
       {!isEditMode && (
         <AppView style={[$.flex_row, $.mb_normal, $.align_items_center]}>
@@ -384,5 +386,6 @@ export function AddedAccountsDetailsScreen({ route }: AddedAccountsDetailsScreen
         </AppView>
       )}
     </AppView>
+    </SafeAreaView>
   );
 }

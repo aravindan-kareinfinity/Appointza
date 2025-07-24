@@ -16,7 +16,7 @@ import {$} from '../../styles';
 import {FormInput} from '../../components/forminput.component';
 import {FormSelect} from '../../components/formselect.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {FlatList, TouchableOpacity, ViewStyle} from 'react-native';
+import {FlatList, TouchableOpacity, ViewStyle, SafeAreaView} from 'react-native';
 import {useAppSelector} from '../../redux/hooks.redux';
 import {selectusercontext} from '../../redux/usercontext.redux';
 import {BottomSheetComponent} from '../../components/bottomsheet.component';
@@ -285,8 +285,10 @@ export function ServiceAvailableScreen() {
     }));
   };
 
+  
   return (
-    <AppView style={[ $.flex_1]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[ $.flex_1]}>
       <CustomHeader
         title="Service Management"
         showBackButton
@@ -440,5 +442,6 @@ export function ServiceAvailableScreen() {
         />
       </BottomSheetComponent>
     </AppView>
+    </SafeAreaView>
   );
 }

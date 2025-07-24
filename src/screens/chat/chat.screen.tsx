@@ -9,15 +9,7 @@ import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AppStackParamList} from '../../appstack.navigation';
 import {AppView} from '../../components/appview.component';
 import {$} from '../../styles';
-import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Image,
-  Modal,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import {ActivityIndicator, Alert, Animated, Image, Modal, ScrollView, TouchableOpacity, SafeAreaView} from 'react-native';
 import {AppText} from '../../components/apptext.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {useEffect, useRef, useState} from 'react';
@@ -46,8 +38,10 @@ export function ChatScreen() {
     outputRange: ['0deg', '45deg'],
   });
 
+  
   return (
-    <ScrollView contentContainerStyle={[$.flex_1]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={[$.flex_1]}>
       <AppView
         style={[$.pt_medium, $.px_normal, $.flex_row, $.align_items_center]}>
         <AppText style={[$.fs_enormous, $.fw_bold, $.text_tint_9, $.flex_1]}>
@@ -55,7 +49,7 @@ export function ChatScreen() {
         </AppText>
         <TouchableOpacity
           onPress={() => {
-            navigation.navigate('Notification');
+            // navigation.navigate('Notification');
           }}>
           <CustomIcon
             name={CustomIcons.Bell}
@@ -159,7 +153,7 @@ export function ChatScreen() {
           }}
           style={{borderRadius: 100}}></Image>
         <TouchableOpacity
-          onPress={() => navigation.navigate('IndividualChat')}
+          // onPress={() => navigation.navigate('IndividualChat')}
           style={[$.ml_compact, $.justify_content_center, $.flex_1]}>
           <AppView style={[$.flex_row]}>
             <AppText
@@ -231,7 +225,7 @@ export function ChatScreen() {
                 $.px_medium,
               ]}
               onPress={() => {
-                navigation.navigate('InvitePeople');
+                // navigation.navigate('InvitePeople');
                 setInviteModel(false);
               }}>
               <CustomIcon
@@ -259,7 +253,7 @@ export function ChatScreen() {
                 $.ml_big,
               ]}
               onPress={() => {
-                navigation.navigate('Broadcast');
+                // navigation.navigate('Broadcast');
                 setInviteModel(false);
               }}>
               <AppView style={[$.ml_regular]}>
@@ -282,6 +276,6 @@ export function ChatScreen() {
           </AppView>
         </TouchableOpacity>
       </Modal>
-    </ScrollView>
+    </ScrollView>  </SafeAreaView>
   );
 }

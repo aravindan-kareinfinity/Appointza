@@ -18,15 +18,7 @@ import {$} from '../../styles';
 import {AppTextInput} from '../../components/apptextinput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {AppSwitch} from '../../components/appswitch.component';
-import {
-  FlatList,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Modal,
-  View,
-} from 'react-native';
+import {FlatList, Image, ScrollView, TouchableOpacity, ActivityIndicator, Modal, View,  SafeAreaView} from 'react-native';
 import {Line} from 'react-native-svg';
 import {AppAlert} from '../../components/appalert.component';
 import {AppSingleSelect} from '../../components/appsingleselect.component';
@@ -299,8 +291,10 @@ export function ServiceScreen() {
     applyFilters();
   }, [selectedPrimaryType, selectedSecondaryType, applyFilters]);
 
+   
   return (
-    <AppView style={[$.bg_tint_11, $.flex_1]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppView style={[$.bg_tint_11, $.flex_1]}>
       <CustomHeader
         title="Services"
         backgroundColor={Colors.light.background}
@@ -729,5 +723,6 @@ export function ServiceScreen() {
         </View>
       </Modal>
     </AppView>
+    </SafeAreaView>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, Image, Dimensions } from 'react-native';
+import {View, StyleSheet, Image, Dimensions, SafeAreaView} from 'react-native';
 import { AppView } from '../../components/appview.component';
 import { AppText } from '../../components/apptext.component';
 import { $ } from '../../styles';
@@ -117,7 +117,8 @@ export function OTPVerificationScreen({ navigation, route }: OTPVerificationScre
   const imageSize = screenWidth * 0.4;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
       <AppView style={[$.align_items_center]}>
         <AppView style={[$.align_items_center]}>
           <Image
@@ -177,6 +178,7 @@ export function OTPVerificationScreen({ navigation, route }: OTPVerificationScre
         />
       </AppView>
     </View>
+    </SafeAreaView>
   );
 }
 

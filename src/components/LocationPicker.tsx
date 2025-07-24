@@ -29,6 +29,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   onClose,
   onLocationSelect,
 }) => {
+  // Add error boundary state
+  const [hasError, setHasError] = useState(false);
   const [region, setRegion] = useState({
     latitude: 12.9716,  // Default to Bangalore
     longitude: 77.5946,
@@ -49,7 +51,10 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
   useEffect(() => {
     if (visible) {
-      getCurrentLocation();
+      // Add a small delay to ensure modal is fully rendered
+      setTimeout(() => {
+        getCurrentLocation();
+      }, 100);
     } else {
       // Reset state when modal closes
       setSelectedLocation(null);
@@ -200,8 +205,14 @@ const getCurrentLocation = async () => {
 
     Geolocation.getCurrentPosition(
       position => {
-        const { latitude, longitude } = position.coords;
-        updateLocation(latitude, longitude);
+        try {
+          const { latitude, longitude } = position.coords;
+          updateLocation(latitude, longitude);
+        } catch (error) {
+          console.error('Error processing location:', error);
+          setHasError(true);
+          setIsLoading(false);
+        }
       },
       error => {
         console.error('Error getting location:', error);
@@ -220,9 +231,40 @@ const getCurrentLocation = async () => {
     );
   } catch (error) {
     console.error('Location error:', error);
+    setHasError(true);
     setIsLoading(false);
   }
 };
+  // Show error state if there's an error
+  if (hasError) {
+    return (
+      <Modal visible={visible} animationType="slide">
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={onClose} style={styles.backButton}>
+              <CustomIcon name={CustomIcons.LeftArrow} size={24} color={$.tint_1} />
+            </TouchableOpacity>
+            <Text style={styles.title}>Select Location</Text>
+          </View>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+            <Text style={{ fontSize: 16, color: $.tint_1, textAlign: 'center', marginBottom: 20 }}>
+              Unable to load location picker. Please check your internet connection and try again.
+            </Text>
+            <TouchableOpacity 
+              style={{ backgroundColor: $.tint_1, padding: 12, borderRadius: 8 }}
+              onPress={() => {
+                setHasError(false);
+                getCurrentLocation();
+              }}
+            >
+              <Text style={{ color: 'white', fontSize: 16 }}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
   return (
     <Modal visible={visible} animationType="slide">
       <View style={styles.container}>
@@ -256,24 +298,26 @@ const getCurrentLocation = async () => {
               <ActivityIndicator size="large" color={$.tint_primary_5} />
             </View>
           ) : (
-            <MapView
-              ref={mapRef}
-              style={styles.map}
-              region={region}
-              onPress={handleMapPress}
-              showsUserLocation={true}
-              showsMyLocationButton={false}
-              followsUserLocation={false}
-              loadingEnabled={true}
-            >
-              {selectedLocation && (
-                <Marker
-                  coordinate={selectedLocation}
-                  title="Selected Location"
-                  pinColor={$.tint_primary_5}
-                />
-              )}
-            </MapView>
+            <View style={styles.map}>
+              <MapView
+                ref={mapRef}
+                style={{ flex: 1 }}
+                region={region}
+                onPress={handleMapPress}
+                showsUserLocation={true}
+                showsMyLocationButton={false}
+                followsUserLocation={false}
+                loadingEnabled={true}
+              >
+                {selectedLocation && (
+                  <Marker
+                    coordinate={selectedLocation}
+                    title="Selected Location"
+                    pinColor={$.tint_primary_5}
+                  />
+                )}
+              </MapView>
+            </View>
           )}
         </View>
 
