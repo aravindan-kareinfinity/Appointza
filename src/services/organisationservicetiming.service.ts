@@ -93,14 +93,15 @@ export class OrganisationServiceTimingService {
             return resp.item;
         }
 
-        async BookLeave(req: Leavereq) {
-            let postdata: ActionReq<Leavereq> = new ActionReq<Leavereq>();
-            postdata.item = req;
+        async BookLeave(req: Partial<Leavereq> | any) {
+            // Some endpoints might expect the raw object (not wrapped) or the wrapper key 'req'.
+            // Try the standard wrapper first; if backend requires 'req', we can adjust here.
+            let postdata: any = new ActionReq<Leavereq>();
+            postdata.item = req as Leavereq;
             let resp = await this.http.post<ActionRes<string>>(
                 this.baseurl + '/BookLeave',
                 postdata
             );
-                    
             return resp.item;
         }
 

@@ -14,7 +14,7 @@ import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
 import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {FlatList, TouchableOpacity, ViewStyle, SafeAreaView} from 'react-native';
+import {FlatList, TouchableOpacity, ViewStyle, SafeAreaView, Alert} from 'react-native';
 
 import {
   OrganisationLocation,
@@ -238,8 +238,36 @@ export function OrganisationScreen() {
                     $.elevation_2,
                   ]}
                   onPress={() => {
-                    // Add delete functionality here
-                    AppAlert({message: 'Delete functionality to be implemented'});
+                    Alert.alert(
+                      'Confirm Delete',
+                      'Are you sure you want to delete this location?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Delete',
+                          style: 'destructive',
+                          onPress: async () => {
+                            try {
+                              setIsloading(true);
+                              const req = { id: item.id, version: 0 } as any;
+                              const res = await organisationlocationservice.delete(req);
+                              if (res) {
+                                AppAlert({ message: 'Location deleted successfully' });
+                                getData();
+                              } else {
+                                AppAlert({ message: 'Failed to delete location' });
+                              }
+                            } catch (error: any) {
+                              const message = error?.response?.data?.message || 'Failed to delete location';
+                              AppAlert({ message });
+                            } finally {
+                              setIsloading(false);
+                            }
+                          },
+                        },
+                      ],
+                      { cancelable: true }
+                    );
                   }}>
                   <CustomIcon
                     name={CustomIcons.Delete}

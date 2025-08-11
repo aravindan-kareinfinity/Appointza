@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "1029193730608",
-    "project_id": "appointza-a0d00",
-    "storage_bucket": "appointza-a0d00.firebasestorage.app"
+    "project_number": "123456789",
+    "project_id": "appointza-app",
+    "storage_bucket": "appointza-app.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1029193730608:android:2e2f83030a0ffa38a7bbf5",
+        "mobilesdk_app_id": "1:123456789:android:abcdef123456",
         "android_client_info": {
           "package_name": "com.appointza"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAjGIRbjEqHjQ4RFXUEGjqN8lHc7Fl4XIk"
+          "current_key": "AIzaSyYourApiKeyHere"
         }
       ],
       "services": {
@@ -26,4 +26,4 @@
     }
   ],
   "configuration_version": "1"
-}
+} 

@@ -185,7 +185,7 @@ export function AddedAccountsScreen() {
 
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+ 
       <ScrollView style={{ }}>
       <AppView style={[$.pt_medium,{ }]}>
         <CustomHeader
@@ -318,6 +318,7 @@ export function AddedAccountsScreen() {
           />
         )}
       </AppView>
-    </ScrollView>    </SafeAreaView>
+    </ScrollView>  
+
   );
 }

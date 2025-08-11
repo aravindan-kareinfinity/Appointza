@@ -10,9 +10,10 @@ import {Button} from '../../components/button.component';
 import {$} from '../../styles';
 import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {ScrollView, TouchableOpacity, ActivityIndicator, ViewStyle, SafeAreaView} from 'react-native';
+import {ScrollView, TouchableOpacity, ActivityIndicator, ViewStyle, SafeAreaView, Alert} from 'react-native';
 import {
   OrganisationLocation,
+  OrganisationLocationDeleteReq,
   OrganisationLocationSelectReq,
 } from '../../models/organisationlocation.model';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
@@ -117,6 +118,40 @@ export function LocationScreen(props: LocationScreenProp) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDelete = async () => {
+    if (!organisationLocation.id) {
+      AppAlert({ message: 'No location to delete' });
+      return;
+    }
+
+    Alert.alert('Confirm Delete', 'Are you sure you want to delete this location?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setIsLoading(true);
+            const req = new OrganisationLocationDeleteReq();
+            req.id = organisationLocation.id;
+            const res = await organisationLocationService.delete(req);
+            if (res) {
+              AppAlert({ message: 'Location deleted successfully' });
+              navigation.goBack();
+            } else {
+              AppAlert({ message: 'Failed to delete location' });
+            }
+          } catch (error: any) {
+            const message = error?.response?.data?.message || 'Failed to delete location';
+            AppAlert({ message });
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      },
+    ]);
   };
 
   const validateFields = () => {
@@ -293,14 +328,34 @@ export function LocationScreen(props: LocationScreenProp) {
           disabled={isLoading}
           style={[$.flex_1, $.mr_huge]}
         />
-        <Button
-          title={props.route.params?.id ? 'Update' : 'Save'}
-          variant="primary"
-          onPress={handleSave}
-          loading={isLoading}
-          disabled={isLoading}
-          style={[$.flex_1]}
-        />
+        {props.route.params?.id ? (
+          <>
+            <Button
+              title="Delete"
+              variant="outline"
+              onPress={handleDelete}
+              disabled={isLoading}
+              style={[$.flex_1, $.mr_small]}
+            />
+            <Button
+              title={'Update'}
+              variant="primary"
+              onPress={handleSave}
+              loading={isLoading}
+              disabled={isLoading}
+              style={[$.flex_1]}
+            />
+          </>
+        ) : (
+          <Button
+            title={'Save'}
+            variant="primary"
+            onPress={handleSave}
+            loading={isLoading}
+            disabled={isLoading}
+            style={[$.flex_1]}
+          />
+        )}
       </AppView>
     </AppView>
     </SafeAreaView>

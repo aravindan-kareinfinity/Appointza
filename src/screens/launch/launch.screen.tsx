@@ -15,7 +15,7 @@ import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
 import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
 import {selectusercontext} from '../../redux/usercontext.redux';
-import {pushnotification_utils} from '../../utils/pushnotification';
+// import {pushnotification_utils} from '../../utils/pushnotification';
 import { iscustomeractions } from '../../redux/iscustomer.redux';
 
 type LaunchScreenProp = CompositeScreenProps<
@@ -31,11 +31,11 @@ export function LaunchScreen() {
     const initializePushNotifications = async () => {
       try {
         // Register push notifications
-        pushnotification_utils.registerPushNotification({});
+        // pushnotification_utils.registerPushNotification({});
         
         // Get push notification token
-        const token = await pushnotification_utils.getPushNotificationToken();
-        console.log('Push notification token:', token);
+        // const token = await pushnotification_utils.getPushNotificationToken();
+        // console.log('Push notification token:', token);
         
         // You can store this token in your Redux store or send it to your backend
         // For example: dispatch(savePushToken(token));
@@ -52,7 +52,7 @@ export function LaunchScreen() {
          dispatch(iscustomeractions.setIsCustomer(false));
     }
     // Initialize push notifications
-    initializePushNotifications();
+    // initializePushNotifications();
 
     // Navigate to home after a short delay
     setTimeout(() => {

@@ -729,67 +729,64 @@ export function BussinessAppoinmentScreen() {
       /></AppView>
       )}
       
-      <ScrollView>
-        {/* Loading Indicator */}
-        {isloading && !isRefreshing ? (
-          <AppView
-            style={[$.flex_1, $.justify_content_center, $.align_items_center]}>
-            <ActivityIndicator size="large" color={$.tint_3} />
-            <AppText style={[$.mt_medium, $.text_primary1]}>
-              Loading appointments...
-            </AppText>
-          </AppView>
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            data={OrganisationApponmentlist}
-            nestedScrollEnabled
-            showsVerticalScrollIndicator={false}
-            keyExtractor={item => item.id.toString()}
-            renderItem={renderAppointmentItem}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={handleRefresh}
-                colors={[$.tint_3]}
-                tintColor={$.tint_3}
+      {/* Loading Indicator / List */}
+      {isloading && !isRefreshing ? (
+        <AppView
+          style={[$.flex_1, $.justify_content_center, $.align_items_center]}>
+          <ActivityIndicator size="large" color={$.tint_3} />
+          <AppText style={[$.mt_medium, $.text_primary1]}>
+            Loading appointments...
+          </AppText>
+        </AppView>
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={OrganisationApponmentlist}
+          showsVerticalScrollIndicator={false}
+          keyExtractor={item => item.id.toString()}
+          renderItem={renderAppointmentItem}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[$.tint_3]}
+              tintColor={$.tint_3}
+            />
+          }
+          ListEmptyComponent={
+            <AppView
+              style={[
+                $.flex_1,
+                $.justify_content_center,
+                $.align_items_center,
+                $.p_large,
+              ]}>
+              <CustomIcon
+                color={$.tint_5}
+                name={CustomIcons.Scheduled}
+                size={$.s_large}
               />
-            }
-            ListEmptyComponent={
-              <AppView
+              <AppText style={[$.mt_medium, $.text_primary5, $.text_center]}>
+                No appointments for this location
+              </AppText>
+              <TouchableOpacity
                 style={[
-                  $.flex_1,
-                  $.justify_content_center,
-                  $.align_items_center,
-                  $.p_large,
-                ]}>
-                <CustomIcon
-                  color={$.tint_5}
-                  name={CustomIcons.Scheduled}
-                  size={$.s_large}
-                />
-                <AppText style={[$.mt_medium, $.text_primary5, $.text_center]}>
-                  No appointments for this location
+                  $.mt_medium,
+                  $.p_small,
+                  $.bg_tint_3,
+                  $.border_rounded,
+                ]}
+                onPress={handleRefresh}>
+                <AppText style={[$.text_tint_11, $.fw_semibold]}>
+                  Refresh
                 </AppText>
-                <TouchableOpacity
-                  style={[
-                    $.mt_medium,
-                    $.p_small,
-                    $.bg_tint_3,
-                    $.border_rounded,
-                  ]}
-                  onPress={handleRefresh}>
-                  <AppText style={[$.text_tint_11, $.fw_semibold]}>
-                    Refresh
-                  </AppText>
-                </TouchableOpacity>
-              </AppView>
-            }
-            contentContainerStyle={[$.flex_1]}
-            style={[$.flex_1]}
-          />
-        )}
-      </ScrollView>
+              </TouchableOpacity>
+            </AppView>
+          }
+          contentContainerStyle={[$.flex_1]}
+          style={[$.flex_1]}
+        />
+      )}
 
       {/* Bottom Sheets */}
       <BottomSheetComponent

@@ -42,6 +42,58 @@ export function AccountScreen() {
   const isCustomer = useSelector(selectiscustomer).isCustomer;
   const dispatch = useAppDispatch();
 
+  const screenWidth = Dimensions.get('window').width;
+
+  // Safety check for usercontext
+  if (!usercontext || !usercontext.value) {
+    return (
+      // <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView style={[$.flex_1, {backgroundColor: '#F5F7FA'}]}>
+          <AppView style={[$.mx_normal, $.border_rounded2, $.m_small, $.p_big]}>
+            <AppView style={[ $.align_items_center]}>
+              <AppView
+                style={[
+                  $.align_items_center
+                ]}>
+                <Image
+                  source={require('../../assert/A1.png')}
+                  style={{
+                    width: screenWidth * 0.4,
+                    height: screenWidth * 0.4,
+                    marginBottom: 24,
+                  }}
+                  resizeMode="contain"
+                />
+                <AppText style={[$.fw_bold, $.fs_enormous, $.text_primary5]}>
+                  Appointza
+                </AppText>
+                <AppText
+                  style={{
+                    fontSize: 16,
+                    color: '#666666',
+                    textAlign: 'center',
+                    marginTop: 8,
+                    lineHeight: 24,
+                  }}>
+                  Book. Manage. Meet.
+                </AppText>
+                <AppText
+                  style={{
+                    fontSize: 16,
+                    color: '#666666',
+                    textAlign: 'center',
+                    lineHeight: 24,
+                  }}>
+                  All in One Place
+                </AppText>
+              </AppView>
+            </AppView>
+          </AppView>
+        </ScrollView>
+      // </SafeAreaView>
+    );
+  }
+
   const gotoSignUp = (value: boolean) => {
     navigation.navigate('SignUp', {isorganization: value});
   };
@@ -52,8 +104,8 @@ export function AccountScreen() {
     dispatch(iscustomeractions.setIsCustomer(false));
   };
 
-  const isLoggedIn = usercontext && usercontext.value.userid > 0;
-  const hasBusiness = usercontext && usercontext.value.organisationid > 0;
+  const isLoggedIn = usercontext && usercontext.value && usercontext.value.userid > 0;
+  const hasBusiness = usercontext && usercontext.value && usercontext.value.organisationid > 0;
 
   type MenuItem = {
     icon: CustomIcons;
@@ -65,7 +117,7 @@ export function AccountScreen() {
 
   const menuItems: MenuItem[] = [
     // Business items
-    ...(isCustomer && usercontext.value.userid > 0
+    ...(isCustomer && usercontext?.value?.userid > 0
       ? [
           {
             icon: CustomIcons.Shop,
@@ -147,7 +199,7 @@ export function AccountScreen() {
           item.isHighlighted ? $.text_tint_2 : $.text_primary5,
           item.isHighlighted ? $.fw_regular : $.fw_light,
         ]}>
-        {item.label}
+        {item.label || ''}
       </AppText>
       {item.showChevron && (
         <CustomIcon
@@ -168,17 +220,17 @@ export function AccountScreen() {
     useState<OrganisationLocationStaffRes | null>(null);
 
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isLoggedIn && usercontext?.value?.userid) {
       getstafflocation();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, usercontext]);
 
 
 
   const getstafflocation = async () => {
     try {
       const req = new OrganisationLocationStaffReq();
-      req.userid = usercontext.value.userid;
+      req.userid = usercontext?.value?.userid || 0;
       const res = await organisationLocationService.Selectlocation(req);
 
       if (res && res.length > 0) {
@@ -193,15 +245,14 @@ export function AccountScreen() {
 
   const handleError = (error: any) => {
     const message = error?.response?.data?.message || 'An error occurred';
-    AppAlert({message});
+    if (message && typeof message === 'string') {
+      AppAlert({message: message.toString()});
+    }
   };
 
   const toggleCustomerBusiness = () => {
     dispatch(iscustomeractions.setIsCustomer(!isCustomer));
   };
-
-  const screenWidth = Dimensions.get('window').width;
-  const imageSize = screenWidth * 0.4;
 
 
  
@@ -252,9 +303,9 @@ export function AccountScreen() {
 
               <AppView style={[$.flex_1]}>
                 <AppText style={[$.fs_big, $.fw_bold, $.text_primary5]}>
-                  {usercontext.value.username}
+                  {usercontext?.value?.username || ''}
                 </AppText>
-                {usercontext.value.organisationname.length > 0 && (
+                {usercontext?.value?.organisationname && usercontext.value.organisationname.length > 0 && (
                   <AppText
                     style={[
                       $.fs_compact,
@@ -262,7 +313,7 @@ export function AccountScreen() {
                       $.mt_tiny,
                       $.fw_regular,
                     ]}>
-                    {usercontext.value.organisationname}
+                    {usercontext.value.organisationname || ''}
                   </AppText>
                 )}
               </AppView>
@@ -287,15 +338,15 @@ export function AccountScreen() {
               style={[
                 $.align_items_center
               ]}>
-              <Image
-                source={require('../../assert/A1.png')}
-                style={{
-                  width: imageSize,
-                  height: imageSize,
-                  marginBottom: 24,
-                }}
-                resizeMode="contain"
-              />
+                              <Image
+                  source={require('../../assert/A1.png')}
+                  style={{
+                    width: screenWidth * 0.4,
+                    height: screenWidth * 0.4,
+                    marginBottom: 24,
+                  }}
+                  resizeMode="contain"
+                />
               <AppText style={[$.fw_bold, $.fs_enormous, $.text_primary5]}>
                 Appointza
               </AppText>
@@ -307,7 +358,15 @@ export function AccountScreen() {
                   marginTop: 8,
                   lineHeight: 24,
                 }}>
-                Book. Manage. Meet.{'\n'}
+                Book. Manage. Meet.
+              </AppText>
+              <AppText
+                style={{
+                  fontSize: 16,
+                  color: '#666666',
+                  textAlign: 'center',
+                  lineHeight: 24,
+                }}>
                 All in One Place
               </AppText>
             </AppView>
@@ -338,6 +397,7 @@ export function AccountScreen() {
           App Version 1.0.0
         </AppText>
       </AppView>
-    </ScrollView>   </SafeAreaView>
+    </ScrollView> 
+      </SafeAreaView>
   );
 }
