@@ -6,8 +6,8 @@ import {$} from '../../styles';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {AppAlert} from '../../components/appalert.component';
 import {AppSingleSelect} from '../../components/appsingleselect.component';
-import {useAppSelector} from '../../redux/hooks.redux';
-import {selectusercontext} from '../../redux/usercontext.redux';
+import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
+import {selectusercontext, usercontextactions} from '../../redux/usercontext.redux';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
 import {
   OrganisationLocationStaffReq,
@@ -26,6 +26,7 @@ type DashboardScreenProps = {
 };
 
 export function BussinessDashboardScreen() {
+  const dispatch = useAppDispatch();
   const usercontext = useAppSelector(selectusercontext);
   const organisationlocationservice = useMemo(
     () => new OrganisationLocationService(),
@@ -103,6 +104,12 @@ export function BussinessDashboardScreen() {
 
   const handleLocationChange = (item: OrganisationLocationStaffRes) => {
     Setselectlocation(item);
+    dispatch(
+      usercontextactions.setOrganisationLocation({
+        id: item.organisationlocationid,
+        name: item.name,
+      }),
+    );
   };
 
   const handleError = (error: any) => {

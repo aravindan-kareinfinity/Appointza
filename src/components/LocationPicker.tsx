@@ -48,12 +48,14 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     pincode: ''
   });
   const mapRef = useRef<MapView>(null);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [locationPermission, setLocationPermission] = useState<'unknown' | 'granted' | 'denied' | 'blocked'>('unknown');
 
   useEffect(() => {
     if (visible) {
       // Add a small delay to ensure modal is fully rendered
       setTimeout(() => {
-        getCurrentLocation();
+        checkLocationPermission();
       }, 100);
     } else {
       // Reset state when modal closes
@@ -68,6 +70,26 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       });
     }
   }, [visible]);
+  const checkLocationPermission = async () => {
+    try {
+      const permissionConst = Platform.OS === 'android' 
+        ? PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION 
+        : PERMISSIONS.IOS.LOCATION_WHEN_IN_USE;
+      const status = await check(permissionConst);
+      if (status === RESULTS.GRANTED) {
+        setLocationPermission('granted');
+        getCurrentLocation();
+      } else if (status === RESULTS.BLOCKED) {
+        setLocationPermission('blocked');
+      } else {
+        setLocationPermission('denied');
+      }
+    } catch (err) {
+      console.warn('Permission check error:', err);
+      setLocationPermission('unknown');
+    }
+  };
+
 
 
   const updateLocation = (latitude: number, longitude: number) => {
@@ -80,15 +102,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     }));
     setSelectedLocation({ latitude, longitude });
     reverseGeocode(latitude, longitude);
-    
-    if (mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude,
-        longitude,
-        latitudeDelta: 0.005,
-        longitudeDelta: 0.005,
-      });
-    }
   };
 
   const handleMapPress = (e: any) => {
@@ -153,25 +166,24 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
  // Add this function to your LocationPicker component
 const requestLocationPermission = async () => {
   try {
-    let permissionStatus;
-    
-    if (Platform.OS === 'android') {
-      permissionStatus = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        {
-          title: 'Location Permission',
-          message: 'This app needs access to your location',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        }
-      );
-    } else {
-      permissionStatus = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+    const permissionConst = Platform.OS === 'android' 
+      ? PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION 
+      : PERMISSIONS.IOS.LOCATION_WHEN_IN_USE;
+
+    const current = await check(permissionConst);
+    if (current === RESULTS.GRANTED) {
+      setLocationPermission('granted');
+      return true;
+    }
+    if (current === RESULTS.BLOCKED) {
+      setLocationPermission('blocked');
+      return false;
     }
 
-    return permissionStatus === RESULTS.GRANTED || 
-           permissionStatus === PermissionsAndroid.RESULTS.GRANTED;
+    const requested = await request(permissionConst);
+    const granted = requested === RESULTS.GRANTED || requested === PermissionsAndroid.RESULTS.GRANTED;
+    setLocationPermission(granted ? 'granted' : (requested === RESULTS.BLOCKED || requested === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) ? 'blocked' : 'denied');
+    return granted;
   } catch (err) {
     console.warn('Permission request error:', err);
     return false;
@@ -187,14 +199,14 @@ const getCurrentLocation = async () => {
     if (!hasPermission) {
       Alert.alert(
         'Permission Required',
-        'Location permission is needed to find your current location',
+        'Location permission is needed to find your current location. You can still search or tap the map.',
         [
           {
             text: 'Open Settings',
             onPress: () => Linking.openSettings(),
           },
           {
-            text: 'Cancel',
+            text: 'OK',
             style: 'cancel',
           },
         ]
@@ -235,6 +247,17 @@ const getCurrentLocation = async () => {
     setIsLoading(false);
   }
 };
+
+  // Animate map to the latest region once the map is ready
+  useEffect(() => {
+    if (!isMapReady || !mapRef.current) return;
+    mapRef.current.animateToRegion({
+      latitude: region.latitude,
+      longitude: region.longitude,
+      latitudeDelta: region.latitudeDelta,
+      longitudeDelta: region.longitudeDelta,
+    });
+  }, [region, isMapReady]);
   // Show error state if there's an error
   if (hasError) {
     return (
@@ -293,30 +316,30 @@ const getCurrentLocation = async () => {
 
         {/* Map */}
         <View style={styles.mapContainer}>
-          {isLoading ? (
+          <View style={styles.map}>
+            <MapView
+              ref={mapRef}
+              style={{ flex: 1 }}
+              initialRegion={region}
+              onPress={handleMapPress}
+              showsUserLocation={true}
+              showsMyLocationButton={false}
+              followsUserLocation={false}
+              loadingEnabled={true}
+              onMapReady={() => setIsMapReady(true)}
+            >
+              {selectedLocation && (
+                <Marker
+                  coordinate={selectedLocation}
+                  title="Selected Location"
+                  pinColor={$.tint_primary_5}
+                />
+              )}
+            </MapView>
+          </View>
+          {isLoading && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={$.tint_primary_5} />
-            </View>
-          ) : (
-            <View style={styles.map}>
-              <MapView
-                ref={mapRef}
-                style={{ flex: 1 }}
-                region={region}
-                onPress={handleMapPress}
-                showsUserLocation={true}
-                showsMyLocationButton={false}
-                followsUserLocation={false}
-                loadingEnabled={true}
-              >
-                {selectedLocation && (
-                  <Marker
-                    coordinate={selectedLocation}
-                    title="Selected Location"
-                    pinColor={$.tint_primary_5}
-                  />
-                )}
-              </MapView>
             </View>
           )}
         </View>

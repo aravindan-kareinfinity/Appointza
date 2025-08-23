@@ -113,20 +113,34 @@ export function SignUpScreen(props: SignUpScreenProp) {
     }
   };
 
-  const pickAndUploadImage = async () => {
+  const pickAndUploadOrgLogo = async () => {
     try {
       const images = await imagepickerutil.launchImageLibrary();
-      console.log(images);
-
       const files = await filesService.upload(images);
       if (files.length > 0) {
         setSignUpModel(prev => ({
           ...prev,
+          organisationlogo: files[0],
           organisationimageid: files[0],
         }));
       }
     } catch (error) {
-      handleError(error, 'Failed to upload image');
+      handleError(error, 'Failed to upload organization logo');
+    }
+  };
+
+  const pickAndUploadProfileImage = async () => {
+    try {
+      const images = await imagepickerutil.launchImageLibrary();
+      const files = await filesService.upload(images);
+      if (files.length > 0) {
+        setSignUpModel(prev => ({
+          ...prev,
+          profileimage: files[0],
+        }));
+      }
+    } catch (error) {
+      handleError(error, 'Failed to upload profile image');
     }
   };
 
@@ -234,23 +248,23 @@ export function SignUpScreen(props: SignUpScreenProp) {
       />
       
       <ScrollView contentContainerStyle={[$.p_medium, { backgroundColor: colors.background }]}>
-        {/* Image Upload */}
-        <HeaderButton
-          title={signUpModel.organisationimageid === 0 ? "Choose Image" : "Change Image"}
+        {/* Organization Logo Upload */}
+     { isOrganization &&    <HeaderButton
+          title={signUpModel.organisationlogo === 0 ? "Upload Organization Logo" : "Change Organization Logo"}
           icon={
-            signUpModel.organisationimageid === 0 ? (
+            signUpModel.organisationlogo === 0 ? (
               <CustomIcon name={CustomIcons.Image} color={colors.placeholder} size={40} />
             ) : (
               <Image
                 source={{
-                  uri: filesService.get(signUpModel.organisationimageid),
+                  uri: filesService.get(signUpModel.organisationlogo),
                   width: 100,
                   height: 100,
                 }}
               />
             )
           }
-          onPress={pickAndUploadImage}
+          onPress={pickAndUploadOrgLogo}
           style={[
             $.mb_medium,
             {
@@ -270,7 +284,9 @@ export function SignUpScreen(props: SignUpScreenProp) {
             $.p_small,
             $.border_rounded,
           ]}
-        />
+        />}
+
+     
 
         {isOrganization && (
           <View style={cardStyle}>
@@ -327,20 +343,120 @@ export function SignUpScreen(props: SignUpScreenProp) {
           </View>
         )}
 
-        {/* Location Picker */}
+        {/* Location Picker (Only for Organization) */}
+        {isOrganization && (
+          <HeaderButton
+            title={signUpModel.googlelocation || 'Select Location on Map'}
+            onPress={() => {
+              try {
+                setShowLocationPicker(true);
+              } catch (error) {
+                console.error('Error opening location picker:', error);
+                AppAlert({ message: 'Failed to open location picker. Please try again.' });
+              }
+            }}
+            style={[
+              $.mb_normal,
+              $.p_small,
+              {
+                backgroundColor: colors.cardBackground,
+                ...Platform.select({
+                  ios: {
+                    shadowColor: colors.text,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                  },
+                  android: {
+                    elevation: 4,
+                  },
+                }),
+              },
+              $.border_rounded,
+            ]}
+            textStyle={[$.text_tint_3]}
+          />
+        )}
+
+        {isOrganization && (
+          <View style={cardStyle}>
+            <FormInput
+              label="Location Name"
+              placeholder="Enter location name"
+              value={signUpModel.locationname}
+              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationname: text }))}
+            />
+
+            <FormInput
+              label="Address Line 1"
+              placeholder="Enter address line 1"
+              value={signUpModel.locationaddressline1}
+              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationaddressline1: text }))}
+            />
+            
+            <FormInput
+              label="Address Line 2"
+              placeholder="Enter address line 2"
+              value={signUpModel.locationaddressline2}
+              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationaddressline2: text }))}
+            />
+
+            <AppView style={[$.flex_row, $.mb_normal]}>
+              <FormInput
+                label="City"
+                placeholder="Enter city"
+                value={signUpModel.locationcity}
+                onChangeText={text => setSignUpModel(prev => ({ ...prev, locationcity: text }))}
+                containerStyle={{ flex: 1, marginRight: 8 }}
+              />
+              <FormInput
+                label="State"
+                placeholder="Enter state"
+                value={signUpModel.locationstate}
+                onChangeText={text => setSignUpModel(prev => ({ ...prev, locationstate: text }))}
+                containerStyle={{ flex: 1 }}
+              />
+            </AppView>
+
+            <AppView style={[$.flex_row, $.mb_normal]}>
+              <FormInput
+                label="Country"
+                placeholder="Enter country"
+                value={signUpModel.locationcountry}
+                onChangeText={text => setSignUpModel(prev => ({ ...prev, locationcountry: text }))}
+                containerStyle={{ flex: 1, marginRight: 8 }}
+              />
+              <FormInput
+                label="Pincode"
+                placeholder="Enter pincode"
+                value={signUpModel.locationpincode}
+                onChangeText={text => setSignUpModel(prev => ({ ...prev, locationpincode: text }))}
+                keyboardType="numeric"
+                containerStyle={{ flex: 1 }}
+              />
+            </AppView>
+          </View>
+        )}
+
+   {/* User Profile Image Upload */}
         <HeaderButton
-          title={signUpModel.googlelocation || 'Select Location on Map'}
-          onPress={() => {
-            try {
-              setShowLocationPicker(true);
-            } catch (error) {
-              console.error('Error opening location picker:', error);
-              AppAlert({ message: 'Failed to open location picker. Please try again.' });
-            }
-          }}
+          title={signUpModel.profileimage === 0 ? "Upload Your Photo" : "Change Your Photo"}
+          icon={
+            signUpModel.profileimage === 0 ? (
+              <CustomIcon name={CustomIcons.Image} color={colors.placeholder} size={40} />
+            ) : (
+              <Image
+                source={{
+                  uri: filesService.get(signUpModel.profileimage),
+                  width: 100,
+                  height: 100,
+                }}
+              />
+            )
+          }
+          onPress={pickAndUploadProfileImage}
           style={[
-            $.mb_normal,
-            $.p_small,
+            $.mb_medium,
             {
               backgroundColor: colors.cardBackground,
               ...Platform.select({
@@ -355,69 +471,10 @@ export function SignUpScreen(props: SignUpScreenProp) {
                 },
               }),
             },
+            $.p_small,
             $.border_rounded,
           ]}
-          textStyle={[$.text_tint_3]}
         />
-
-        <View style={cardStyle}>
-          <FormInput
-            label="Location Name"
-            placeholder="Enter location name"
-            value={signUpModel.locationname}
-            onChangeText={text => setSignUpModel(prev => ({ ...prev, locationname: text }))}
-          />
-
-          <FormInput
-            label="Address Line 1"
-            placeholder="Enter address line 1"
-            value={signUpModel.locationaddressline1}
-            onChangeText={text => setSignUpModel(prev => ({ ...prev, locationaddressline1: text }))}
-          />
-          
-          <FormInput
-            label="Address Line 2"
-            placeholder="Enter address line 2"
-            value={signUpModel.locationaddressline2}
-            onChangeText={text => setSignUpModel(prev => ({ ...prev, locationaddressline2: text }))}
-          />
-
-          <AppView style={[$.flex_row, $.mb_normal]}>
-            <FormInput
-              label="City"
-              placeholder="Enter city"
-              value={signUpModel.locationcity}
-              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationcity: text }))}
-              containerStyle={{ flex: 1, marginRight: 8 }}
-            />
-            <FormInput
-              label="State"
-              placeholder="Enter state"
-              value={signUpModel.locationstate}
-              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationstate: text }))}
-              containerStyle={{ flex: 1 }}
-            />
-          </AppView>
-
-          <AppView style={[$.flex_row, $.mb_normal]}>
-            <FormInput
-              label="Country"
-              placeholder="Enter country"
-              value={signUpModel.locationcountry}
-              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationcountry: text }))}
-              containerStyle={{ flex: 1, marginRight: 8 }}
-            />
-            <FormInput
-              label="Pincode"
-              placeholder="Enter pincode"
-              value={signUpModel.locationpincode}
-              onChangeText={text => setSignUpModel(prev => ({ ...prev, locationpincode: text }))}
-              keyboardType="numeric"
-              containerStyle={{ flex: 1 }}
-            />
-          </AppView>
-        </View>
-
         <View style={cardStyle}>
           <FormInput
             label="Your Name"

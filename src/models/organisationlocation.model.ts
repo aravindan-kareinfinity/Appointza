@@ -105,3 +105,12 @@ export class AppointmentPaymentsummary {
   completedcount: number=0;
   paymentsummary: PaymentSummary[]=[];
 }
+
+export class UsersGenerateQRCodeReq {
+  organisationid: number = 0
+  locationid: number = 0
+}
+
+export class UsersGenerateQRCodeRes {
+  qrcodebase64string: string = '';
+}

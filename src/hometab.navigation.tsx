@@ -16,6 +16,7 @@ import {BussinessAppoinmentScreen} from './screens/bussinessappoinment/bussiness
 import { UserDashboardScreen } from './screens/userdashboard/userdashboard.screen';
 import { LucideIcon, LucideIcons } from './components/LucideIcons.component';
 import { DefaultColor } from './styles/default-color.style';
+import { useSelector } from 'react-redux';
 
 export type HomeTabParamList = {
   Home: undefined;
@@ -33,7 +34,7 @@ const HomeTab = createBottomTabNavigator<HomeTabParamList>();
 const colors = DefaultColor.instance;
 
 function HomeTabNavigation() {
-  const usercontext = useAppSelector(selectiscustomer);
+  const isCustomer = useSelector(selectiscustomer).isCustomer;
   return (
     <HomeTab.Navigator
       tabBar={({state, descriptors, navigation}) => {
@@ -80,7 +81,7 @@ function HomeTabNavigation() {
           </AppView>
         );
       }}
-      initialRouteName= {!usercontext.isCustomer ? "Service" :"BussinessAppoinment"}
+      initialRouteName= {isCustomer ? "Service" :"BussinessAppoinment"}
       screenOptions={{
         headerShown: false,
       }}>
@@ -93,7 +94,7 @@ function HomeTabNavigation() {
           ),
         }}
       /> */}
- {!usercontext.isCustomer && 
+ {isCustomer && 
       <HomeTab.Screen
         name="UserDashboard"
         component={UserDashboardScreen}
@@ -103,7 +104,7 @@ function HomeTabNavigation() {
           ),
         }}
       />}
- {usercontext.isCustomer && 
+ {!isCustomer && 
       <HomeTab.Screen
         name="BussinessDashboard"
         component={BussinessDashboardScreen}
@@ -114,7 +115,7 @@ function HomeTabNavigation() {
         }}
       />}
 
-{!usercontext.isCustomer &&  <HomeTab.Screen
+{isCustomer &&  <HomeTab.Screen
         name="Service"
         component={ServiceScreen}
         options={{
@@ -125,7 +126,7 @@ function HomeTabNavigation() {
       />
 }
 
-      {!usercontext.isCustomer && (
+      {isCustomer && (
         <HomeTab.Screen
           name="UserAppoinment"
           component={UserAppoinmentScreen}
@@ -137,7 +138,7 @@ function HomeTabNavigation() {
         />
       )}
 
-      {usercontext.isCustomer && (
+      {!isCustomer && (
         <HomeTab.Screen
           name="BussinessAppoinment"
           component={BussinessAppoinmentScreen}

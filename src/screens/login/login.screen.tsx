@@ -49,9 +49,9 @@ export function LoginScreen() {
       loginreq.otp = otp;
       let loginresp = await usersservice.login(loginreq);
       dispatch(usercontextactions.set(loginresp!));
-      console.log("resp", loginresp,loginresp.organisationlocationid > 0);
-      
-      dispatch(iscustomeractions.setIsCustomer(loginresp.organisationlocationid > 0));
+      // User is a business if they have an organisation; otherwise a customer
+      const iscustomer = loginresp?.organisationlocationid  == 0 || loginresp?.organisationlocationid == null;
+      dispatch(iscustomeractions.setIsCustomer(iscustomer));
       navigation.navigate('HomeTab');
     } catch (error: any) {
       var message = error?.response?.data?.message;

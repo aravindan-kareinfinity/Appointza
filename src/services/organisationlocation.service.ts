@@ -9,6 +9,8 @@ import {
   OrganisationLocationStaffRes,
   OrgLocationReq,
   OrgLocationStaffResponse,
+  UsersGenerateQRCodeReq,
+  UsersGenerateQRCodeRes,
 } from '../models/organisationlocation.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
 import {environment} from '../utils/environment';
@@ -100,6 +102,16 @@ export class OrganisationLocationService {
         postdata.item = req;
         let resp = await this.http.post<ActionRes<AppointmentPaymentsummary >>(
             this.baseurl + '/SelectAppointmentPaymentsummary', 
+            postdata
+        );
+        return resp.item;
+    }
+
+    async GenerateQRCode(req: UsersGenerateQRCodeReq) {
+        let postdata: ActionReq<UsersGenerateQRCodeReq> = new ActionReq<UsersGenerateQRCodeReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<UsersGenerateQRCodeRes>>(
+            this.baseurl + '/GenerateQRCode',
             postdata
         );
         return resp.item;

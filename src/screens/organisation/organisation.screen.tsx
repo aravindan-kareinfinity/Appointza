@@ -14,7 +14,7 @@ import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
 import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {FlatList, TouchableOpacity, ViewStyle, SafeAreaView, Alert} from 'react-native';
+import {FlatList, TouchableOpacity, ViewStyle, SafeAreaView, Alert, Image} from 'react-native';
 
 import {
   OrganisationLocation,
@@ -31,6 +31,9 @@ import {
   OrganisationSelectReq,
 } from '../../models/organisation.model';
 import {OrganisationService} from '../../services/organisation.service';
+import {HeaderButton} from '../../components/headerbutton.component';
+import {FilesService} from '../../services/files.service';
+import {imagepickerutil} from '../../utils/imagepicker.util';
 
 type OrganisationScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Organisation'>,
@@ -45,6 +48,7 @@ export function OrganisationScreen() {
   >([]);
   const [isloading, setIsloading] = useState(false);
   const organisationservice = useMemo(() => new OrganisationService(), []);
+  const filesService = useMemo(() => new FilesService(), []);
   const organisationlocationservice = useMemo(
     () => new OrganisationLocationService(),
     [],
@@ -60,6 +64,22 @@ export function OrganisationScreen() {
       getData();
     }, []),
   );
+
+  const pickAndUploadOrgLogo = async () => {
+    try {
+      const images = await imagepickerutil.launchImageLibrary();
+      const files = await filesService.upload(images);
+      if (files.length > 0) {
+        setOrganisation(prev => ({
+          ...prev,
+          organisationlogo: files[0],
+          imageid: files[0],
+        }));
+      }
+    } catch (error) {
+      AppAlert({message: 'Failed to upload logo'});
+    }
+  };
 
   const getData = async () => {
     setIsloading(true);
@@ -132,6 +152,24 @@ export function OrganisationScreen() {
         </AppView>
 
         <AppView style={[$.px_regular]}>
+          <HeaderButton
+            title={organisation.organisationlogo === 0 ? 'Upload Organisation Logo' : 'Change Organisation Logo'}
+            icon={
+              organisation.organisationlogo === 0 ? (
+                <CustomIcon name={CustomIcons.Image} size={$.s_medium} color={$.tint_3} />
+              ) : (
+                <Image
+                  source={{
+                    uri: filesService.get(organisation.organisationlogo),
+                    width: 100,
+                    height: 100,
+                  }}
+                />
+              )
+            }
+            onPress={pickAndUploadOrgLogo}
+            style={[$.mb_medium, $.p_small, $.border_rounded]}
+          />
           <FormInput
             label="Organisation Name"
             value={organisation.name}

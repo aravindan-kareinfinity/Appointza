@@ -46,6 +46,7 @@ export class UsersRegisterReq {
   organisationimageid: number = 0;
   organisationname: string = '';
   organisationgstnumber: string = '';
+  organisationlogo: number = 0;
 
   secondarytypecode: string = ""
   secondarytype: number = 0
@@ -67,6 +68,7 @@ export class UsersRegisterReq {
   usermobile: string = '';
   usermobilecountrycode: string = '';
   userdesignation: string = '';
+  profileimage: number = 0;
 }
 
 export class UsersRegisterRes {

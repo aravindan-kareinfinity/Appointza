@@ -7,7 +7,7 @@ import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {Dimensions, FlatList, Image, ScrollView, TouchableOpacity, SafeAreaView} from 'react-native';
+import {Dimensions, FlatList, Image, ScrollView, TouchableOpacity, SafeAreaView, Alert} from 'react-native';
 import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
 import {
   selectusercontext,
@@ -25,10 +25,13 @@ import {useSelector} from 'react-redux';
 import {
   OrganisationLocationStaffReq,
   OrganisationLocationStaffRes,
+  OrganisationLocation,
+  OrganisationLocationSelectReq,
 } from '../../models/organisationlocation.model';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
 import {AppAlert} from '../../components/appalert.component';
 import {UsersContext} from '../../models/users.model';
+import { FormSelect } from '../../components/formselect.component';
 
 type AccountScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Account'>,
@@ -117,7 +120,7 @@ export function AccountScreen() {
 
   const menuItems: MenuItem[] = [
     // Business items
-    ...(isCustomer && usercontext?.value?.userid > 0
+    ...(!isCustomer && usercontext?.value?.userid > 0
       ? [
           {
             icon: CustomIcons.Shop,
@@ -219,6 +222,12 @@ export function AccountScreen() {
   const [selectlocation, Setselectlocation] =
     useState<OrganisationLocationStaffRes | null>(null);
 
+  // Business locations state
+  const [organisationlocation, setOrganisationlocation] = useState<OrganisationLocation[]>([]);
+  const [Selectorganisationlocationid, setSelectorganisationlocationid] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     if (isLoggedIn && usercontext?.value?.userid) {
       getstafflocation();
@@ -247,6 +256,67 @@ export function AccountScreen() {
     const message = error?.response?.data?.message || 'An error occurred';
     if (message && typeof message === 'string') {
       AppAlert({message: message.toString()});
+    }
+  };
+
+  // Fetch organisation locations for business users
+  useEffect(() => {
+    const orgId = usercontext?.value?.organisationid || 0;
+    if (orgId > 0) {
+      // If we already have a stored selection in redux, preload it
+      if (usercontext?.value?.organisationlocationid) {
+        setSelectorganisationlocationid(usercontext.value.organisationlocationid);
+      }
+      getorganisation();
+    } else {
+      // Clear when not a business user
+      setOrganisationlocation([]);
+      setSelectorganisationlocationid(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usercontext?.value?.organisationid]);
+
+  const handleLocationSelect = (loc: OrganisationLocation) => {
+    setSelectorganisationlocationid(loc.id);
+    dispatch(usercontextactions.setOrganisationLocation({ id: loc.id, name: loc.city }));
+  };
+
+  const getorganisation = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const locreq: OrganisationLocationSelectReq = new OrganisationLocationSelectReq();
+      locreq.organisationid = usercontext.value.organisationid;
+      const locresp = await organisationLocationService.select(locreq);
+      if (locresp && locresp.length > 0) {
+        setOrganisationlocation(locresp);
+        // Prefer existing redux selection if valid
+        const existingId = usercontext?.value?.organisationlocationid || 0;
+        const hasExisting = existingId > 0 && locresp.some(l => l.id === existingId);
+        if (hasExisting) {
+          setSelectorganisationlocationid(existingId);
+        } else if (locresp.length === 1 && locresp[0].id) {
+          // Auto-select first when only one
+          setSelectorganisationlocationid(locresp[0].id);
+          dispatch(usercontextactions.setOrganisationLocation({ id: locresp[0].id, name: locresp[0].city }));
+        } else if (!Selectorganisationlocationid && locresp[0].id) {
+          // Set a default selection locally, allow user to change via FormSelect
+          setSelectorganisationlocationid(locresp[0].id);
+          // Do not dispatch here to avoid overriding user's later choice
+        }
+      } else {
+        setOrganisationlocation([]);
+        setError('No business locations found');
+      }
+    } catch (err) {
+      setError('Failed to fetch business locations');
+      console.error('Error fetching locations:', err);
+      Alert.alert(
+        'Error',
+        'Failed to fetch business locations. Please try again.',
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -383,6 +453,27 @@ export function AccountScreen() {
           $.mb_large,
           {backgroundColor: '#FFFFFF'},
         ]}>
+        {/* Business location selector */}
+        {usercontext?.value?.organisationid > 0 && organisationlocation.length > 0 && (
+          organisationlocation.length > 1 ? (
+            <FormSelect
+              label="Select Business Location"
+              options={organisationlocation.map(loc => ({ id: loc.id, name: loc.city }))}
+              selectedId={Selectorganisationlocationid}
+              onSelect={(item) => {
+                const loc = organisationlocation.find(l => l.id === item.id);
+                if (loc) handleLocationSelect(loc);
+              }}
+            />
+          ) : (
+            <AppView style={[$.p_medium]}>
+              <AppText style={[$.fs_compact, $.text_primary5]}>Business Location</AppText>
+              <AppText style={[$.fs_small, $.fw_bold, $.text_primary5]}>
+                {organisationlocation[0]?.city || ''}
+              </AppText>
+            </AppView>
+          )
+        )}
         {menuItems.map(renderMenuItem)}
       </AppView>
 

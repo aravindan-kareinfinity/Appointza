@@ -10,7 +10,7 @@ import {Button} from '../../components/button.component';
 import {$} from '../../styles';
 import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {ScrollView, TouchableOpacity, ActivityIndicator, ViewStyle, SafeAreaView, Alert} from 'react-native';
+import {ScrollView, TouchableOpacity, ActivityIndicator, ViewStyle, SafeAreaView, Alert, Image} from 'react-native';
 import {
   OrganisationLocation,
   OrganisationLocationDeleteReq,
@@ -21,6 +21,9 @@ import {AppAlert} from '../../components/appalert.component';
 import {useAppSelector} from '../../redux/hooks.redux';
 import {selectusercontext} from '../../redux/usercontext.redux';
 import {LocationPicker} from '../../components/LocationPicker';
+import {HeaderButton} from '../../components/headerbutton.component';
+import {FilesService} from '../../services/files.service';
+import {imagepickerutil} from '../../utils/imagepicker.util';
 
 type LocationScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Location'>,
@@ -38,6 +41,7 @@ export function LocationScreen(props: LocationScreenProp) {
     () => new OrganisationLocationService(),
     [],
   );
+  const filesService = useMemo(() => new FilesService(), []);
 
   useEffect(() => {
     fetchLocationData();
@@ -86,6 +90,7 @@ export function LocationScreen(props: LocationScreenProp) {
         latitude: organisationLocation.latitude,
         longitude: organisationLocation.longitude,
         googlelocation: organisationLocation.googlelocation,
+        images: organisationLocation.images?.slice(0, 5) || [],
         attributes: {} // Replace with an appropriate object or import AttributesData if it exists
         
       };
@@ -118,6 +123,32 @@ export function LocationScreen(props: LocationScreenProp) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const pickAndUploadImages = async () => {
+    try {
+      const remaining = 5 - (organisationLocation.images?.length || 0);
+      if (remaining <= 0) {
+        AppAlert({message: 'You can upload up to 5 images only'});
+        return;
+      }
+      const assets = await imagepickerutil.launchImageLibrary(remaining);
+      const ids = await filesService.upload(assets);
+      setOrganisationLocation(prev => ({
+        ...prev,
+        images: [...(prev.images || []), ...ids].slice(0, 5),
+      }));
+    } catch (error: any) {
+      if (typeof error === 'string') return; // user cancel
+      AppAlert({message: 'Failed to upload images'});
+    }
+  };
+
+  const removeImageAt = (index: number) => {
+    setOrganisationLocation(prev => ({
+      ...prev,
+      images: (prev.images || []).filter((_, i) => i !== index),
+    }));
   };
 
   const handleDelete = async () => {
@@ -263,6 +294,31 @@ export function LocationScreen(props: LocationScreenProp) {
       ) : (
         <ScrollView style={[$.flex_1, $.pb_large]}>
           <AppView style={[$.px_regular]}>
+            {/* Images Uploader */}
+            <HeaderButton
+              title={
+                (organisationLocation.images?.length || 0) === 0
+                  ? 'Add Photos (max 5)'
+                  : 'Add More Photos'
+              }
+              onPress={pickAndUploadImages}
+              style={[$.mb_medium, $.p_small, $.border_rounded]}
+            />
+            <AppView style={[$.flex_row, { flexWrap: 'wrap' }, $.mb_medium]}>
+              {(organisationLocation.images || []).map((id, index) => (
+                <AppView key={id + '_' + index} style={[$.mr_small, $.mb_small, { position: 'relative' }]}>
+                  <Image
+                    source={{ uri: filesService.get(id), width: 90, height: 90 }}
+                  />
+                  <TouchableOpacity
+                    style={[{ position: 'absolute', right: 0, top: 0 }, $.p_tiny, $.bg_tint_11, $.border_rounded]}
+                    onPress={() => removeImageAt(index)}
+                  >
+                    <CustomIcon name={CustomIcons.Delete} size={$.s_compact} color={$.danger} />
+                  </TouchableOpacity>
+                </AppView>
+              ))}
+            </AppView>
             {/* Form Fields */}
             <FormInput
               label="Location Name"
@@ -328,15 +384,9 @@ export function LocationScreen(props: LocationScreenProp) {
           disabled={isLoading}
           style={[$.flex_1, $.mr_huge]}
         />
-        {props.route.params?.id ? (
+        {/* {props.route.params?.id ? (
           <>
-            <Button
-              title="Delete"
-              variant="outline"
-              onPress={handleDelete}
-              disabled={isLoading}
-              style={[$.flex_1, $.mr_small]}
-            />
+         
             <Button
               title={'Update'}
               variant="primary"
@@ -346,7 +396,7 @@ export function LocationScreen(props: LocationScreenProp) {
               style={[$.flex_1]}
             />
           </>
-        ) : (
+        ) : ( */}
           <Button
             title={'Save'}
             variant="primary"
@@ -355,7 +405,7 @@ export function LocationScreen(props: LocationScreenProp) {
             disabled={isLoading}
             style={[$.flex_1]}
           />
-        )}
+      
       </AppView>
     </AppView>
     </SafeAreaView>

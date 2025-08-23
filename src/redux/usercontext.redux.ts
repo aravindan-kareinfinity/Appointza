@@ -15,6 +15,15 @@ const usercontextslice = createSlice({
     set: (state, action: PayloadAction<UsersContext>) => {
       state.value = action.payload;
     },
+    setOrganisationLocation: (
+      state,
+      action: PayloadAction<{ id: number; name?: string }>,
+    ) => {
+      state.value.organisationlocationid = action.payload.id;
+      if (action.payload.name !== undefined) {
+        state.value.organisationlocationname = action.payload.name;
+      }
+    },
   },
 });
 

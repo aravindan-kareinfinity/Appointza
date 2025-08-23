@@ -10,7 +10,7 @@ import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
 import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {ScrollView, TouchableOpacity, Alert, SafeAreaView} from 'react-native';
+import {ScrollView, TouchableOpacity, Alert, SafeAreaView, Image} from 'react-native';
 import {
   Organisationdeletereq,
   Users,
@@ -28,6 +28,9 @@ import {selectiscustomer} from '../../redux/iscustomer.redux';
 import {BottomSheetComponent} from '../../components/bottomsheet.component';
 import {store} from '../../redux/store.redux';
 import { Button } from '../../components/button.component';
+import {HeaderButton} from '../../components/headerbutton.component';
+import {FilesService} from '../../services/files.service';
+import {imagepickerutil} from '../../utils/imagepicker.util';
 
 type ProfileScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Profile'>,
@@ -43,6 +46,7 @@ export function ProfileScreen() {
   const deleteSheetRef = useRef<any>(null);
   const usersservice = useMemo(() => new UsersService(), []);
   const usercontext = useAppSelector(selectusercontext);
+  const filesService = useMemo(() => new FilesService(), []);
 
   useEffect(() => {
     getdata();
@@ -127,6 +131,19 @@ export function ProfileScreen() {
     }
   };
 
+  const pickAndUploadProfileImage = async () => {
+    try {
+      const assets = await imagepickerutil.launchImageLibrary(1);
+      const ids = await filesService.upload(assets);
+      if (ids && ids.length > 0) {
+        setProfile(prev => ({...prev, profileimage: ids[0]}));
+      }
+    } catch (error) {
+      if (typeof error === 'string') return; // likely user canceled
+      AppAlert({message: 'Failed to upload profile image'});
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <AppView style={[$.pt_normal, $.flex_1]}>
@@ -145,6 +162,24 @@ export function ProfileScreen() {
             style={[$.ml_compact, $.p_small, $.text_tint_2, $.fw_medium]}>
             Profile
           </AppText>
+        </AppView>
+
+        {/* Profile Image */}
+        <AppView style={[$.px_regular]}>
+          <HeaderButton
+            title={profile.profileimage === 0 ? 'Upload Profile Photo' : 'Change Profile Photo'}
+            icon={
+              profile.profileimage === 0 ? (
+                <CustomIcon name={CustomIcons.Image} size={$.s_medium} color={$.tint_3} />
+              ) : (
+                <Image
+                  source={{ uri: filesService.get(profile.profileimage), width: 100, height: 100 }}
+                />
+              )
+            }
+            onPress={pickAndUploadProfileImage}
+            style={[$.mb_medium, $.p_small, $.border_rounded]}
+          />
         </AppView>
 
         {/* Profile Fields */}
