@@ -22,6 +22,7 @@ export class Users {
   parentid: number = 0;
   isfactory: boolean = false;
   notes: string = '';
+  profileimage: number = 0;
 }
 
 export namespace Users {

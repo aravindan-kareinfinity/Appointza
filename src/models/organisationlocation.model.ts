@@ -23,6 +23,7 @@ issuspended: boolean = false
 parentid: number = 0
 isfactory: boolean = false
 notes: string = ""
+  images: number[] = [];
 }
 
 export namespace OrganisationLocation {

@@ -18,6 +18,7 @@ export class Organisation {
   parentid: number = 0
   isfactory: boolean = false
   notes: string = ""
+  organisationlogo: number = 0  
 }
 
 export namespace Organisation {
