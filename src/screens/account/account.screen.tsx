@@ -43,57 +43,81 @@ export function AccountScreen() {
   const colors = DefaultColor.instance.colors;
   const usercontext = useAppSelector(selectusercontext);
   const isCustomer = useSelector(selectiscustomer).isCustomer;
+  const isLoggedIn = useSelector(selectiscustomer).isLoggedIn;
   const dispatch = useAppDispatch();
 
   const screenWidth = Dimensions.get('window').width;
 
+  // Update login status when usercontext changes
+  useEffect(() => {
+    if (usercontext && usercontext.value && usercontext.value.userid > 0) {
+      console.log('Setting user as logged in with userid:', usercontext.value.userid);
+      dispatch(iscustomeractions.setLoginStatus(true));
+      // Also set the customer type based on whether they have an organization
+      if (usercontext.value.organisationid > 0) {
+        console.log('Setting user as organization (isCustomer = false)');
+        dispatch(iscustomeractions.setIsCustomer(false)); // Organization
+      } else {
+        console.log('Setting user as customer (isCustomer = true)');
+        dispatch(iscustomeractions.setIsCustomer(true)); // Customer
+      }
+    } else {
+      console.log('Setting user as logged out');
+      dispatch(iscustomeractions.setLoginStatus(false));
+      dispatch(iscustomeractions.setIsCustomer(false));
+    }
+  }, [usercontext, dispatch]);
+
+  // Force refresh navigation when login status changes
+  useEffect(() => {
+    console.log('Login status changed:', { isLoggedIn, isCustomer });
+  }, [isLoggedIn, isCustomer]);
+
   // Safety check for usercontext
   if (!usercontext || !usercontext.value) {
     return (
-      // <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView style={[$.flex_1, {backgroundColor: '#F5F7FA'}]}>
-          <AppView style={[$.mx_normal, $.border_rounded2, $.m_small, $.p_big]}>
-            <AppView style={[ $.align_items_center]}>
-              <AppView
-                style={[
-                  $.align_items_center
-                ]}>
-                <Image
-                  source={require('../../assert/A1.png')}
-                  style={{
-                    width: screenWidth * 0.4,
-                    height: screenWidth * 0.4,
-                    marginBottom: 24,
-                  }}
-                  resizeMode="contain"
-                />
-                <AppText style={[$.fw_bold, $.fs_enormous, $.text_primary5]}>
-                  Appointza
-                </AppText>
-                <AppText
-                  style={{
-                    fontSize: 16,
-                    color: '#666666',
-                    textAlign: 'center',
-                    marginTop: 8,
-                    lineHeight: 24,
-                  }}>
-                  Book. Manage. Meet.
-                </AppText>
-                <AppText
-                  style={{
-                    fontSize: 16,
-                    color: '#666666',
-                    textAlign: 'center',
-                    lineHeight: 24,
-                  }}>
-                  All in One Place
-                </AppText>
-              </AppView>
+      <ScrollView style={[$.flex_1, {backgroundColor: '#F5F7FA'}]}>
+        <AppView style={[$.mx_normal, $.border_rounded2, $.m_small, $.p_big]}>
+          <AppView style={[ $.align_items_center]}>
+            <AppView
+              style={[
+                $.align_items_center
+              ]}>
+              <Image
+                source={require('../../assert/A1.png')}
+                style={{
+                  width: screenWidth * 0.4,
+                  height: screenWidth * 0.4,
+                  marginBottom: 24,
+                }}
+                resizeMode="contain"
+              />
+              <AppText style={[$.fw_bold, $.fs_enormous, $.text_primary5]}>
+                Appointza
+              </AppText>
+              <AppText
+                style={{
+                  fontSize: 16,
+                  color: '#666666',
+                  textAlign: 'center',
+                  marginTop: 8,
+                  lineHeight: 24,
+                }}>
+                Book. Manage. Meet.
+              </AppText>
+              <AppText
+                style={{
+                  fontSize: 16,
+                  color: '#666666',
+                  textAlign: 'center',
+                  lineHeight: 24,
+                }}>
+                All in One Place
+              </AppText>
             </AppView>
           </AppView>
-        </ScrollView>
-      // </SafeAreaView>
+        </AppView>
+      </ScrollView>
     );
   }
 
@@ -104,11 +128,21 @@ export function AccountScreen() {
   const logout = () => {
     dispatch(usercontextactions.clear());
     dispatch(usercontextactions.set(new UsersContext()));
-    dispatch(iscustomeractions.setIsCustomer(false));
+    dispatch(iscustomeractions.logout()); // Use the new logout action
   };
 
-  const isLoggedIn = usercontext && usercontext.value && usercontext.value.userid > 0;
+  const isUserLoggedIn = usercontext && usercontext.value && usercontext.value.userid > 0;
   const hasBusiness = usercontext && usercontext.value && usercontext.value.organisationid > 0;
+
+  // Debug logging
+  console.log('Account Screen Debug:', {
+    isLoggedIn,
+    isCustomer,
+    isUserLoggedIn,
+    hasBusiness,
+    userid: usercontext?.value?.userid,
+    organisationid: usercontext?.value?.organisationid
+  });
 
   type MenuItem = {
     icon: CustomIcons;
@@ -119,15 +153,16 @@ export function AccountScreen() {
   };
 
   const menuItems: MenuItem[] = [
-    // Business items
-    ...(!isCustomer && usercontext?.value?.userid > 0
+    // Business items - Only show when logged in as organization
+    ...(isLoggedIn && !isCustomer && hasBusiness
       ? [
-          {
-            icon: CustomIcons.Shop,
-            label: 'Services',
-            onPress: () => navigation.navigate('ServiceAvailable'),
-            showChevron: true,
-          },
+          // Remove Services menu item - not needed for organization users
+          // {
+          //   icon: CustomIcons.Shop,
+          //   label: 'Services',
+          //   onPress: () => navigation.navigate('ServiceAvailable'),
+          //   showChevron: true,
+          // },
           {
             icon: CustomIcons.Supplier,
             label: 'Location',
@@ -150,7 +185,7 @@ export function AccountScreen() {
       : []),
 
     // User items
-    ...(isLoggedIn
+    ...(isUserLoggedIn
       ? [
           {
             icon: CustomIcons.Account,
@@ -229,10 +264,10 @@ export function AccountScreen() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isLoggedIn && usercontext?.value?.userid) {
+    if (isUserLoggedIn && usercontext?.value?.userid) {
       getstafflocation();
     }
-  }, [isLoggedIn, usercontext]);
+  }, [isUserLoggedIn, usercontext]);
 
 
 
@@ -262,7 +297,7 @@ export function AccountScreen() {
   // Fetch organisation locations for business users
   useEffect(() => {
     const orgId = usercontext?.value?.organisationid || 0;
-    if (orgId > 0) {
+    if (orgId > 0 && isLoggedIn && !isCustomer) {
       // If we already have a stored selection in redux, preload it
       if (usercontext?.value?.organisationlocationid) {
         setSelectorganisationlocationid(usercontext.value.organisationlocationid);
@@ -274,7 +309,7 @@ export function AccountScreen() {
       setSelectorganisationlocationid(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usercontext?.value?.organisationid]);
+  }, [usercontext?.value?.organisationid, isLoggedIn, isCustomer]);
 
   const handleLocationSelect = (loc: OrganisationLocation) => {
     setSelectorganisationlocationid(loc.id);
@@ -390,11 +425,11 @@ export function AccountScreen() {
             </AppView>
 
             {/* Only show toggle if user has a business */}
-            {hasBusiness && (
+            {isLoggedIn && !isCustomer && usercontext?.value?.userid > 0 &&  (
               <AppView style={[$.align_items_center]}>
                 <TouchableOpacity onPress={toggleCustomerBusiness}>
                   <AppText style={[$.text_primary5, $.fs_small, $.fw_bold]}>
-                    Login as {isCustomer ? 'Customer' : 'Business'}
+                    Login as {!isCustomer ? 'Business' : 'Customer'}
                   </AppText>
                 </TouchableOpacity>
               </AppView>
@@ -444,6 +479,32 @@ export function AccountScreen() {
         )}
       </AppView>
 
+        {/* Business Location Selector - Centralized location selection for all business screens */}
+        {isLoggedIn && !isCustomer && usercontext?.value?.userid > 0 && usercontext?.value?.organisationid > 0 && organisationlocation.length > 0 && (
+          <AppView style={[$.mx_normal, $.border_rounded2, $.m_small, $.p_big, {backgroundColor: '#FFFFFF'}]}>
+            <AppText style={[$.fs_compact, $.fw_semibold, $.text_primary5, $.mb_small]}>
+              Business Location
+            </AppText>
+            {organisationlocation.length > 1 ? (
+              <FormSelect
+                label="Select Business Location"
+                options={organisationlocation.map(loc => ({ id: loc.id, name: loc.city }))}
+                selectedId={Selectorganisationlocationid}
+                onSelect={(item) => {
+                  const loc = organisationlocation.find(l => l.id === item.id);
+                  if (loc) handleLocationSelect(loc);
+                }}
+              />
+            ) : (
+              <AppView style={[$.p_medium, $.bg_tint_10, $.border_rounded]}>
+                <AppText style={[$.fs_small, $.fw_bold, $.text_primary5]}>
+                  {organisationlocation[0]?.city || ''}
+                </AppText>
+              </AppView>
+            )}
+          </AppView>
+        )}
+
       {/* Menu Section */}
       <AppView
         style={[
@@ -454,26 +515,6 @@ export function AccountScreen() {
           {backgroundColor: '#FFFFFF'},
         ]}>
         {/* Business location selector */}
-        {usercontext?.value?.organisationid > 0 && organisationlocation.length > 0 && (
-          organisationlocation.length > 1 ? (
-            <FormSelect
-              label="Select Business Location"
-              options={organisationlocation.map(loc => ({ id: loc.id, name: loc.city }))}
-              selectedId={Selectorganisationlocationid}
-              onSelect={(item) => {
-                const loc = organisationlocation.find(l => l.id === item.id);
-                if (loc) handleLocationSelect(loc);
-              }}
-            />
-          ) : (
-            <AppView style={[$.p_medium]}>
-              <AppText style={[$.fs_compact, $.text_primary5]}>Business Location</AppText>
-              <AppText style={[$.fs_small, $.fw_bold, $.text_primary5]}>
-                {organisationlocation[0]?.city || ''}
-              </AppText>
-            </AppView>
-          )
-        )}
         {menuItems.map(renderMenuItem)}
       </AppView>
 

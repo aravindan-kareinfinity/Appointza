@@ -5,7 +5,6 @@ import {AppView} from './components/appview.component';
 import {AccountScreen} from './screens/account/account.screen';
 import {TouchableOpacity} from 'react-native';
 import {ChatScreen} from './screens/chat/chat.screen';
-import {GroupScreen} from './screens/group/group.screen';
 import {ServiceAvailableScreen} from './screens/servicesavailable/service.screen';
 import {ServiceScreen} from './screens/events/servicelist.screen';
 import {BussinessDashboardScreen} from './screens/bussinessdashboard/bussinessdashboard.screen';
@@ -35,8 +34,18 @@ const colors = DefaultColor.instance;
 
 function HomeTabNavigation() {
   const isCustomer = useSelector(selectiscustomer).isCustomer;
+  const isLoggedIn = useSelector(selectiscustomer).isLoggedIn;
+  
+  // Debug logging
+  console.log('HomeTab Navigation Debug:', {
+    isCustomer,
+    isLoggedIn,
+    initialRoute: isLoggedIn ? (isCustomer ? "UserDashboard" : "BussinessDashboard") : "Service"
+  });
+  
   return (
     <HomeTab.Navigator
+      key={`${isLoggedIn}-${isCustomer}`} // Force re-render when login status changes
       tabBar={({state, descriptors, navigation}) => {
         return (
           <AppView style={[$.flex_row, {height: 50}]}>
@@ -81,74 +90,73 @@ function HomeTabNavigation() {
           </AppView>
         );
       }}
-      initialRouteName= {isCustomer ? "Service" :"BussinessAppoinment"}
+      initialRouteName={isLoggedIn ? (isCustomer ? "UserDashboard" : "BussinessDashboard") : "Service"}
       screenOptions={{
         headerShown: false,
       }}>
-      {/* <HomeTab.Screen
-        name="Group"
-        component={GroupScreen}
-        options={{
-          tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={CustomIcons.Account} />
-          ),
-        }}
-      /> */}
- {isCustomer && 
-      <HomeTab.Screen
-        name="UserDashboard"
-        component={UserDashboardScreen}
-        options={{
-          tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={LucideIcons.BarChart2} />
-          ),
-        }}
-      />}
- {!isCustomer && 
-      <HomeTab.Screen
-        name="BussinessDashboard"
-        component={BussinessDashboardScreen}
-        options={{
-          tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={LucideIcons.BarChart2} />
-          ),
-        }}
-      />}
-
-{isCustomer &&  <HomeTab.Screen
-        name="Service"
-        component={ServiceScreen}
-        options={{
-          tabBarIcon: ({focused}) => (
-            <TabBarIcon focused={focused} icon={LucideIcons.Settings} />
-          ),
-        }}
-      />
-}
-
-      {isCustomer && (
+      
+      {/* Service Screen - Show for everyone EXCEPT when logged in as business */}
+      {!(isLoggedIn && !isCustomer) && (
         <HomeTab.Screen
-          name="UserAppoinment"
-          component={UserAppoinmentScreen}
+          name="Service"
+          component={ServiceScreen}
           options={{
             tabBarIcon: ({focused}) => (
-              <TabBarIcon focused={focused} icon={LucideIcons.Calendar} />
+              <TabBarIcon focused={focused} icon={LucideIcons.Settings} />
             ),
           }}
         />
       )}
 
-      {!isCustomer && (
-        <HomeTab.Screen
-          name="BussinessAppoinment"
-          component={BussinessAppoinmentScreen}
-          options={{
-            tabBarIcon: ({focused}) => (
-              <TabBarIcon focused={focused} icon={LucideIcons.Calendar} />
-            ),
-          }}
-        />
+      {/* Customer Screens - Only when logged in as customer */}
+      {isLoggedIn && isCustomer && (
+        <>
+          <HomeTab.Screen
+            name="UserDashboard"
+            component={UserDashboardScreen}
+            options={{
+              tabBarIcon: ({focused}) => (
+                <TabBarIcon focused={focused} icon={LucideIcons.BarChart2} />
+              ),
+            }}
+          />
+          <HomeTab.Screen
+            name="UserAppoinment"
+            component={UserAppoinmentScreen}
+            options={{
+              tabBarIcon: ({focused}) => (
+                <TabBarIcon focused={focused} icon={LucideIcons.Calendar} />
+              ),
+            }}
+          />
+        </>
       )}
+
+      {/* Business Screens - Only when logged in as organization */}
+      {isLoggedIn && !isCustomer && (
+        <>
+          <HomeTab.Screen
+            name="BussinessDashboard"
+            component={BussinessDashboardScreen}
+            options={{
+              tabBarIcon: ({focused}) => (
+                <TabBarIcon focused={focused} icon={LucideIcons.BarChart2} />
+              ),
+            }}
+          />
+          <HomeTab.Screen
+            name="BussinessAppoinment"
+            component={BussinessAppoinmentScreen}
+            options={{
+              tabBarIcon: ({focused}) => (
+                <TabBarIcon focused={focused} icon={LucideIcons.Calendar} />
+              ),
+            }}
+          />
+        </>
+      )}
+
+      {/* Account Screen - Always visible */}
       <HomeTab.Screen
         name="Account"
         component={AccountScreen}

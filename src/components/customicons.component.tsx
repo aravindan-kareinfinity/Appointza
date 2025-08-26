@@ -2877,9 +2877,40 @@ export const CustomIcon = (props: Props) => {
           height={props.size}
           viewBox="0 0 384 512"
           fill="none">
-          <path
+          <Path
             d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"
             fill={props.color}
+          />
+        </Svg>
+      );
+
+    case CustomIcons.Refresh:
+      return (
+        <Svg
+          width={props.size}
+          height={props.size}
+          viewBox="0 0 24 24"
+          fill="none">
+          <Path
+            d="M1 4V10H7"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M23 20V14H17"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20.49 9C19.2214 5.33147 15.6837 2.5 11.5 2.5C6.80546 2.5 2.5 6.80546 2.5 11.5C2.5 16.1945 6.80546 20.5 11.5 20.5C15.6837 20.5 19.2214 17.6685 20.49 14"
+            stroke={props.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
         </Svg>
       );

@@ -41,7 +41,6 @@ import {
   usercontextactions,
 } from '../../redux/usercontext.redux';
 import { AppoinmentService } from '../../services/appoinment.service';
-import { OrganisationLocationService } from '../../services/organisationlocation.service';
 import { StaffService } from '../../services/staff.service';
 import { ReferenceValueService } from '../../services/referencevalue.service';
 import {
@@ -51,10 +50,11 @@ import {
   UpdateStatusReq,
   UpdatePaymentReq,
 } from '../../models/appoinment.model';
-import {
-  OrganisationLocationStaffReq,
-  OrganisationLocationStaffRes,
-} from '../../models/organisationlocation.model';
+// Remove unused imports since we're no longer using location selection
+// import {
+//   OrganisationLocationStaffReq,
+//   OrganisationLocationStaffRes,
+// } from '../../models/organisationlocation.model';
 import { StaffSelectReq, StaffUser } from '../../models/staff.model';
 import { ReferenceTypeSelectReq } from '../../models/referencetype.model';
 import { REFERENCETYPE } from '../../models/users.model';
@@ -64,7 +64,6 @@ import { AppStackParamList } from '../../appstack.navigation';
 import { environment } from '../../utils/environment';
 import { AppTextInput } from '../../components/apptextinput.component';
 import { DatePickerComponent } from '../../components/Datetimepicker.component';
-import { FormSelect } from '../../components/formselect.component';
 import { FormInput } from '../../components/forminput.component';
 
 type BussinessAppoinmentScreenProp = CompositeScreenProps<
@@ -87,9 +86,10 @@ export function BussinessAppoinmentScreen() {
   const [OrganisationApponmentlist, setOrganisationAppoinmentList] = useState<
     BookedAppoinmentRes[]
   >([]);
-  const [locationlist, Setlocationlist] = useState<
-    OrganisationLocationStaffRes[]
-  >([]);
+  // Remove locationlist state since we're using Redux location
+  // const [locationlist, Setlocationlist] = useState<
+  //   OrganisationLocationStaffRes[]
+  // >([]);
 
   const [stafflist, setStafflist] = useState<StaffUser[]>([]);
   const [AppinmentStatuslist, setAppoinmentStatuslist] = useState<
@@ -111,10 +111,6 @@ export function BussinessAppoinmentScreen() {
   const usercontext = useAppSelector(selectusercontext);
   const dispatch = useAppDispatch();
   const appoinmentservices = useMemo(() => new AppoinmentService(), []);
-  const organisationLocationService = useMemo(
-    () => new OrganisationLocationService(),
-    [],
-  );
   const staffservice = useMemo(() => new StaffService(), []);
   const referenceValueService = useMemo(() => new ReferenceValueService(), []);
 
@@ -137,7 +133,8 @@ export function BussinessAppoinmentScreen() {
   const loadInitialData = async () => {
     setIsloading(true);
     try {
-      await getstafflocation();
+      // Remove getstafflocation call since we're using Redux location
+      // await getstafflocation();
       await fetchStatusReferenceTypes();
     } catch (error: any) {
       handleError(error);
@@ -163,38 +160,41 @@ export function BussinessAppoinmentScreen() {
     }
   };
 
-  const getstafflocation = async () => {
-    try {
-      const req = new OrganisationLocationStaffReq();
-      req.userid = usercontext.value.userid;
-      const res = await organisationLocationService.Selectlocation(req);
+  // Remove getstafflocation function since it's no longer needed
+  // const getstafflocation = async () => {
+  //   try {
+  //     const req = new OrganisationLocationStaffReq();
+  //     req.userid = usercontext.value.userid;
+  //     const res = await organisationLocationService.Selectlocation(req);
 
-      if (res && res.length > 0) {
-        Setlocationlist(res);
-        // Prefer stored redux location if available and valid
-        const storedLocId = usercontext.value.organisationlocationid || 0;
-        const preferred =
-          storedLocId > 0
-            ? res.find(r => r.organisationlocationid === storedLocId)
-            : undefined;
-        const chosen = preferred || res[0];
-       
-        // Persist to redux if changed or not set
-        if (!preferred || storedLocId !== chosen.organisationlocationid) {
-          dispatch(
-            usercontextactions.setOrganisationLocation({
-              id: chosen.organisationlocationid,
-              name: chosen.name,
-            }),
-          );
-        }
-      } else {
-        Setlocationlist([]);
-      }
-    } catch (error: any) {
-      handleError(error);
-    }
-  };
+  //     if (res && res.length > 0) {
+  //       // Setlocationlist(res); // This line is removed
+  //       // Remove local location selection - Redux handles this
+  //       // Prefer stored redux location if available and valid
+  //       // const storedLocId = usercontext.value.organisationlocationid || 0;
+  //       // const preferred =
+  //       //   storedLocId > 0
+  //       //     ? res.find(r => r.organisationlocationid === storedLocId)
+  //       //     : undefined;
+  //       // const chosen = preferred || res[0];
+        
+  //       // Persist to redux if changed or not set
+  //       // if (!preferred || storedLocId !== chosen.organisationlocationid) {
+  //       //   dispatch(
+  //       //     usercontextactions.setOrganisationLocation({
+  //       //       id: chosen.organisationlocationid,
+  //       //       name: chosen.name,
+  //       //     }),
+  //       //   );
+  //       // }
+  //     } else {
+  //       // Setlocationlist([]); // This line is removed
+  //     }
+  //   } catch (error: any) {
+  //     handleError(error);
+  //     // }
+  //   };
+  // };
 
   const getorganisationappoinment = async (orgid: number, locid: number) => {
     try {
@@ -261,14 +261,15 @@ export function BussinessAppoinmentScreen() {
     AppAlert({ message });
   };
 
-  const handleLocationChange = (item: OrganisationLocationStaffRes) => {
-    dispatch(
-      usercontextactions.setOrganisationLocation({
-        id: item.organisationlocationid,
-        name: item.name,
-      }),
-    );
-  };
+  // Remove handleLocationChange - no longer needed
+  // const handleLocationChange = (item: OrganisationLocationStaffRes) => {
+  //   dispatch(
+  //     usercontextactions.setOrganisationLocation({
+  //       id: item.organisationlocationid,
+  //       name: item.name,
+  //     }),
+  //   );
+  // };
 
   // No local selection; rely on redux organisationlocationid exclusively
 
@@ -873,8 +874,17 @@ export function BussinessAppoinmentScreen() {
           </View>
         </AppView>
 
-        {/* Location Selector */}
-        {locationlist.length > 1 && (
+        {/* Show current location info - Uses location stored in Redux from account screen */}
+        {usercontext.value.organisationlocationname && (
+          <AppView style={[$.mx_normal, $.mb_tiny, $.p_small, {backgroundColor: '#FFFFFF'}]}>
+            <AppText style={[$.fs_compact, $.fw_semibold, $.text_primary5]}>
+              Location: {usercontext.value.organisationlocationname}
+            </AppText>
+          </AppView>
+        )}
+
+        {/* Location Selector - Remove this section as it's now handled in account screen */}
+        {/* {locationlist.length > 1 && (
           <AppView style={[$.mb_tiny, { paddingLeft: 10, paddingRight: 10 }]}>
             <FormSelect
               label="Select Location"
@@ -893,7 +903,7 @@ export function BussinessAppoinmentScreen() {
               }}
             />
           </AppView>
-        )}
+        )} */}
 
         {/* Loading Indicator / List */}
         {isloading && !isRefreshing ? (

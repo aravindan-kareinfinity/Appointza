@@ -1,4 +1,4 @@
-import {SafeAreaView, StatusBar} from 'react-native';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {AppStackNavigation} from './appstack.navigation';
 import {Provider} from 'react-redux';
 import {persistor, store} from './redux/store.redux';
@@ -8,13 +8,17 @@ import { ThemeProvider } from './components/theme-provider';
 
 function App() {
   return (
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <ThemeProvider>
-          <AppStackNavigation />
-        </ThemeProvider>
-      </PersistGate>
-    </Provider>
+    <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1 }}>
+        <Provider store={store}>
+          <PersistGate loading={null} persistor={persistor}>
+            <ThemeProvider>
+              <AppStackNavigation />
+            </ThemeProvider>
+          </PersistGate>
+        </Provider>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

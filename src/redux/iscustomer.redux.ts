@@ -2,7 +2,8 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from './store.redux';
 
 const initialState = {
-  isCustomer: false, // or false, depending on your default
+  isCustomer: false, // Default to false (organization) when user is logged in
+  isLoggedIn: false, // Track if user is logged in
 };
 
 const isCustomerSlice = createSlice({
@@ -14,6 +15,13 @@ const isCustomerSlice = createSlice({
     },
     toggleIsCustomer: (state) => {
       state.isCustomer = !state.isCustomer;
+    },
+    setLoginStatus: (state, action: PayloadAction<boolean>) => {
+      state.isLoggedIn = action.payload;
+    },
+    logout: (state) => {
+      state.isLoggedIn = false;
+      state.isCustomer = false;
     },
   },
 });

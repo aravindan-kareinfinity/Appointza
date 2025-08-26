@@ -10,14 +10,14 @@ import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
 import {selectusercontext, usercontextactions} from '../../redux/usercontext.redux';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
 import {
-  OrganisationLocationStaffReq,
-  OrganisationLocationStaffRes,
+  // Remove unused imports since we're no longer using location selection
+  // OrganisationLocationStaffReq,
+  // OrganisationLocationStaffRes,
   OrgLocationReq,
   AppointmentPaymentsummary,
   PaymentSummary,
 } from '../../models/organisationlocation.model';
 import {useFocusEffect} from '@react-navigation/native';
-import {FormSelect} from '../../components/formselect.component';
 import {CustomHeader} from '../../components/customheader.component';
 import {Colors} from '../../constants/colors';
 
@@ -34,11 +34,12 @@ export function BussinessDashboardScreen() {
   );
 
   const [isLoading, setIsLoading] = useState(true);
-  const [selectlocation, Setselectlocation] =
-    useState<OrganisationLocationStaffRes | null>(null);
-  const [locationlist, Setlocationlist] = useState<
-    OrganisationLocationStaffRes[]
-  >([]);
+  // Remove local location selection state - use Redux instead
+  // const [selectlocation, Setselectlocation] = useState<OrganisationLocationStaffRes | null>(null);
+  // Remove locationlist state since we're using Redux location
+  // const [locationlist, Setlocationlist] = useState<
+  //   OrganisationLocationStaffRes[]
+  // >([]);
   const [paymentSummary, setPaymentSummary] =
     useState<AppointmentPaymentsummary>(new AppointmentPaymentsummary());
 
@@ -49,15 +50,23 @@ export function BussinessDashboardScreen() {
   );
 
   useEffect(() => {
-    if (selectlocation) {
-      getLocationDetail(selectlocation.organisationlocationid);
+    // Use Redux-stored location instead of local state
+    const currentLocationId = usercontext.value.organisationlocationid;
+    if (currentLocationId > 0) {
+      getLocationDetail(currentLocationId);
     }
-  }, [selectlocation]);
+  }, [usercontext.value.organisationlocationid]);
 
   const loadInitialData = async () => {
     setIsLoading(true);
     try {
-      await getstafflocation();
+      // Remove getstafflocation call since we're using Redux location
+      // await getstafflocation();
+      // Load location details directly if we have a location ID
+      const currentLocationId = usercontext.value.organisationlocationid;
+      if (currentLocationId > 0) {
+        await getLocationDetail(currentLocationId);
+      }
     } catch (error: any) {
       handleError(error);
     } finally {
@@ -65,23 +74,23 @@ export function BussinessDashboardScreen() {
     }
   };
 
-  const getstafflocation = async () => {
-    try {
-      const req = new OrganisationLocationStaffReq();
-      req.userid = usercontext.value.userid;
-      const res = await organisationlocationservice.Selectlocation(req);
+  // Remove getstafflocation function since it's no longer needed
+  // const getstafflocation = async () => {
+  //   try {
+  //     const req = new OrganisationLocationStaffReq();
+  //     req.userid = usercontext.value.userid;
+  //     const res = await organisationlocationservice.Selectlocation(req);
 
-      if (res && res.length > 0) {
-        Setlocationlist(res);
-        Setselectlocation(res[0]);
-      } else {
-        Setlocationlist([]);
-        Setselectlocation(null);
-      }
-    } catch (error: any) {
-      handleError(error);
-    }
-  };
+  //     if (res && res.length > 0) {
+  //       // No need to set local selection - Redux handles this
+  //       // Setselectlocation(res[0]);
+  //     } else {
+  //       // Setselectlocation(null);
+  //     }
+  //   } catch (error: any) {
+  //     handleError(error);
+  //   }
+  // };
 
   const getLocationDetail = async (id: number) => {
     try {
@@ -102,15 +111,16 @@ export function BussinessDashboardScreen() {
     }
   };
 
-  const handleLocationChange = (item: OrganisationLocationStaffRes) => {
-    Setselectlocation(item);
-    dispatch(
-      usercontextactions.setOrganisationLocation({
-        id: item.organisationlocationid,
-        name: item.name,
-      }),
-    );
-  };
+  // Remove handleLocationChange - no longer needed
+  // const handleLocationChange = (item: OrganisationLocationStaffRes) => {
+  //   Setselectlocation(item);
+  //   dispatch(
+  //     usercontextactions.setOrganisationLocation({
+  //       id: item.organisationlocationid,
+  //       name: item.name,
+  //     }),
+  //   );
+  // };
 
   const handleError = (error: any) => {
     const message = error?.response?.data?.message || 'An error occurred';
@@ -193,8 +203,8 @@ export function BussinessDashboardScreen() {
         rightComponent={
           <TouchableOpacity
             onPress={() =>
-              selectlocation &&
-              getLocationDetail(selectlocation.organisationlocationid)
+              usercontext.value.organisationlocationid > 0 &&
+              getLocationDetail(usercontext.value.organisationlocationid)
             }
             style={styles.refreshButton}>
             <CustomIcon name={CustomIcons.Refresh} size={20} color={$.tint_3} />
@@ -202,7 +212,17 @@ export function BussinessDashboardScreen() {
         }
       />
 
-      {locationlist.length > 1 && (
+      {/* Show current location info - Uses location stored in Redux from account screen */}
+      {usercontext.value.organisationlocationname && (
+        <View style={styles.currentLocationContainer}>
+          <AppText style={styles.currentLocationText}>
+            Location: {usercontext.value.organisationlocationname}
+          </AppText>
+        </View>
+      )}
+
+      {/* Remove the location selector - now handled in account screen */}
+      {/* {locationlist.length > 1 && (
         <View style={styles.locationSelectorContainer}>
           <FormSelect
             label="Select Location"
@@ -221,7 +241,7 @@ export function BussinessDashboardScreen() {
             }}
           />
         </View>
-      )}
+      )} */}
 
       <ScrollView
         style={styles.container}
@@ -327,13 +347,14 @@ export function BussinessDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  locationSelectorContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: Colors.light.background,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
+  // Remove locationSelectorContainer style since it's no longer used
+  // locationSelectorContainer: {
+  //   paddingHorizontal: 16,
+  //   paddingVertical: 12,
+  //   backgroundColor: Colors.light.background,
+  //   borderBottomWidth: 1,
+  //   borderBottomColor: '#E0E0E0',
+  // },
   refreshButton: {
     width: 40,
     height: 40,
@@ -495,6 +516,17 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: 12,
+    fontSize: 14,
+    color: '#666',
+  },
+  currentLocationContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.light.background,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  currentLocationText: {
     fontSize: 14,
     color: '#666',
   },
