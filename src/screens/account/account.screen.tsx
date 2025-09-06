@@ -7,7 +7,7 @@ import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
 import {$} from '../../styles';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {Dimensions, FlatList, Image, ScrollView, TouchableOpacity, SafeAreaView, Alert} from 'react-native';
+import {Dimensions, FlatList, Image, ScrollView, TouchableOpacity, SafeAreaView, Alert, Clipboard, Share} from 'react-native';
 import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
 import {
   selectusercontext,
@@ -32,6 +32,11 @@ import {OrganisationLocationService} from '../../services/organisationlocation.s
 import {AppAlert} from '../../components/appalert.component';
 import {UsersContext} from '../../models/users.model';
 import { FormSelect } from '../../components/formselect.component';
+import { EncryptionUtil } from '../../utils/encryption.util';
+import { environment } from '../../utils/environment';
+import { FilesService } from '../../services/files.service';
+import { Users, UsersSelectReq } from '../../models/users.model';
+import { UsersService } from '../../services/users.service';
 
 type AccountScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Account'>,
@@ -134,16 +139,6 @@ export function AccountScreen() {
   const isUserLoggedIn = usercontext && usercontext.value && usercontext.value.userid > 0;
   const hasBusiness = usercontext && usercontext.value && usercontext.value.organisationid > 0;
 
-  // Debug logging
-  console.log('Account Screen Debug:', {
-    isLoggedIn,
-    isCustomer,
-    isUserLoggedIn,
-    hasBusiness,
-    userid: usercontext?.value?.userid,
-    organisationid: usercontext?.value?.organisationid
-  });
-
   type MenuItem = {
     icon: CustomIcons;
     label: string;
@@ -157,12 +152,12 @@ export function AccountScreen() {
     ...(isLoggedIn && !isCustomer && hasBusiness
       ? [
           // Remove Services menu item - not needed for organization users
-          // {
-          //   icon: CustomIcons.Shop,
-          //   label: 'Services',
-          //   onPress: () => navigation.navigate('ServiceAvailable'),
-          //   showChevron: true,
-          // },
+          {
+            icon: CustomIcons.Shop,
+            label: 'Services',
+            onPress: () => navigation.navigate('ServiceAvailable'),
+            showChevron: true,
+          },
           {
             icon: CustomIcons.Supplier,
             label: 'Location',
@@ -254,8 +249,13 @@ export function AccountScreen() {
     [],
   );
 
+  const filesService = useMemo(() => new FilesService(), []);
+  const usersService = useMemo(() => new UsersService(), []);
+
   const [selectlocation, Setselectlocation] =
     useState<OrganisationLocationStaffRes | null>(null);
+  const [userProfile, setUserProfile] = useState<Users | null>(null);
+  const [encryptedUrl, setEncryptedUrl] = useState<string>('');
 
   // Business locations state
   const [organisationlocation, setOrganisationlocation] = useState<OrganisationLocation[]>([]);
@@ -263,11 +263,33 @@ export function AccountScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Debug logging
+  console.log('Account Screen Debug:', {
+    isLoggedIn,
+    isCustomer,
+    isUserLoggedIn,
+    hasBusiness,
+    userid: usercontext?.value?.userid,
+    organisationid: usercontext?.value?.organisationid,
+    Selectorganisationlocationid,
+    organisationlocationLength: organisationlocation.length
+  });
+
   useEffect(() => {
     if (isUserLoggedIn && usercontext?.value?.userid) {
       getstafflocation();
+      getUserProfile();
     }
   }, [isUserLoggedIn, usercontext]);
+
+  // Generate encrypted URL when location is selected
+  useEffect(() => {
+    if (Selectorganisationlocationid > 0) {
+      generateEncryptedUrl(Selectorganisationlocationid);
+    } else {
+      setEncryptedUrl('');
+    }
+  }, [Selectorganisationlocationid]);
 
 
 
@@ -284,6 +306,21 @@ export function AccountScreen() {
       }
     } catch (error: any) {
       handleError(error);
+    }
+  };
+
+  const getUserProfile = async () => {
+    try {
+      if (usercontext?.value?.userid > 0) {
+        const selectreq = new UsersSelectReq();
+        selectreq.id = usercontext.value.userid;
+        const resp = await usersService.select(selectreq);
+        if (resp && resp.length > 0) {
+          setUserProfile(resp[0]);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error fetching user profile:', error);
     }
   };
 
@@ -312,8 +349,55 @@ export function AccountScreen() {
   }, [usercontext?.value?.organisationid, isLoggedIn, isCustomer]);
 
   const handleLocationSelect = (loc: OrganisationLocation) => {
+    console.log('Location selected:', loc);
     setSelectorganisationlocationid(loc.id);
     dispatch(usercontextactions.setOrganisationLocation({ id: loc.id, name: loc.city }));
+    generateEncryptedUrl(loc.id);
+  };
+
+  const generateEncryptedUrl = (locationId: number) => {
+    if (locationId > 0) {
+      try {
+        const encryptedId = EncryptionUtil.encodeLocationId(locationId);
+        const url = `${environment.templateBaseUrl}/${encryptedId}`;
+        setEncryptedUrl(url);
+      } catch (error) {
+        console.error('Error generating encrypted URL:', error);
+        setEncryptedUrl('');
+      }
+    } else {
+      setEncryptedUrl('');
+    }
+  };
+
+  const copyUrlToClipboard = async () => {
+    if (encryptedUrl) {
+      try {
+        await Clipboard.setString(encryptedUrl);
+        AppAlert({ message: 'URL copied to clipboard!' });
+      } catch (error) {
+        console.error('Error copying URL:', error);
+        AppAlert({ message: 'Failed to copy URL' });
+      }
+    }
+  };
+
+  const shareUrl = async () => {
+    if (encryptedUrl) {
+      try {
+        const selectedLocation = organisationlocation.find(loc => loc.id === Selectorganisationlocationid);
+        const locationName = selectedLocation?.city || 'this location';
+        
+        await Share.share({
+          message: `Book your appointment at ${locationName}!\n\nClick here to schedule: ${encryptedUrl}`,
+          url: encryptedUrl,
+          title: 'Book Appointment - Appointza'
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        AppAlert({ message: 'Unable to share URL' });
+      }
+    }
   };
 
   const getorganisation = async () => {
@@ -378,9 +462,11 @@ export function AccountScreen() {
                     borderWidth: 2,
                     borderColor: $.tint_10,
                   }}
-                  source={{
-                    uri: 'https://s3-alpha-sig.figma.com/img/6a98/e81b/28b333039b432776eb354412dfc36db6?Expires=1736121600&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=RM4xqC9wBX~AFmwoHy9bjm4RGSkMyAwhum3dWECBjW83kdSUAcFWix1EBG8iPS4CByrsDBs9z3Z0mo8stq-4d0SR4ifUZxsk4jL2dbTlwzzzD2ZVe1XEN1p05yGxz~LJj6ogrwtH36B1DN6ZsSCxCxxPmaQ-DhKfDnceXQhweJEM3s8vt6hzpOC9dXx5cwp5DJmAdEK~tTVXxUQuYbqZX9SnQoqx27RVftTc9c~WtCA4rxHoRPtAZuINO2-ptdRUhGLpt1fjc~vWmoWrUFiUQx2SEPm4y2WLM1lCQYfTguig6nomt0DwcgIG6q8gVAdEnboMTbyh5tlDRXMv3s46VA__',
-                  }}
+                  source={
+                    userProfile?.profileimage && userProfile.profileimage > 0
+                      ? { uri: filesService.get(userProfile.profileimage) }
+                      : require('../../assert/A1.png')
+                  }
                 />
                 <TouchableOpacity
                   onPress={() => navigation.navigate('Profile')}
@@ -479,26 +565,82 @@ export function AccountScreen() {
         )}
       </AppView>
 
-        {/* Business Location Selector - Centralized location selection for all business screens */}
-        {isLoggedIn && !isCustomer && usercontext?.value?.userid > 0 && usercontext?.value?.organisationid > 0 && organisationlocation.length > 0 && (
+        {/* Business Location & Booking Link - Combined Container */}
+        {isLoggedIn && !isCustomer && usercontext?.value?.userid > 0 && usercontext?.value?.organisationid > 0 && (
           <AppView style={[$.mx_normal, $.border_rounded2, $.m_small, $.p_big, {backgroundColor: '#FFFFFF'}]}>
-            <AppText style={[$.fs_compact, $.fw_semibold, $.text_primary5, $.mb_small]}>
-              Business Location
+            {/* Business Location Section */}
+            {organisationlocation.length > 0 && (
+              <>
+                <AppText style={[$.fs_compact, $.fw_semibold, $.text_primary5, $.mb_small]}>
+                  Business Location
+                </AppText>
+                {organisationlocation.length > 1 ? (
+                  <FormSelect
+                    label="Select Business Location"
+                    options={organisationlocation.map(loc => ({ id: loc.id, name: loc.city }))}
+                    selectedId={Selectorganisationlocationid}
+                    onSelect={(item) => {
+                      const loc = organisationlocation.find(l => l.id === item.id);
+                      if (loc) handleLocationSelect(loc);
+                    }}
+                  />
+                ) : (
+                  <AppView style={[$.p_medium, $.bg_tint_10, $.border_rounded, $.mb_medium]}>
+                    <AppText style={[$.fs_small, $.fw_bold, $.text_primary5]}>
+                      {organisationlocation[0]?.city || ''}
+                    </AppText>
+                  </AppView>
+                )}
+              </>
+            )}
+
+            {/* Business Booking Link Section */}
+            <AppText style={[$.fs_compact, $.fw_semibold, $.text_primary5, $.mb_small, $.mt_medium]}>
+              Your Business Booking Link {Selectorganisationlocationid}
             </AppText>
-            {organisationlocation.length > 1 ? (
-              <FormSelect
-                label="Select Business Location"
-                options={organisationlocation.map(loc => ({ id: loc.id, name: loc.city }))}
-                selectedId={Selectorganisationlocationid}
-                onSelect={(item) => {
-                  const loc = organisationlocation.find(l => l.id === item.id);
-                  if (loc) handleLocationSelect(loc);
-                }}
-              />
+            {Selectorganisationlocationid > 0 ? (
+              <>
+                <AppView style={[$.p_medium, $.border_rounded, $.mb_small]}>
+                  <AppText style={[$.fs_small, $.mb_small]}>
+                    {encryptedUrl || 'Generating URL...'}
+                  </AppText>
+                </AppView>
+                <AppView style={[$.flex_row, $.justify_content_center, $.align_items_center, $.mb_small]}>
+                  <TouchableOpacity 
+                    onPress={copyUrlToClipboard}
+                    style={[$.p_small, $.bg_tint_5, $.border_rounded, $.mr_small, $.flex_row, $.align_items_center]}
+                  >
+                    <CustomIcon
+                      color={$.tint_primary_5}
+                      name={CustomIcons.Edit}
+                      size={$.s_small}
+                    />
+                    <AppText style={[$.fs_small, $.text_primary5, $.fw_bold, $.ml_tiny]}>
+                      Copy
+                    </AppText>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={shareUrl}
+                    style={[$.p_small, $.bg_tint_5, $.border_rounded, $.flex_row, $.align_items_center]}
+                  >
+                    <CustomIcon
+                      color={$.tint_primary_5}
+                      name={CustomIcons.Share}
+                      size={$.s_small}
+                    />
+                    <AppText style={[$.fs_small, $.text_primary5, $.fw_bold, $.ml_tiny]}>
+                      Share
+                    </AppText>
+                  </TouchableOpacity>
+                </AppView>
+                <AppText style={[$.fs_extrasmall, $.text_tint_4, $.text_center]}>
+                  Share this link with customers to let them book appointments at your {organisationlocation.find(loc => loc.id === Selectorganisationlocationid)?.city || 'location'}
+                </AppText>
+              </>
             ) : (
               <AppView style={[$.p_medium, $.bg_tint_10, $.border_rounded]}>
-                <AppText style={[$.fs_small, $.fw_bold, $.text_primary5]}>
-                  {organisationlocation[0]?.city || ''}
+                <AppText style={[$.fs_small, $.text_tint_4, $.text_center]}>
+                  Please select a business location to generate your booking link
                 </AppText>
               </AppView>
             )}

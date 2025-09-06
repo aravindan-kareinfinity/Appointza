@@ -55,6 +55,8 @@ import {BottomSheetComponent} from '../../components/bottomsheet.component';
 import {AppoinmentService} from '../../services/appoinment.service';
 import {Button} from '../../components/button.component';
 import {FormInput} from '../../components/forminput.component';
+import {PaymentModal} from '../../components/paymentmodal.component';
+import { PushNotificationService } from '../../services/pushnotification.service';
 
 type AppoinmentFixingScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'AppoinmentFixing'>,
@@ -96,6 +98,9 @@ export function AppoinmentBookingScreen() {
   const [showCancelSheet, setShowCancelSheet] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [cancelReason, setCancelReason] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const pushNotificationService = useMemo(() => new PushNotificationService(), []);
 
   const handleServiceSelection = (req: OrganisationServices) => {
     const item = new SelectedSerivice();
@@ -156,6 +161,17 @@ export function AppoinmentBookingScreen() {
   useEffect(() => {
     gettimingdata()
     fetchOrganisationDetails();
+    
+    // Initialize push notifications
+    const initializePushNotifications = async () => {
+      try {
+        await pushNotificationService.initialize();
+      } catch (error) {
+        console.error('Error initializing push notifications:', error);
+      }
+    };
+    
+    initializePushNotifications();
   }, []);
 
   const fetchOrganisationDetails = async () => {
@@ -331,6 +347,30 @@ const [openbefore, setopenbefore] = useState(0);
         return;
       }
 
+      if (seletedTiming.totime == seletedTiming.fromtime) {
+        Alert.alert(environment.baseurl, 'Please select at least one service');
+        return;
+      }
+
+      // Calculate total amount
+      const totalAmount = selectedService.reduce((sum, service) => sum + service.serviceprice, 0);
+      
+      // Show payment modal
+      setShowPaymentModal(true);
+    } catch (error) {
+      console.error('Error preparing appointment:', error);
+      Alert.alert(
+        'Error',
+        'There was an error preparing your appointment. Please try again.',
+      );
+    }
+  };
+
+  const handlePaymentSuccess = async (paymentId: string) => {
+    try {
+      setIsProcessingPayment(true);
+      
+      // Book the appointment
       var a = new AppoinmentFinal();
       a.appoinmentdate = sendToApi(seleteddate);
       a.userid = usercontext.value.userid;
@@ -338,18 +378,16 @@ const [openbefore, setopenbefore] = useState(0);
       a.organizationid = route.params.organisationid;
       a.totime = seletedTiming.totime;
       a.fromtime = seletedTiming.fromtime;
-
-      if (seletedTiming.totime == seletedTiming.fromtime) {
-        Alert.alert(environment.baseurl, 'Please select at least one service');
-        return;
-      }
-
       a.attributes.servicelist = selectedService;
+
       var res = await organisationservicetiming.Bookappoinment(a);
 
+      // Close payment modal
+      setShowPaymentModal(false);
+
       Alert.alert(
-        'Appointment Booked',
-        'Your appointment has been successfully booked!',
+        'Appointment Booked Successfully!',
+        `Your appointment has been booked and payment of ₹${selectedService.reduce((sum, service) => sum + service.serviceprice, 0)} has been processed.`,
         [
           {
             text: 'OK',
@@ -364,12 +402,30 @@ const [openbefore, setopenbefore] = useState(0);
         ],
       );
     } catch (error) {
-      console.error('Error saving appointment:', error);
+      console.error('Error booking appointment after payment:', error);
       Alert.alert(
         'Error',
-        'There was an error booking your appointment. Please try again.',
+        'Payment was successful but there was an error booking your appointment. Please contact support.',
       );
+    } finally {
+      setIsProcessingPayment(false);
     }
+  };
+
+  const handlePaymentFailure = (error: string) => {
+    setShowPaymentModal(false);
+    Alert.alert(
+      'Payment Failed',
+      error || 'There was an error processing your payment. Please try again.',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            // User can try again
+          },
+        },
+      ],
+    );
   };
 
   const isTimeSlotSelected = (timeSlot: AppoinmentFinal) => {
@@ -840,7 +896,7 @@ const [openbefore, setopenbefore] = useState(0);
 
         {/* Book Appointment Button */}
         <Button
-          title="Book Appointment"
+          title="Proceed to Payment"
           onPress={save}
           disabled={selectedService.length === 0 || !seletedTiming.fromtime}
           style={styles.bookButton}
@@ -861,6 +917,27 @@ const [openbefore, setopenbefore] = useState(0);
 
       {showPaymentSheet && <PaymentBottomSheet />}
       {showCancelSheet && <CancelAppointmentBottomSheet />}
+      
+      {/* Payment Modal */}
+      <PaymentModal
+        visible={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onPaymentSuccess={handlePaymentSuccess}
+        onPaymentFailure={handlePaymentFailure}
+        amount={selectedService.reduce((sum, service) => sum + service.serviceprice, 0)}
+        currency="₹"
+        appointmentData={{
+          organisationId: route.params.organisationid,
+          organisationLocationId: route.params.organisationlocationid,
+          staffId: 0, // You might want to get this from the selected service or route params
+          appointmentId: 0, // This will be set after booking
+          customerId: usercontext.value.userid,
+          customerName: usercontext.value.username || 'Customer',
+          customerEmail: usercontext.value.useremail || '',
+          customerContact: usercontext.value.usermobile || '',
+        }}
+        isLoading={isProcessingPayment}
+      />
     </AppView>
        </SafeAreaView>
   );

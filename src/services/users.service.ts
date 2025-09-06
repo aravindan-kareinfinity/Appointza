@@ -1,6 +1,7 @@
 import {navigate} from '../appstack.navigation';
 import {ActionReq} from '../models/actionreq.model';
 import {ActionRes} from '../models/actionres.model';
+import PushNotificationService from '../utils/pushnotification';
 import {
   Organisationdeletereq,
   Users,
@@ -29,9 +30,12 @@ import axios from 'axios';
 export class UsersService {
   baseurl: string;
   http: AxiosHelperUtils;
+  private pushNotificationService: PushNotificationService;
+  
   constructor() {
     this.baseurl = environment.baseurl + '/api/Users';
     this.http = new AxiosHelperUtils();
+    this.pushNotificationService = PushNotificationService.getInstance();
   }
   async select(req: UsersSelectReq) {
     let postdata: ActionReq<UsersSelectReq> = new ActionReq<UsersSelectReq>();
@@ -92,7 +96,11 @@ export class UsersService {
       true,
     );
 
-    return resp.item!;
+    const userContext = resp.item!;
+    
+
+
+    return userContext;
   }
   async login(req: UsersLoginReq) {
     let postdata: ActionReq<UsersLoginReq> = new ActionReq<UsersLoginReq>();
@@ -103,7 +111,11 @@ export class UsersService {
       true,
     );
 
-    return resp.item!;
+    const userContext = resp.item!;
+    
+
+
+    return userContext;
   }
 
   async SelectUser(req: UsersLoginReq) {
@@ -127,6 +139,22 @@ export class UsersService {
     );
 
     return resp.item!;
+  }
+
+  async UpdatePushToken(userId: number, pushToken: string): Promise<boolean> {
+    try {
+      const response = await this.http.post<ActionRes<boolean>>(
+        this.baseurl + '/UpdatePushToken',
+        {
+          UserId: userId,
+          PushToken: pushToken,
+        }
+      );
+      return response.item!;
+    } catch (error) {
+      console.error('Error updating push token:', error);
+      return false;
+    }
   }
   async MergeDesign(req: UsersMergeDesign) {
     let postdata: ActionReq<UsersMergeDesign> =

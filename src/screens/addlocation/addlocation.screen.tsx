@@ -10,7 +10,7 @@ import {Button} from '../../components/button.component';
 import {$} from '../../styles';
 import {FormInput} from '../../components/forminput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
-import {ScrollView, TouchableOpacity, ActivityIndicator, ViewStyle, SafeAreaView, Alert, Image} from 'react-native';
+import {ScrollView, TouchableOpacity, ActivityIndicator, ViewStyle, SafeAreaView, Alert, Image, KeyboardAvoidingView, Platform} from 'react-native';
 import {
   OrganisationLocation,
   OrganisationLocationDeleteReq,
@@ -24,6 +24,7 @@ import {LocationPicker} from '../../components/LocationPicker';
 import {HeaderButton} from '../../components/headerbutton.component';
 import {FilesService} from '../../services/files.service';
 import {imagepickerutil} from '../../utils/imagepicker.util';
+import { environment } from '../../utils/environment';
 
 type LocationScreenProp = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList, 'Location'>,
@@ -36,6 +37,8 @@ export function LocationScreen(props: LocationScreenProp) {
   const [organisationLocation, setOrganisationLocation] = useState<OrganisationLocation>(new OrganisationLocation());
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [isFromMap, setIsFromMap] = useState(false);
+  const [customUrlInput, setCustomUrlInput] = useState(environment.baseurl);
+  const [isDefaultUrl, setIsDefaultUrl] = useState(true);
   const userContext = useAppSelector(selectusercontext);
   const organisationLocationService = useMemo(
     () => new OrganisationLocationService(),
@@ -62,6 +65,11 @@ export function LocationScreen(props: LocationScreenProp) {
         if (locations[0].googlelocation) {
           setIsFromMap(true);
         }
+        // Set custom URL input for editing
+        if (locations[0].customurl) {
+          setCustomUrlInput(locations[0].customurl);
+          setIsDefaultUrl(false);
+        }
       }
     } catch (error) {
       handleError(error, 'Failed to fetch location details');
@@ -87,6 +95,7 @@ export function LocationScreen(props: LocationScreenProp) {
         state: organisationLocation.state?.trim(),
         country: organisationLocation.country?.trim(),
         pincode: organisationLocation.pincode?.trim(),
+        customurl: organisationLocation.customurl?.trim(),
         latitude: organisationLocation.latitude,
         longitude: organisationLocation.longitude,
         googlelocation: organisationLocation.googlelocation,
@@ -195,6 +204,16 @@ export function LocationScreen(props: LocationScreenProp) {
       AppAlert({message: `Please fill in all required fields (${missingFields.join(', ')})`});
       return false;
     }
+    
+    // Validate custom URL format if provided
+    // if (organisationLocation.customurl && organisationLocation.customurl.trim()) {
+    //   const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    //   if (!urlPattern.test(organisationLocation.customurl.trim())) {
+    //     AppAlert({message: 'Please enter a valid URL format for Custom URL'});
+    //     return false;
+    //   }
+    // }
+    
     return true;
   };
 
@@ -243,6 +262,29 @@ export function LocationScreen(props: LocationScreenProp) {
     }));
   };
 
+  const handleCustomUrlChange = (text: string) => {
+    setCustomUrlInput(text);
+    
+    // Clear default URL when user starts typing
+    if (isDefaultUrl && text !== environment.baseurl) {
+      setIsDefaultUrl(false);
+      // Extract the user input part (remove base URL)
+      const userInput = text.replace(environment.baseurl, '');
+      setCustomUrlInput(environment.baseurl + userInput);
+    }
+    
+    // Update the organisation location with the full URL
+    updateOrganisationLocation('customurl', text);
+  };
+
+  const handleCustomUrlFocus = () => {
+    // Clear default URL when user focuses on input
+    if (isDefaultUrl) {
+      setIsDefaultUrl(false);
+      setCustomUrlInput(environment.baseurl);
+    }
+  };
+
   const inputContainerStyle: ViewStyle = {
     marginBottom: 16,
   };
@@ -250,7 +292,12 @@ export function LocationScreen(props: LocationScreenProp) {
    
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <AppView style={[$.pt_normal, $.flex_1]}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <AppView style={[$.pt_normal, $.flex_1]}>
       {/* Header */}
       <AppView style={[$.flex_row, $.ml_regular, $.align_items_center, $.mb_medium]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -371,6 +418,15 @@ export function LocationScreen(props: LocationScreenProp) {
               editable={!isFromMap}
               containerStyle={inputContainerStyle}
             />
+
+            <FormInput
+              label="Custom URL"
+              value={customUrlInput}
+              onChangeText={handleCustomUrlChange}
+              onFocus={handleCustomUrlFocus}
+              placeholder="Enter custom URL (optional)"
+              containerStyle={inputContainerStyle}
+            />
           </AppView>
         </ScrollView>
       )}
@@ -407,7 +463,8 @@ export function LocationScreen(props: LocationScreenProp) {
           />
       
       </AppView>
-    </AppView>
+        </AppView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
