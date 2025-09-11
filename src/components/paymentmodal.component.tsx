@@ -60,15 +60,14 @@ export function PaymentModal({
 
       // Create payment order
       const orderRequest = new CreateOrderRequest();
-      orderRequest.OrganisationLocationId = appointmentData.organisationLocationId;
+      orderRequest.UserId = appointmentData.customerId;
       orderRequest.OrganisationId = appointmentData.organisationId;
-      orderRequest.StaffId = appointmentData.staffId;
+      orderRequest.OrganisationLocationId = appointmentData.organisationLocationId;
       orderRequest.AppointmentId = appointmentData.appointmentId;
-      orderRequest.CustomerId = appointmentData.customerId;
+      orderRequest.Amount = amount;
       orderRequest.CustomerName = appointmentData.customerName;
       orderRequest.CustomerEmail = appointmentData.customerEmail;
       orderRequest.CustomerContact = appointmentData.customerContact;
-      orderRequest.Amount = amount;
       orderRequest.Notes = 'Appointment payment';
 
       const orderResponse = await paymentService.createOrder(orderRequest);

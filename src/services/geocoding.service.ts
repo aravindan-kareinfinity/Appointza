@@ -1,8 +1,9 @@
 import { Platform } from 'react-native';
 import Geocoder from 'react-native-geocoding';
+import { environment } from '../utils/environment';
 
 // Initialize with your API key (Google Maps API)
-Geocoder.init('AIzaSyAbrK8cbIpOv0Ew-LDkYniw1szFf7aH2ic');
+Geocoder.init(environment.googleMapsApiKey);
 
 export const Geocoding = {
   reverseGeocode: async (lat: number, lng: number) => {

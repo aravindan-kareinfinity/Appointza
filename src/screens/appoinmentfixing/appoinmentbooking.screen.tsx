@@ -40,6 +40,7 @@ import {
   OrganisationServiceTimingSelectReq,
   Weeks,
 } from '../../models/organisationservicetiming.model';
+import { DayOfWeekUtil } from '../../utils/dayofweek.util';
 import {OrganisationServicesService} from '../../services/organisationservices.service';
 import {
   OrganisationServices,
@@ -50,6 +51,7 @@ import {
   Appoinment,
   AppoinmentFinal,
   SelectedSerivice,
+  UpdatePaymentReq,
 } from '../../models/appoinment.model';
 import {BottomSheetComponent} from '../../components/bottomsheet.component';
 import {AppoinmentService} from '../../services/appoinment.service';
@@ -206,7 +208,7 @@ export function AppoinmentBookingScreen() {
       });
       const dayNumber = Weeks[dayName as keyof typeof Weeks];
       organizariontimereq.day_of_week = dayNumber;
-      organizariontimereq.appointmentdate = seleteddate;
+      organizariontimereq.appointmentdate = sendToApi(seleteddate);
 
       var organisationtimingres =
         await organisationservicetiming.selecttimingslot(organizariontimereq);
@@ -222,15 +224,7 @@ export function AppoinmentBookingScreen() {
     () => new OrganisationServiceTimingService(),
     [],
   );
-  const daysOfWeek = [
-    {id: Weeks.Monday, label: 'Monday'},
-    {id: Weeks.Tuesday, label: 'Tuesday'},
-    {id: Weeks.Wednesday, label: 'Wednesday'},
-    {id: Weeks.Thursday, label: 'Thursday'},
-    {id: Weeks.Friday, label: 'Friday'},
-    {id: Weeks.Saturday, label: 'Saturday'},
-    {id: Weeks.Sunday, label: 'Sunday'},
-  ];
+  const daysOfWeek = DayOfWeekUtil.getAllDays();
   const timeStringToDate = (timeString: string): Date => {
     const [hours, minutes, seconds] = timeString.split(':').map(Number);
     const now = new Date();
@@ -310,15 +304,30 @@ const [openbefore, setopenbefore] = useState(0);
     bottomSheetRef.current?.close();
   };
 
-  function convertToUTCFormat(dateInput: string | Date): Date {
-    return new Date(dateInput);
-  }
+
+
+  const formatDateOnly = (date: Date): string => {
+    const y = date.getUTCFullYear();
+    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(date.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
 
   const sendToApi = (date: Date) => {
-    const utcDate = new Date(
-      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0),
-    );
-
+    // Create a date in UTC to avoid timezone conversion issues
+    // This ensures the date components (year, month, day) are preserved
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    
+    // Create UTC date with the same year, month, day but at midnight UTC
+    const utcDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+    
+    console.log('Original date:', date.toDateString());
+    console.log('Original date components - Year:', year, 'Month:', month, 'Day:', day);
+    console.log('UTC date:', utcDate.toISOString());
+    console.log('UTC date local string:', utcDate.toDateString());
+    
     return utcDate;
   };
 
@@ -380,11 +389,63 @@ const [openbefore, setopenbefore] = useState(0);
       a.fromtime = seletedTiming.fromtime;
       a.attributes.servicelist = selectedService;
 
+      // Debug logging for appointment data
+      console.log('=== APPOINTMENT BOOKING DEBUG ===');
+      console.log('Selected date (local):', seleteddate.toDateString());
+      console.log('Selected date (ISO):', seleteddate.toISOString());
+      console.log('Converted date for API:', a.appoinmentdate.toISOString());
+      console.log('Converted date (local string):', a.appoinmentdate.toDateString());
+      console.log('Appointment data being sent:', JSON.stringify(a, null, 2));
+      console.log('================================');
+
       var res = await organisationservicetiming.Bookappoinment(a);
+
+      // Check if the response is a success message or an error
+      if (res === "Successfully booked." || res === "Successfully booked") {
+        // Appointment was booked successfully
+        console.log('Appointment booked successfully:', res);
+      } else if (res && !isNaN(parseInt(res))) {
+        // Response is a numeric appointment ID
+        console.log('Appointment ID received:', res);
+      } else {
+        // Response is an error message
+        Alert.alert(
+          'Booking Error',
+          res || 'Unknown error occurred',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      // Update appointment with payment information (only if we have a numeric appointment ID)
+      if (res && !isNaN(parseInt(res))) {
+        const appointmentId = parseInt(res);
+        const totalAmount = selectedService.reduce((sum, service) => sum + service.serviceprice, 0);
+        
+        const updatePaymentReq = new UpdatePaymentReq();
+        updatePaymentReq.appoinmentid = appointmentId;
+        updatePaymentReq.paymentname = 'Razorpay Payment';
+        updatePaymentReq.paymentcode = paymentId;
+        updatePaymentReq.paymenttype = 'Online';
+        updatePaymentReq.paymenttypeid = 1; // Online payment type
+        updatePaymentReq.statusid = 1; // Paid status
+        updatePaymentReq.customername = usercontext.value.username || 'Customer';
+        updatePaymentReq.customerid = usercontext.value.userid;
+        updatePaymentReq.amount = Math.round(totalAmount * 100); // Convert to paise
+        updatePaymentReq.organisationid = route.params.organisationid;
+        updatePaymentReq.organisationlocationid = route.params.organisationlocationid;
+
+        await appoinmentservices.UpdatePayment(updatePaymentReq);
+      }
 
       // Close payment modal
       setShowPaymentModal(false);
 
+      // Reset states
+      setSelectedService([]);
+      setSelectedtiming(new AppoinmentFinal());
+
+      // Show success message and navigate
       Alert.alert(
         'Appointment Booked Successfully!',
         `Your appointment has been booked and payment of ₹${selectedService.reduce((sum, service) => sum + service.serviceprice, 0)} has been processed.`,
@@ -392,20 +453,21 @@ const [openbefore, setopenbefore] = useState(0);
           {
             text: 'OK',
             onPress: () => {
-              // Reset states
-              setSelectedService([]);
-              setSelectedtiming(new AppoinmentFinal());
-              // Navigate back
-              navigation.goBack();
+              // Navigate to HomeTab first, then to Service tab
+              navigation.navigate('HomeTab', { screen: 'Service' });
             },
           },
         ],
       );
     } catch (error) {
       console.error('Error booking appointment after payment:', error);
+      console.error('Selected date:', seleteddate);
+      console.error('Converted date:', sendToApi(seleteddate));
+      console.error('Appointment data:', a);
+      
       Alert.alert(
         'Error',
-        'Payment was successful but there was an error booking your appointment. Please contact support.',
+        `Payment was successful but there was an error booking your appointment. Error: ${error.message || error}. Please contact support.`,
       );
     } finally {
       setIsProcessingPayment(false);

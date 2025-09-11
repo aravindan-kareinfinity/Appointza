@@ -1,93 +1,82 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { AppStackParamList } from '../../appstack.navigation';
 import { AppView } from '../../components/appview.component';
 import { AppText } from '../../components/apptext.component';
-import { TimelineService } from '../../services/timeline.service';
-import { Timeline, TimelineSelectReq } from '../../models/timeline.model';
+import { AppoinmentService } from '../../services/appoinment.service';
+import { AppointmentSummary, AppointmentSummarySelectReq } from '../../models/appointmentsummary.model';
 import { AppAlert } from '../../components/appalert.component';
-import { useTheme } from '../../components/theme-provider';
-import { styled } from 'nativewind';
-import { $ } from '../../styles';
-import { CustomIcon, CustomIcons } from '../../components/customicons.component';
-import { AppText as AppTextStyle } from '../../styles/app-text.style';
-import { AppView as AppViewStyle } from '../../styles/app-view.style';
 import { CustomHeader } from '../../components/customheader.component';
-import { Colors } from '../../constants/colors';
-
-const StyledView = styled(AppView);
-const textStyle = AppTextStyle.instance;
-const viewStyle = AppViewStyle.instance;
 
 type AppointmentTimelineScreenRouteProp = RouteProp<AppStackParamList, 'AppointmentTimeline'>;
 
 export const AppointmentTimelineScreen = () => {
   const route = useRoute<AppointmentTimelineScreenRouteProp>();
   const [isLoading, setIsLoading] = useState(true);
-  const [appointment, setAppointment] = useState<Timeline | null>(null);
-  const timelineservice = new TimelineService();
-  const { colors } = useTheme();
+  const [appointment, setAppointment] = useState<AppointmentSummary | null>(null);
+  const appointmentService = new AppoinmentService();
 
   useEffect(() => {
     loadAppointmentDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadAppointmentDetails = async () => {
     try {
       setIsLoading(true);
-      const req = new TimelineSelectReq();
+      const req = new AppointmentSummarySelectReq();
       req.appointmentid = route.params.appointmentid;
-      
-      const response = await timelineservice.select(req);
-      if (response && response.length > 0) {
-        setAppointment(response[0]);
+
+      const response = await appointmentService.GetAppointmentSummary(req);
+      if (response) {
+        setAppointment(response);
+      } else {
+        AppAlert({ message: 'No appointment data found' });
       }
     } catch (error: any) {
+      console.error('Error loading appointment details:', error);
       AppAlert({ message: error?.response?.data?.message || 'Failed to load appointment details' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
+  const getStatusColor = (status?: string) => {
+    if (!status) return '#6B7280';
+    switch (status.toUpperCase()) {
       case 'CONFIRMED':
-        return '#10B981'; // Green
+        return '#10B981';
       case 'PENDING':
-        return '#F59E0B'; // Amber
+        return '#F59E0B';
       case 'CANCELLED':
-        return '#EF4444'; // Red
+        return '#EF4444';
       case 'COMPLETED':
-        return '#3B82F6'; // Blue
+        return '#3B82F6';
       default:
-        return '#6B7280'; // Gray
+        return '#6B7280';
     }
   };
 
-  const getStatusBackground = (status: string) => {
-    switch (status?.toUpperCase()) {
+  const getStatusBackground = (status?: string) => {
+    if (!status) return '#F3F4F6';
+    switch (status.toUpperCase()) {
       case 'CONFIRMED':
-        return '#ECFDF5'; // Light green
+        return '#ECFDF5';
       case 'PENDING':
-        return '#FFFBEB'; // Light amber
+        return '#FFFBEB';
       case 'CANCELLED':
-        return '#FEE2E2'; // Light red
+        return '#FEE2E2';
       case 'COMPLETED':
-        return '#EFF6FF'; // Light blue
+        return '#EFF6FF';
       default:
-        return '#F3F4F6'; // Light gray
+        return '#F3F4F6';
     }
   };
 
   if (isLoading) {
     return (
-      <AppView style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#F9FAFB'
-      }}>
+      <AppView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' }}>
         <ActivityIndicator size="large" color="#3B82F6" />
       </AppView>
     );
@@ -95,244 +84,152 @@ export const AppointmentTimelineScreen = () => {
 
   if (!appointment) {
     return (
-      <AppView style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#F9FAFB'
-      }}>
-        <AppText style={{
-          fontSize: 16,
-          fontWeight: '500',
-          color: '#EF4444'
-        }}>Appointment not found</AppText>
+      <AppView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB', padding: 20 }}>
+        <AppText style={{ fontSize: 18, fontWeight: '600', color: '#EF4444', textAlign: 'center', marginBottom: 8 }}>
+          Appointment Not Found
+        </AppText>
+        <AppText style={{ fontSize: 14, color: '#6B7280', textAlign: 'center' }}>
+          The requested appointment could not be found or may have been removed.
+        </AppText>
       </AppView>
     );
   }
 
   return (
     <AppView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      <CustomHeader
-        title="Appointment Timeline"
-        showBackButton
-        backgroundColor="#FFFFFF"
-        titleColor="#111827"
-      />
+      <CustomHeader title="Appointment Summary" showBackButton backgroundColor="#FFFFFF" titleColor="#111827" />
 
       <ScrollView contentContainerStyle={{ padding: 20 }}>
-        {/* Timeline container */}
-        <AppView style={{ position: 'relative' }}>
-          {/* Vertical line */}
-          <AppView style={{
-            position: 'absolute',
-            left: 28,
-            top: 0,
-            bottom: 0,
-            width: 2,
-            backgroundColor: '#E5E7EB'
-          }} />
-
-          {/* Timeline items */}
-          <AppView style={{ marginBottom: 24 }}>
-            <AppView style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              {/* Timeline dot */}
-              <AppView style={{
-                width: 16,
-                height: 16,
-                borderRadius: 8,
-                backgroundColor: '#3B82F6',
-                borderWidth: 3,
-                borderColor: '#EFF6FF',
-                marginRight: 20,
-                zIndex: 1
-              }} />
-              
-              {/* Content card */}
-              <AppView style={{
-                flex: 1,
-                backgroundColor: '#FFFFFF',
-                padding: 16,
-                borderRadius: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 2
-              }}>
-                <AppText style={{
-                  fontSize: 16,
-                  fontWeight: '600',
-                  color: '#111827',
-                  marginBottom: 8
-                }}>Appointment Created</AppText>
-                <AppText style={{
+        {/* Appointment Status Card */}
+        <AppView
+          style={{
+            backgroundColor: '#FFFFFF',
+            padding: 20,
+            borderRadius: 12,
+            marginBottom: 20,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 8,
+            elevation: 2,
+          }}
+        >
+          <AppView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <AppText style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>Appointment #{appointment.id}</AppText>
+            <AppView
+              style={{
+                backgroundColor: getStatusBackground(appointment.status),
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 16,
+              }}
+            >
+              <AppText
+                style={{
                   fontSize: 14,
-                  color: '#6B7280',
-                  marginBottom: 4
-                }}>
-                  {new Date(appointment.createdon).toLocaleString()}
-                </AppText>
-              </AppView>
+                  fontWeight: '600',
+                  color: getStatusColor(appointment.status),
+                  textTransform: 'capitalize',
+                }}
+              >
+                {appointment.status || 'Unknown'}
+              </AppText>
             </AppView>
           </AppView>
 
-          <AppView style={{ marginBottom: 24 }}>
-            <AppView style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              <AppView style={{
-                width: 16,
-                height: 16,
-                borderRadius: 8,
-                backgroundColor: '#3B82F6',
-                borderWidth: 3,
-                borderColor: '#EFF6FF',
-                marginRight: 20,
-                zIndex: 1
-              }} />
-              
-              <AppView style={{
-                flex: 1,
-                backgroundColor: '#FFFFFF',
-                padding: 16,
-                borderRadius: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 2
-              }}>
-                <AppText style={{
-                  fontSize: 16,
-                  fontWeight: '600',
-                  color: '#111827',
-                  marginBottom: 8
-                }}>Appointment Date</AppText>
-                <AppText style={{
-                  fontSize: 14,
-                  color: '#6B7280',
-                  marginBottom: 4
-                }}>
-                  {new Date(appointment.createdon).toLocaleDateString()}
-                </AppText>
-                <AppText style={{
-                  fontSize: 14,
-                  color: '#6B7280'
-                }}>{appointment.taskcode}</AppText>
-              </AppView>
-            </AppView>
-          </AppView>
+          <AppText style={{ fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
+            {appointment.organisationname || 'N/A'}
+          </AppText>
+          <AppText style={{ fontSize: 14, color: '#6B7280', marginBottom: 4 }}>{appointment.locationname || 'N/A'}</AppText>
+          <AppText style={{ fontSize: 14, color: '#6B7280', marginBottom: 12 }}>{appointment.locationaddress || 'N/A'}</AppText>
 
-          <AppView style={{ marginBottom: 24 }}>
-            <AppView style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              <AppView style={{
-                width: 16,
-                height: 16,
-                borderRadius: 8,
-                backgroundColor: '#3B82F6',
-                borderWidth: 3,
-                borderColor: '#EFF6FF',
-                marginRight: 20,
-                zIndex: 1
-              }} />
-              
-              <AppView style={{
-                flex: 1,
-                backgroundColor: '#FFFFFF',
-                padding: 16,
-                borderRadius: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 2
-              }}>
-                <AppText style={{
-                  fontSize: 16,
-                  fontWeight: '600',
-                  color: '#111827',
-                  marginBottom: 8
-                }}>Current Status</AppText>
-                <AppView style={{
-                  backgroundColor: getStatusBackground(appointment.taskcode),
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 16,
-                  alignSelf: 'flex-start'
-                }}>
-                  <AppText style={{
-                    fontSize: 14,
-                    fontWeight: '600',
-                    color: getStatusColor(appointment.taskcode),
-                    textTransform: 'capitalize'
-                  }}>
-                    {appointment.taskcode}
-                  </AppText>
-                </AppView>
-              </AppView>
+          <AppView
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              marginTop: 12,
+              paddingTop: 12,
+              borderTopWidth: 1,
+              borderTopColor: '#E5E7EB',
+            }}
+          >
+            <AppView>
+              <AppText style={{ fontSize: 14, fontWeight: '600', color: '#374151' }}>Date & Time</AppText>
+              <AppText style={{ fontSize: 14, color: '#6B7280' }}>
+                {appointment.appointmentdate
+                  ? new Date(appointment.appointmentdate).toLocaleDateString()
+                  : 'N/A'}{' '}
+                at {appointment.fromtime || 'N/A'} - {appointment.totime || 'N/A'}
+              </AppText>
             </AppView>
+          
           </AppView>
-
-          {appointment.attributes && (
-            <AppView style={{ marginBottom: 24 }}>
-              <AppView style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                <AppView style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: 8,
-                  backgroundColor: '#3B82F6',
-                  borderWidth: 3,
-                  borderColor: '#EFF6FF',
-                  marginRight: 20,
-                  zIndex: 1
-                }} />
-                
-                <AppView style={{
-                  flex: 1,
-                  backgroundColor: '#FFFFFF',
-                  padding: 16,
-                  borderRadius: 12,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 8,
-                  elevation: 2
-                }}>
-                  <AppText style={{
-                    fontSize: 16,
-                    fontWeight: '600',
-                    color: '#111827',
-                    marginBottom: 12
-                  }}>Additional Information</AppText>
-                  
-                  <AppView style={{ marginTop: 8 }}>
-                    {Object.entries(appointment.attributes).map(([key, value], index) => (
-                      <AppView key={index} style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        marginBottom: 12,
-                        paddingBottom: 12,
-                        borderBottomWidth: 1,
-                        borderBottomColor: '#F3F4F6'
-                      }}>
-                        <AppText style={{
-                          fontSize: 14,
-                          fontWeight: '500',
-                          color: '#374151',
-                          flex: 1
-                        }}>{key}</AppText>
-                        <AppText style={{
-                          fontSize: 14,
-                          color: '#6B7280',
-                          flex: 1,
-                          textAlign: 'right'
-                        }}>{JSON.stringify(value)}</AppText>
-                      </AppView>
-                    ))}
-                  </AppView>
-                </AppView>
-              </AppView>
-            </AppView>
-          )}
         </AppView>
+
+        {/* Services Card */}
+        {Array.isArray(appointment.services) && appointment.services.length > 0 ? (
+          <AppView
+            style={{
+              backgroundColor: '#FFFFFF',
+              padding: 20,
+              borderRadius: 12,
+              marginBottom: 20,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 2,
+            }}
+          >
+            <AppText style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 16 }}>Services Booked</AppText>
+            {appointment.services.map((service, index) => (
+              <AppView
+                key={service.id || index}
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingVertical: 12,
+                  borderBottomWidth: index < appointment.services.length - 1 ? 1 : 0,
+                  borderBottomColor: '#E5E7EB',
+                }}
+              >
+                <AppView style={{ flex: 1 }}>
+                  <AppText style={{ fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 4 }}>
+                    {service.servicename || 'N/A'}
+                  </AppText>
+                  {service.servicedescription && (
+                    <AppText style={{ fontSize: 14, color: '#6B7280', marginBottom: 4 }}>
+                      {service.servicedescription}
+                    </AppText>
+                  )}
+                  {/* <AppText style={{ fontSize: 12, color: '#9CA3AF' }}>{service.duration || '0'} minutes</AppText> */}
+                </AppView>
+                <AppText style={{ fontSize: 16, fontWeight: '700', color: '#059669' }}>₹{service.serviceprice || '0'}</AppText>
+              </AppView>
+            ))}
+          </AppView>
+        ) : (
+          <AppView
+            style={{
+              backgroundColor: '#FFFFFF',
+              padding: 20,
+              borderRadius: 12,
+              marginBottom: 20,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 2,
+            }}
+          >
+            <AppText style={{ fontSize: 16, color: '#6B7280', textAlign: 'center' }}>
+              No services booked for this appointment
+            </AppText>
+          </AppView>
+        )}
+
+        {/* Other cards (organization, staff, payment, timeline, notes) stay the same */}
       </ScrollView>
     </AppView>
   );

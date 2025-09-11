@@ -1,7 +1,8 @@
 // LocationPicker.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Modal, View, StyleSheet, TouchableOpacity, TextInput, Text, ActivityIndicator, Alert } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { View, StyleSheet, TouchableOpacity, TextInput, Text, ActivityIndicator, Alert } from 'react-native';
+import { BottomSheetComponent } from './bottomsheet.component';
+// MapView removed - using search and current location only
 import { $ } from '../styles';
 import { AppButton } from './appbutton.component';
 import { CustomIcon, CustomIcons } from './customicons.component';
@@ -29,6 +30,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   onClose,
   onLocationSelect,
 }) => {
+  const bottomSheetRef = useRef<any>(null);
   const [region, setRegion] = useState({
     latitude: 12.9716,  // Default to Bangalore
     longitude: 77.5946,
@@ -45,13 +47,15 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     country: '',
     pincode: ''
   });
-  const mapRef = useRef<MapView>(null);
+  // Map ref removed - using search and current location only
 
   useEffect(() => {
     if (visible) {
+      bottomSheetRef.current?.open();
       getCurrentLocation();
     } else {
-      // Reset state when modal closes
+      bottomSheetRef.current?.close();
+      // Reset state when bottom sheet closes
       setSelectedLocation(null);
       setAddress('');
       setSearchQuery('');
@@ -66,6 +70,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
 
   const updateLocation = (latitude: number, longitude: number) => {
+    console.log('Updating location to:', latitude, longitude);
+    
     setRegion(prev => ({
       ...prev,
       latitude,
@@ -75,21 +81,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     }));
     setSelectedLocation({ latitude, longitude });
     reverseGeocode(latitude, longitude);
-    
-    if (mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude,
-        longitude,
-        latitudeDelta: 0.005,
-        longitudeDelta: 0.005,
-      });
-    }
   };
 
-  const handleMapPress = (e: any) => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    updateLocation(latitude, longitude);
-  };
+  // Map press handler removed - using search and current location only
 
   const reverseGeocode = async (lat: number, lng: number) => {
     setIsLoading(true);
@@ -201,7 +195,9 @@ const getCurrentLocation = async () => {
     Geolocation.getCurrentPosition(
       position => {
         const { latitude, longitude } = position.coords;
+        console.log('Got current position:', latitude, longitude);
         updateLocation(latitude, longitude);
+        setIsLoading(false);
       },
       error => {
         console.error('Error getting location:', error);
@@ -224,15 +220,13 @@ const getCurrentLocation = async () => {
   }
 };
   return (
-    <Modal visible={visible} animationType="slide">
+    <BottomSheetComponent
+      ref={bottomSheetRef}
+      onClose={onClose}
+      Save={handleConfirm}
+      title="Select Location"
+    >
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.backButton}>
-            <CustomIcon name={CustomIcons.LeftArrow} size={24} color={$.tint_1} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Select Location</Text>
-        </View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
@@ -249,38 +243,12 @@ const getCurrentLocation = async () => {
           </TouchableOpacity>
         </View>
 
-        {/* Map */}
-        <View style={styles.mapContainer}>
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={$.tint_primary_5} />
-            </View>
-          ) : (
-            <MapView
-              ref={mapRef}
-              style={styles.map}
-              region={region}
-              onPress={handleMapPress}
-              showsUserLocation={true}
-              showsMyLocationButton={false}
-              followsUserLocation={false}
-              loadingEnabled={true}
-            >
-              {selectedLocation && (
-                <Marker
-                  coordinate={selectedLocation}
-                  title="Selected Location"
-                  pinColor={$.tint_primary_5}
-                />
-              )}
-            </MapView>
-          )}
-        </View>
+      
 
         {/* Selected Location Info */}
-        <View style={styles.locationInfo}>
+        <View style={styles.addressContainer}>
           <Text style={styles.addressText} numberOfLines={2}>
-            {address || 'Tap on map to select location'}
+            {address || 'Search for a location or use current location'}
           </Text>
           {addressDetails.city && (
             <Text style={styles.detailText}>
@@ -299,42 +267,25 @@ const getCurrentLocation = async () => {
             textStyle={[$.text_tint_1]}
             disabled={isLoading}
           />
-          <AppButton
+          {/* <AppButton
             name="Confirm Location"
             onPress={handleConfirm}
             style={[styles.button, $.bg_tint_1]}
             textStyle={[$.text_tint_11]}
             disabled={!selectedLocation || isLoading}
-          />
+          /> */}
         </View>
       </View>
-    </Modal>
+    </BottomSheetComponent>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: $.tint_1,
+ 
   },
   searchContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#fff',
   },
@@ -356,20 +307,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  mapContainer: {
-    flex: 1,
-  },
-  map: {
-    flex: 1,
+  locationSelectionContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    minHeight: 120,
   },
   loadingContainer: {
-    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.7)',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: $.tint_1,
   },
   locationInfo: {
-    padding: 16,
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  locationTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: $.tint_1,
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  locationSubtitle: {
+    fontSize: 14,
+    color: $.tint_3,
+    textAlign: 'center',
+  },
+  addressContainer: {
+    paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: '#eee',
   },
@@ -385,7 +357,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    padding: 16,
+    paddingTop: 16,
     backgroundColor: '#fff',
   },
   button: {

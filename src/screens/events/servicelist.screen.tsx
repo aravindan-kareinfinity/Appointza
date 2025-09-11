@@ -18,6 +18,7 @@ import {$} from '../../styles';
 import {AppTextInput} from '../../components/apptextinput.component';
 import {CustomIcon, CustomIcons} from '../../components/customicons.component';
 import {AppSwitch} from '../../components/appswitch.component';
+import {DayOfWeekUtil} from '../../utils/dayofweek.util';
 import {FlatList, Image, ScrollView, TouchableOpacity, ActivityIndicator, Modal, View,  SafeAreaView} from 'react-native';
 import {Line} from 'react-native-svg';
 import {AppAlert} from '../../components/appalert.component';
@@ -176,16 +177,7 @@ export function ServiceScreen() {
 
   // Helper functions (add these outside your component)
   const getDayName = (dayNumber: number): string => {
-    const days = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-    ];
-    return days[dayNumber] || `Day ${dayNumber}`;
+    return DayOfWeekUtil.getDayNameFromNumber(dayNumber);
   };
 
   const formatTime = (timeString: string): string => {

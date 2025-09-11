@@ -542,7 +542,7 @@ export function UserAppoinmentScreen() {
           </TouchableOpacity>
         )}
 
-        {!item.ispaid && item.statuscode !== 'CANCELLED' && (
+        {/* {!item.ispaid && item.statuscode !== 'CANCELLED' && (
           <TouchableOpacity
             style={{
               flexDirection: 'row', 
@@ -570,7 +570,7 @@ export function UserAppoinmentScreen() {
               Pay Now
             </AppText>
           </TouchableOpacity>
-        )}
+        )} */}
       </View>
     </TouchableOpacity>
   );

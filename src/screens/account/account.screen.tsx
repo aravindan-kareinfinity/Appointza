@@ -568,34 +568,26 @@ export function AccountScreen() {
         {/* Business Location & Booking Link - Combined Container */}
         {isLoggedIn && !isCustomer && usercontext?.value?.userid > 0 && usercontext?.value?.organisationid > 0 && (
           <AppView style={[$.mx_normal, $.border_rounded2, $.m_small, $.p_big, {backgroundColor: '#FFFFFF'}]}>
-            {/* Business Location Section */}
-            {organisationlocation.length > 0 && (
+            {/* Business Location Section - Only show if multiple locations */}
+            {organisationlocation.length > 1 && (
               <>
                 <AppText style={[$.fs_compact, $.fw_semibold, $.text_primary5, $.mb_small]}>
                   Business Location
                 </AppText>
-                {organisationlocation.length > 1 ? (
-                  <FormSelect
-                    label="Select Business Location"
-                    options={organisationlocation.map(loc => ({ id: loc.id, name: loc.city }))}
-                    selectedId={Selectorganisationlocationid}
-                    onSelect={(item) => {
-                      const loc = organisationlocation.find(l => l.id === item.id);
-                      if (loc) handleLocationSelect(loc);
-                    }}
-                  />
-                ) : (
-                  <AppView style={[$.p_medium, $.bg_tint_10, $.border_rounded, $.mb_medium]}>
-                    <AppText style={[$.fs_small, $.fw_bold, $.text_primary5]}>
-                      {organisationlocation[0]?.city || ''}
-                    </AppText>
-                  </AppView>
-                )}
+                <FormSelect
+                  label="Select Business Location"
+                  options={organisationlocation.map(loc => ({ id: loc.id, name: loc.city }))}
+                  selectedId={Selectorganisationlocationid}
+                  onSelect={(item) => {
+                    const loc = organisationlocation.find(l => l.id === item.id);
+                    if (loc) handleLocationSelect(loc);
+                  }}
+                />
               </>
             )}
 
             {/* Business Booking Link Section */}
-            <AppText style={[$.fs_compact, $.fw_semibold, $.text_primary5, $.mb_small, $.mt_medium]}>
+            <AppText style={[$.fs_compact, $.fw_semibold, $.text_primary5, $.mb_small, organisationlocation.length > 1 ? $.mt_medium : {}]}>
               Your Business Booking Link {Selectorganisationlocationid}
             </AppText>
             {Selectorganisationlocationid > 0 ? (

@@ -79,6 +79,20 @@ export class PaymentService {
     // Razorpay Integration Methods
     async createOrder(req: CreateOrderRequest): Promise<CreateOrderResponse> {
         try {
+            // Validate request
+            if (!req.Amount || req.Amount <= 0) {
+                throw new Error('Invalid amount');
+            }
+            if (!req.CustomerContact) {
+                throw new Error('Customer contact is required');
+            }
+            if (!req.OrganisationId || !req.OrganisationLocationId) {
+                throw new Error('Organisation and location are required');
+            }
+            if (!req.UserId) {
+                throw new Error('User ID is required');
+            }
+
             const response = await this.http.post<CreateOrderResponse>(
                 this.baseurl + '/create-order',
                 req
@@ -91,6 +105,11 @@ export class PaymentService {
 
     async processPayment(req: ProcessPaymentRequest): Promise<{ success: boolean; message: string }> {
         try {
+            // Validate request
+            if (!req.RazorpayOrderId || !req.RazorpayPaymentId || !req.RazorpaySignature) {
+                throw new Error('Missing required payment parameters');
+            }
+
             const response = await this.http.post<{ success: boolean; message: string }>(
                 this.baseurl + '/process-payment',
                 req

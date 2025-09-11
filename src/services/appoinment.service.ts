@@ -10,6 +10,7 @@ import {
   UpdatePaymentReq,
   UpdateStatusReq,
 } from '../models/appoinment.model';
+import { AppointmentSummary, AppointmentSummarySelectReq } from '../models/appointmentsummary.model';
 import {AxiosHelperUtils} from '../utils/axioshelper.utils';
 import {environment} from '../utils/environment';
 
@@ -110,6 +111,17 @@ export class AppoinmentService {
         postdata.item = req;
         let resp = await this.http.post<ActionRes<boolean>>(
             this.baseurl + '/UpdatePayment',
+            postdata
+        );
+                
+        return resp.item;
+    }
+
+    async GetAppointmentSummary(req: AppointmentSummarySelectReq) {
+        let postdata: ActionReq<AppointmentSummarySelectReq> = new ActionReq<AppointmentSummarySelectReq>();
+        postdata.item = req;
+        let resp = await this.http.post<ActionRes<AppointmentSummary>>(
+            this.baseurl + '/GetAppointmentSummary',
             postdata
         );
                 

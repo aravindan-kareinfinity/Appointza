@@ -41,6 +41,7 @@ import {
   OrganisationServiceTimingSelectReq,
   Weeks,
 } from '../../models/organisationservicetiming.model';
+import { DayOfWeekUtil } from '../../utils/dayofweek.util';
 import { DatePickerComponent } from '../../components/Datetimepicker.component';
 import { $ } from '../../styles';
 import { OrganisationServiceTimingService } from '../../services/organisationservicetiming.service';
@@ -108,15 +109,7 @@ export function TimingScreen() {
   const usercontext = useAppSelector(selectusercontext);
 
   // Initialize days of week
-  const daysOfWeek = [
-    { id: Weeks.Monday, label: 'Monday' },
-    { id: Weeks.Tuesday, label: 'Tuesday' },
-    { id: Weeks.Wednesday, label: 'Wednesday' },
-    { id: Weeks.Thursday, label: 'Thursday' },
-    { id: Weeks.Friday, label: 'Friday' },
-    { id: Weeks.Saturday, label: 'Saturday' },
-    { id: Weeks.Sunday, label: 'Sunday' },
-  ];
+  const daysOfWeek = DayOfWeekUtil.getAllDays();
 
   // Convert time string to Date object
   const timeStringToDate = (timeString: string): Date => {
