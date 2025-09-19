@@ -41,11 +41,11 @@ export function LoginScreen() {
   const { savePushToken } = usePushNotifications();
   const [isloading, setIsloading] = useState(false);
   const [isotpsent, setIsotpsent] = useState(false);
-  const [mobile, setMobile] = useState(environment.baseurl);
+  const [mobile, setMobile] = useState('');
   const [name, setName] = useState('');
   const [otp, setOtp] = useState('');
   const [mobileError, setMobileError] = useState('');
-  const [isDefaultUrl, setIsDefaultUrl] = useState(true);
+  const [isDefaultUrl, setIsDefaultUrl] = useState(false);
 
   const login = async () => {
     setIsloading(true);
@@ -91,15 +91,23 @@ export function LoginScreen() {
   };
 
   const validateMobile = (mobileNumber: string): boolean => {
-    // Check if mobile number is valid (10 digits)
-    const mobileRegex = /^[0-9]{10}$/;
-    if (!mobileRegex.test(mobileNumber)) {
-      setMobileError('Please enter a valid 10-digit mobile number');
+    // Remove any spaces, dashes, or other characters
+    const cleanMobile = mobileNumber.replace(/[\s\-\(\)]/g, '');
+    
+    // Check if mobile number is valid (10-15 digits, allowing country codes)
+    const mobileRegex = /^[0-9]{10,15}$/;
+    if (!mobileRegex.test(cleanMobile)) {
+      setMobileError('Please enter a valid mobile number (10-15 digits)');
       return false;
     }
     
-    // Check for duplicates (you can implement your own duplicate check logic here)
-    // For now, we'll just clear any existing error
+    // Check if it's too short
+    if (cleanMobile.length < 10) {
+      setMobileError('Mobile number must be at least 10 digits');
+      return false;
+    }
+    
+    // Clear any existing error
     setMobileError('');
     return true;
   };
@@ -108,8 +116,11 @@ export function LoginScreen() {
     // Clear any previous errors
     setMobileError('');
     
+    // Clean the mobile number
+    const cleanMobile = mobile.replace(/[\s\-\(\)]/g, '');
+    
     // Validate mobile number
-    if (!validateMobile(mobile)) {
+    if (!validateMobile(cleanMobile)) {
       return;
     }
     
@@ -117,28 +128,32 @@ export function LoginScreen() {
     
     try {
       let getotpreq = new UsersGetOtpReq();
-      getotpreq.mobile = mobile;
-      console.log("Getting OTP for mobile:", mobile);
+      getotpreq.mobile = cleanMobile; // Use cleaned mobile number
+      console.log("🚀 Getting OTP for mobile:", cleanMobile);
       
       let getotpresp = await usersservice.GetOtp(getotpreq);
-      setName(getotpresp!.name);
-      setIsotpsent(true);
+      console.log("✅ OTP response received:", getotpresp);
       
-      // Save push token to server after successful OTP request
-      console.log('🚀 Saving push token to server...');
-      const tokenSaved = await savePushToken(getotpresp!.userid || 0);
-      
-      if (tokenSaved) {
-        console.log('✅ Push token saved successfully');
+      if (getotpresp) {
+        setName(getotpresp.name || 'User');
+        setIsotpsent(true);
+        console.log("✅ OTP sent successfully, showing OTP input");
       } else {
-        console.log('❌ Failed to save push token');
+        console.log("⚠️ No response received from OTP API");
+        AppAlert({message: 'Failed to send OTP. Please try again.'});
       }
+      
     } catch (error: any) {
-      var message = error?.response?.data?.message;
-      if (message && message.includes('duplicate') || message.includes('already exists')) {
+      console.error("❌ OTP Error:", error);
+      
+      var message = error?.response?.data?.message || error?.message || 'Failed to send OTP';
+      
+      if (message && (message.includes('duplicate') || message.includes('already exists'))) {
         setMobileError('This mobile number is already registered');
+      } else if (message.includes('500') || message.includes('Internal Server Error')) {
+        AppAlert({message: 'Server is temporarily unavailable. Please try again later.'});
       } else {
-        AppAlert({message: message});
+        AppAlert({message: `OTP Error: ${message}`});
       }
     } finally {
       setIsloading(false);
@@ -206,21 +221,8 @@ export function LoginScreen() {
           onChangeText={(text) => {
             setMobile(text);
             setMobileError(''); // Clear error when user types
-            
-            // Clear default URL when user starts typing
-            if (isDefaultUrl && text !== environment.baseurl) {
-              setIsDefaultUrl(false);
-              setMobile(text);
-            }
           }}
-          onFocus={() => {
-            // Clear default URL when user focuses on input
-            if (isDefaultUrl) {
-              setIsDefaultUrl(false);
-              setMobile('');
-            }
-          }}
-          placeholder="Enter your mobile number"
+          placeholder="Enter your mobile number (e.g., 9876543210)"
           keyboardType="phone-pad"
           containerStyle={inputContainerStyle}
           error={mobileError}
@@ -269,7 +271,7 @@ export function LoginScreen() {
         <AppText style={[$.fs_small, $.fw_regular, $.text_tint_1]}>
           Don't Have an account?{' '}
         </AppText>
-        <TouchableOpacity onPress={() => gotoSignUp(false)}><AppText>Sighn up</AppText></TouchableOpacity>
+        <TouchableOpacity onPress={() => gotoSignUp(false)}><AppText>Sign up</AppText></TouchableOpacity>
        
       </AppView>
     </SafeAreaView>
