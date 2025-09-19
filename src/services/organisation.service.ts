@@ -72,10 +72,16 @@ export class OrganisationService {
         let postdata: ActionReq<OrganisationSelectReq> =
             new ActionReq<OrganisationSelectReq>();
         postdata.item = req;
+        console.log("ad",this.baseurl + '/SelectOrganisationDetail');
+        
+     
         let resp = await this.http.post<ActionRes<Array<OrganisationDetail>>>(
             this.baseurl + '/SelectOrganisationDetail', 
             postdata
         );
+        console.log("ad",this.baseurl + '/SelectOrganisationDetail');
+        
+     
         return resp.item;
     }
 }

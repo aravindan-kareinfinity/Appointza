@@ -23,6 +23,10 @@ export class ReferenceValueService {
             this.baseurl + '/select', 
             postdata
         );
+        console.log('ReferenceValue select resp', this.baseurl + '/select');
+        
+        console.log(resp);
+        
         return resp.item;
     }
     async save(req: ReferenceValue) {

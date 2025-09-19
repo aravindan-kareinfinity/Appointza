@@ -1,7 +1,7 @@
 import {navigate} from '../appstack.navigation';
 import {ActionReq} from '../models/actionreq.model';
 import {ActionRes} from '../models/actionres.model';
-import PushNotificationService from '../utils/pushnotification';
+import {pushnotification_utils} from '../utils/pushnotification';
 import {
   Organisationdeletereq,
   Users,
@@ -30,12 +30,12 @@ import axios from 'axios';
 export class UsersService {
   baseurl: string;
   http: AxiosHelperUtils;
-  private pushNotificationService: PushNotificationService;
+  private pushNotificationService: typeof pushnotification_utils;
   
   constructor() {
     this.baseurl = environment.baseurl + '/api/Users';
     this.http = new AxiosHelperUtils();
-    this.pushNotificationService = PushNotificationService.getInstance();
+    this.pushNotificationService = pushnotification_utils;
   }
   async select(req: UsersSelectReq) {
     let postdata: ActionReq<UsersSelectReq> = new ActionReq<UsersSelectReq>();

@@ -104,6 +104,17 @@ export function AppoinmentBookingScreen() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const pushNotificationService = useMemo(() => new PushNotificationService(), []);
 
+  // Helper function to calculate total amount based on organisation settings
+  const calculateTotalAmount = () => {
+    if (organisationDetails?.isserviceamount) {
+      // If isserviceamount is true, charge the sum of selected services
+      return selectedService.reduce((sum, service) => sum + service.serviceprice, 0);
+    } else {
+      // If isserviceamount is false, charge the booking amount
+      return organisationDetails?.booking_amount || 5.10;
+    }
+  };
+
   const handleServiceSelection = (req: OrganisationServices) => {
     const item = new SelectedSerivice();
     item.id = req.id;
@@ -361,8 +372,8 @@ const [openbefore, setopenbefore] = useState(0);
         return;
       }
 
-      // Calculate total amount
-      const totalAmount = selectedService.reduce((sum, service) => sum + service.serviceprice, 0);
+      // Calculate total amount based on organisation's isserviceamount flag
+      const totalAmount = calculateTotalAmount();
       
       // Show payment modal
       setShowPaymentModal(true);
@@ -420,7 +431,8 @@ const [openbefore, setopenbefore] = useState(0);
       // Update appointment with payment information (only if we have a numeric appointment ID)
       if (res && !isNaN(parseInt(res))) {
         const appointmentId = parseInt(res);
-        const totalAmount = selectedService.reduce((sum, service) => sum + service.serviceprice, 0);
+        // Calculate total amount based on organisation's isserviceamount flag
+        const totalAmount = calculateTotalAmount();
         
         const updatePaymentReq = new UpdatePaymentReq();
         updatePaymentReq.appoinmentid = appointmentId;
@@ -445,16 +457,19 @@ const [openbefore, setopenbefore] = useState(0);
       setSelectedService([]);
       setSelectedtiming(new AppoinmentFinal());
 
+      // Calculate total amount for success message
+      const totalAmount = calculateTotalAmount();
+
       // Show success message and navigate
       Alert.alert(
         'Appointment Booked Successfully!',
-        `Your appointment has been booked and payment of ₹${selectedService.reduce((sum, service) => sum + service.serviceprice, 0)} has been processed.`,
+        `Your appointment has been booked and payment of ₹${totalAmount} has been processed.`,
         [
           {
             text: 'OK',
             onPress: () => {
               // Navigate to HomeTab first, then to Service tab
-              navigation.navigate('HomeTab', { screen: 'Service' });
+              navigation.navigate('HomeTab');
             },
           },
         ],
@@ -463,11 +478,11 @@ const [openbefore, setopenbefore] = useState(0);
       console.error('Error booking appointment after payment:', error);
       console.error('Selected date:', seleteddate);
       console.error('Converted date:', sendToApi(seleteddate));
-      console.error('Appointment data:', a);
       
+      const errorMessage = error instanceof Error ? error.message : String(error);
       Alert.alert(
         'Error',
-        `Payment was successful but there was an error booking your appointment. Error: ${error.message || error}. Please contact support.`,
+        `Payment was successful but there was an error booking your appointment. Error: ${errorMessage}. Please contact support.`,
       );
     } finally {
       setIsProcessingPayment(false);
@@ -632,7 +647,7 @@ const [openbefore, setopenbefore] = useState(0);
         <AppView style={[$.mb_medium]}>
           <FormInput
             label="Total Amount"
-            value={`₹${selectedService.reduce((sum, service) => sum + service.serviceprice, 0)}`}
+            value={`₹${calculateTotalAmount()}`}
             onChangeText={() => {}}
             editable={false}
             containerStyle={{
@@ -956,6 +971,16 @@ const [openbefore, setopenbefore] = useState(0);
           </AppView>
         )}
 
+        {/* Pricing Information */}
+        <AppView style={styles.pricingInfoContainer}>
+          <AppText style={styles.pricingInfoText}>
+            {organisationDetails?.isserviceamount 
+              ? `Service-based pricing: ₹${calculateTotalAmount()} for selected services`
+              : `Fixed booking fee: ₹${calculateTotalAmount()}`
+            }
+          </AppText>
+        </AppView>
+
         {/* Book Appointment Button */}
         <Button
           title="Proceed to Payment"
@@ -986,7 +1011,7 @@ const [openbefore, setopenbefore] = useState(0);
         onClose={() => setShowPaymentModal(false)}
         onPaymentSuccess={handlePaymentSuccess}
         onPaymentFailure={handlePaymentFailure}
-        amount={selectedService.reduce((sum, service) => sum + service.serviceprice, 0)}
+        amount={calculateTotalAmount()}
         currency="₹"
         appointmentData={{
           organisationId: route.params.organisationid,
@@ -1195,5 +1220,20 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 24,
+  },
+  pricingInfoContainer: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: '#F0F7FF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E3F2FD',
+  },
+  pricingInfoText: {
+    fontSize: 14,
+    color: '#1976D2',
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });

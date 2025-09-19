@@ -46,6 +46,7 @@ export class PushNotificationService {
     }
   }
 
+
   // Save push token to server
   async savePushToken(userId: number, token: string): Promise<boolean> {
     try {

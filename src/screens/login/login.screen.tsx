@@ -15,7 +15,7 @@ import {Button} from '../../components/button.component';
 import {FormInput} from '../../components/forminput.component';
 import {UsersGetOtpReq, UsersLoginReq} from '../../models/users.model';
 import {UsersService} from '../../services/users.service';
-import PushNotificationService from '../../utils/pushnotification';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 import {AppAlert} from '../../components/appalert.component';
 import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
 import {
@@ -25,6 +25,7 @@ import {
 import {ViewStyle, Image, Dimensions, TouchableOpacity, SafeAreaView} from 'react-native';
 import { iscustomeractions } from '../../redux/iscustomer.redux';
 import { environment } from '../../utils/environment';
+import { pushnotification_utils } from '../../utils/pushnotification';
 
 type LoginScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList>,
@@ -37,7 +38,7 @@ export function LoginScreen() {
   const usercontext = useAppSelector(selectusercontext);
   const dispatch = useAppDispatch();
   const usersservice = useMemo(() => new UsersService(), []);
-  const pushNotificationService = useMemo(() => PushNotificationService.getInstance(), []);
+  const { savePushToken } = usePushNotifications();
   const [isloading, setIsloading] = useState(false);
   const [isotpsent, setIsotpsent] = useState(false);
   const [mobile, setMobile] = useState(environment.baseurl);
@@ -59,7 +60,7 @@ export function LoginScreen() {
       if (loginresp?.userid) {
         try {
           // Get the stored token
-          let pushToken = await pushNotificationService.getToken();
+          let pushToken = await pushnotification_utils.getToken();
           
           if (pushToken) {
             console.log('💾 Saving Firebase push token to server for user:', loginresp.userid);
@@ -115,21 +116,6 @@ export function LoginScreen() {
     setIsloading(true);
     
     try {
-      // Initialize Firebase push notifications and get token
-      console.log('🚀 Initializing Firebase push notifications...');
-      await pushNotificationService.initialize();
-      
-      // Get the FCM token
-      const pushToken = await pushNotificationService.getToken();
-      
-      if (pushToken) {
-        console.log('✅ Firebase push notification token generated successfully:', pushToken);
-        console.log('📱 FCM Token:', pushToken);
-      } else {
-        console.log('⚠️ Firebase push notification token not available yet');
-        console.log('This might be due to permission denial or network issues');
-      }
-      
       let getotpreq = new UsersGetOtpReq();
       getotpreq.mobile = mobile;
       console.log("Getting OTP for mobile:", mobile);
@@ -137,6 +123,16 @@ export function LoginScreen() {
       let getotpresp = await usersservice.GetOtp(getotpreq);
       setName(getotpresp!.name);
       setIsotpsent(true);
+      
+      // Save push token to server after successful OTP request
+      console.log('🚀 Saving push token to server...');
+      const tokenSaved = await savePushToken(getotpresp!.userid || 0);
+      
+      if (tokenSaved) {
+        console.log('✅ Push token saved successfully');
+      } else {
+        console.log('❌ Failed to save push token');
+      }
     } catch (error: any) {
       var message = error?.response?.data?.message;
       if (message && message.includes('duplicate') || message.includes('already exists')) {
@@ -166,7 +162,7 @@ export function LoginScreen() {
       {/* Header Section */}
       <AppView style={[$.align_items_center, { paddingTop: 60, paddingBottom: 40 }]}>
         <Image 
-          source={require('../../assert/A1.png')}
+          source={require('../../assert/a1.png')}
           style={{
             width: imageSize,
             height: imageSize,

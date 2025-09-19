@@ -122,7 +122,7 @@ export function OTPVerificationScreen({ navigation, route }: OTPVerificationScre
       <AppView style={[$.align_items_center]}>
         <AppView style={[$.align_items_center]}>
           <Image
-            source={require('../../assert/A1.png')}
+            source={require('../../assert/a1.png')}
             style={{
               width: imageSize,
               height: imageSize,

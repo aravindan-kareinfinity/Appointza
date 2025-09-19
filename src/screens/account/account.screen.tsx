@@ -89,7 +89,7 @@ export function AccountScreen() {
                 $.align_items_center
               ]}>
               <Image
-                source={require('../../assert/A1.png')}
+                source={require('../../assert/a1.png')}
                 style={{
                   width: screenWidth * 0.4,
                   height: screenWidth * 0.4,
@@ -465,7 +465,7 @@ export function AccountScreen() {
                   source={
                     userProfile?.profileimage && userProfile.profileimage > 0
                       ? { uri: filesService.get(userProfile.profileimage) }
-                      : require('../../assert/A1.png')
+                      : require('../../assert/a1.png')
                   }
                 />
                 <TouchableOpacity
@@ -530,7 +530,7 @@ export function AccountScreen() {
                 $.align_items_center
               ]}>
                               <Image
-                  source={require('../../assert/A1.png')}
+                  source={require('../../assert/a1.png')}
                   style={{
                     width: screenWidth * 0.4,
                     height: screenWidth * 0.4,
@@ -651,6 +651,7 @@ export function AccountScreen() {
         {/* Business location selector */}
         {menuItems.map(renderMenuItem)}
       </AppView>
+
 
       {/* App Version */}
       <AppView

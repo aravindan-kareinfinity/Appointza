@@ -1,6 +1,9 @@
 package com.appointza
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -35,5 +38,37 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
     loadReactNative(this)
+    createNotificationChannels()
+  }
+
+  private fun createNotificationChannels() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val notificationManager = getSystemService(NotificationManager::class.java)
+      
+      // Default channel
+      val defaultChannel = NotificationChannel(
+        "default_channel",
+        "Default Channel",
+        NotificationManager.IMPORTANCE_HIGH
+      ).apply {
+        description = "Default notification channel"
+        enableVibration(true)
+        enableLights(true)
+      }
+      
+      // Background channel
+      val backgroundChannel = NotificationChannel(
+        "background_channel",
+        "Background Channel",
+        NotificationManager.IMPORTANCE_HIGH
+      ).apply {
+        description = "Background notification channel"
+        enableVibration(true)
+        enableLights(true)
+      }
+      
+      notificationManager.createNotificationChannel(defaultChannel)
+      notificationManager.createNotificationChannel(backgroundChannel)
+    }
   }
 }

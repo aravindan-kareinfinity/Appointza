@@ -18,7 +18,9 @@ export class Organisation {
   parentid: number = 0
   isfactory: boolean = false
   notes: string = ""
-  organisationlogo: number = 0  
+  organisationlogo: number = 0
+  booking_amount: number = 5.10
+  isserviceamount: boolean = false
 }
 
 export namespace Organisation {

@@ -86,29 +86,116 @@ export function SignUpScreen(props: SignUpScreenProp) {
 
   const fetchReferenceTypes = async () => {
     try {
-      var req= new ReferenceTypeSelectReq();
-      req.referencetypeid = REFERENCETYPE.ORGANISATIONPRIMARYTYPE;
-      console.log("req",req);
+      // For now, let's use hardcoded business types since the API is not working
+      console.log("🚀 Using hardcoded business types due to server API issues");
       
-      const response = await referenceValueService.select(req);
-      if (response) {
-        setPrimaryBusinessTypes(response);
-      }
+      const hardcodedBusinessTypes = [
+        { id: 1, displaytext: "Healthcare", identifier: "HEALTHCARE" },
+        { id: 2, displaytext: "Beauty & Wellness", identifier: "BEAUTY" },
+        { id: 3, displaytext: "Professional Services", identifier: "PROFESSIONAL" },
+        { id: 4, displaytext: "Education", identifier: "EDUCATION" },
+        { id: 5, displaytext: "Fitness & Sports", identifier: "FITNESS" },
+        { id: 6, displaytext: "Automotive", identifier: "AUTOMOTIVE" },
+        { id: 7, displaytext: "Home Services", identifier: "HOME" },
+        { id: 8, displaytext: "Technology", identifier: "TECHNOLOGY" }
+      ];
+      
+      setPrimaryBusinessTypes(hardcodedBusinessTypes);
+      console.log("✅ Set hardcoded business types:", hardcodedBusinessTypes.length, "items");
+      
+      // TODO: Uncomment when server API is fixed
+      // var req= new ReferenceTypeSelectReq();
+      // req.referencetypeid = REFERENCETYPE.ORGANISATIONPRIMARYTYPE;
+      // console.log("🚀 Fetching business types with request:", req);
+      // const response = await referenceTypeService.select(req);
+      // console.log("✅ Business types response:", response);
+      // if (response && Array.isArray(response)) {
+      //   setPrimaryBusinessTypes(response);
+      //   console.log("✅ Set primary business types:", response.length, "items");
+      // } else {
+      //   console.log("⚠️ No business types received or invalid format");
+      // }
     } catch (error) {
+      console.error("❌ Error fetching business types:", error);
       handleError(error, 'Failed to fetch business types');
     }
   };
 
   const fetchReferenceValues = async (id: number) => {
     try {
-      const req = new ReferenceValueSelectReq();
-      req.parentid = id;
-      req.referencetypeid = REFERENCETYPE.ORGANISATIONSECONDARYTYPE;
-      const response = await referenceValueService.select(req);
-      if (response) {
-        setSecondaryBusinessTypes(response);
-      }
+      // For now, let's use hardcoded business details since the API is not working
+      console.log("🚀 Using hardcoded business details for parent ID:", id);
+      
+      const hardcodedBusinessDetails = {
+        1: [ // Healthcare
+          { id: 1, displaytext: "Doctor", identifier: "DOCTOR" },
+          { id: 2, displaytext: "Dentist", identifier: "DENTIST" },
+          { id: 3, displaytext: "Therapist", identifier: "THERAPIST" },
+          { id: 4, displaytext: "Nurse", identifier: "NURSE" }
+        ],
+        2: [ // Beauty & Wellness
+          { id: 5, displaytext: "Hair Salon", identifier: "HAIR_SALON" },
+          { id: 6, displaytext: "Spa", identifier: "SPA" },
+          { id: 7, displaytext: "Nail Salon", identifier: "NAIL_SALON" },
+          { id: 8, displaytext: "Massage", identifier: "MASSAGE" }
+        ],
+        3: [ // Professional Services
+          { id: 9, displaytext: "Lawyer", identifier: "LAWYER" },
+          { id: 10, displaytext: "Accountant", identifier: "ACCOUNTANT" },
+          { id: 11, displaytext: "Consultant", identifier: "CONSULTANT" },
+          { id: 12, displaytext: "Real Estate", identifier: "REAL_ESTATE" }
+        ],
+        4: [ // Education
+          { id: 13, displaytext: "Tutor", identifier: "TUTOR" },
+          { id: 14, displaytext: "Language School", identifier: "LANGUAGE_SCHOOL" },
+          { id: 15, displaytext: "Music Teacher", identifier: "MUSIC_TEACHER" },
+          { id: 16, displaytext: "Driving School", identifier: "DRIVING_SCHOOL" }
+        ],
+        5: [ // Fitness & Sports
+          { id: 17, displaytext: "Personal Trainer", identifier: "PERSONAL_TRAINER" },
+          { id: 18, displaytext: "Yoga Instructor", identifier: "YOGA_INSTRUCTOR" },
+          { id: 19, displaytext: "Swimming Coach", identifier: "SWIMMING_COACH" },
+          { id: 20, displaytext: "Martial Arts", identifier: "MARTIAL_ARTS" }
+        ],
+        6: [ // Automotive
+          { id: 21, displaytext: "Car Repair", identifier: "CAR_REPAIR" },
+          { id: 22, displaytext: "Car Wash", identifier: "CAR_WASH" },
+          { id: 23, displaytext: "Auto Parts", identifier: "AUTO_PARTS" },
+          { id: 24, displaytext: "Towing", identifier: "TOWING" }
+        ],
+        7: [ // Home Services
+          { id: 25, displaytext: "Plumber", identifier: "PLUMBER" },
+          { id: 26, displaytext: "Electrician", identifier: "ELECTRICIAN" },
+          { id: 27, displaytext: "Cleaner", identifier: "CLEANER" },
+          { id: 28, displaytext: "Gardener", identifier: "GARDENER" }
+        ],
+        8: [ // Technology
+          { id: 29, displaytext: "IT Support", identifier: "IT_SUPPORT" },
+          { id: 30, displaytext: "Web Developer", identifier: "WEB_DEVELOPER" },
+          { id: 31, displaytext: "Tech Repair", identifier: "TECH_REPAIR" },
+          { id: 32, displaytext: "Software Training", identifier: "SOFTWARE_TRAINING" }
+        ]
+      };
+      
+      const businessDetails = hardcodedBusinessDetails[id] || [];
+      setSecondaryBusinessTypes(businessDetails);
+      console.log("✅ Set hardcoded business details:", businessDetails.length, "items");
+      
+      // TODO: Uncomment when server API is fixed
+      // const req = new ReferenceValueSelectReq();
+      // req.parentid = id;
+      // req.referencetypeid = REFERENCETYPE.ORGANISATIONSECONDARYTYPE;
+      // console.log("🚀 Fetching business details with request:", req);
+      // const response = await referenceValueService.select(req);
+      // console.log("✅ Business details response:", response);
+      // if (response && Array.isArray(response)) {
+      //   setSecondaryBusinessTypes(response);
+      //   console.log("✅ Set secondary business types:", response.length, "items");
+      // } else {
+      //   console.log("⚠️ No business details received or invalid format");
+      // }
     } catch (error) {
+      console.error("❌ Error fetching business details:", error);
       handleError(error, 'Failed to fetch business details');
     }
   };
