@@ -103,6 +103,47 @@ export function AppoinmentBookingScreen() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const pushNotificationService = useMemo(() => new PushNotificationService(), []);
+  
+  // Holiday/Leave days configuration
+  const [holidayDates, setHolidayDates] = useState<Date[]>([]);
+  const [holidayReasons, setHolidayReasons] = useState<{[key: string]: string}>({});
+
+  // Initialize holiday dates (you can modify this to fetch from API)
+  const initializeHolidayDates = () => {
+    const holidays: Date[] = [];
+    const reasons: {[key: string]: string} = {};
+    
+    // Add some example holidays - you can replace this with API data
+    const today = new Date();
+    
+    // Example: Mark next 3 days as holidays for testing
+    for (let i = 1; i <= 3; i++) {
+      const holidayDate = new Date(today);
+      holidayDate.setDate(today.getDate() + i);
+      holidays.push(holidayDate);
+      reasons[holidayDate.toDateString()] = `Holiday ${i} - Office Closed`;
+    }
+    
+    // Example: Mark specific dates as holidays
+    // const newYear = new Date(2025, 0, 1); // January 1, 2025
+    // holidays.push(newYear);
+    // reasons[newYear.toDateString()] = 'New Year Holiday';
+    
+    setHolidayDates(holidays);
+    setHolidayReasons(reasons);
+  };
+
+  // Check if a date is a holiday
+  const isHoliday = (date: Date): boolean => {
+    return holidayDates.some(holiday => 
+      holiday.toDateString() === date.toDateString()
+    );
+  };
+
+  // Get holiday reason for a date
+  const getHolidayReason = (date: Date): string => {
+    return holidayReasons[date.toDateString()] || 'Holiday - Office Closed';
+  };
 
   // Helper function to calculate total amount based on organisation settings
   const calculateTotalAmount = () => {
@@ -174,6 +215,7 @@ export function AppoinmentBookingScreen() {
   useEffect(() => {
     gettimingdata()
     fetchOrganisationDetails();
+    initializeHolidayDates(); // Initialize holiday dates
     
     // Initialize push notifications
     const initializePushNotifications = async () => {
@@ -359,6 +401,17 @@ const [openbefore, setopenbefore] = useState(0);
       }
 
     try {
+      // Check if selected date is a holiday
+      if (isHoliday(seleteddate)) {
+        const holidayReason = getHolidayReason(seleteddate);
+        Alert.alert(
+          'Cannot Book on Holiday',
+          `${holidayReason}\n\nPlease select a different date for your appointment.`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
       if (selectedService.length === 0) {
         Alert.alert(
           'No Services Selected',
@@ -768,22 +821,34 @@ const [openbefore, setopenbefore] = useState(0);
           <AppText style={styles.sectionTitle}>Select Date</AppText>
           <TouchableOpacity
             onPress={() => setshowdatepicker(true)}
-            style={styles.datePickerButton}>
+            style={[
+              styles.datePickerButton,
+              isHoliday(seleteddate) && styles.holidayDateButton
+            ]}>
             <AppView style={styles.datePickerContent}>
               <CustomIcon
-                name={CustomIcons.Account}
-                color={$.tint_2}
+                name={isHoliday(seleteddate) ? CustomIcons.Warning : CustomIcons.Account}
+                color={isHoliday(seleteddate) ? '#FF6B6B' : $.tint_2}
                 size={$.s_small}
               />
-              <AppText style={styles.dateText}>
+              <AppText style={[
+                styles.dateText,
+                isHoliday(seleteddate) && styles.holidayDateText
+              ]}>
                 {seleteddate.toLocaleDateString('en-US', {
                   weekday: 'short',
                   month: 'short',
                   day: 'numeric',
                 })}
+                {isHoliday(seleteddate) && ' (Holiday)'}
               </AppText>
             </AppView>
           </TouchableOpacity>
+          {isHoliday(seleteddate) && (
+            <AppText style={styles.holidayWarningText}>
+              ⚠️ {getHolidayReason(seleteddate)} - Please select a different date
+            </AppText>
+          )}
         </AppView>
 
         <AppView style={styles.divider} />
@@ -990,12 +1055,30 @@ const [openbefore, setopenbefore] = useState(0);
         />
       </ScrollView>
 
-      <DatePickerComponent
+        <DatePickerComponent
         date={seleteddate}
         show={showdatepicker}
         mode="date"
         setShow={() => setshowdatepicker(false)}
         setDate={v => {
+          // Check if selected date is a holiday
+          if (isHoliday(v)) {
+            const holidayReason = getHolidayReason(v);
+            Alert.alert(
+              'Holiday Selected',
+              `${holidayReason}\n\nPlease select a different date for your appointment.`,
+              [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    // Don't change the date, keep the current one
+                    setshowdatepicker(false);
+                  },
+                },
+              ],
+            );
+            return; // Don't update the date
+          }
           setselectedate(v);
         }}
         daysBefore={openbefore}
@@ -1235,5 +1318,20 @@ const styles = StyleSheet.create({
     color: '#1976D2',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  holidayDateButton: {
+    borderColor: '#FF6B6B',
+    backgroundColor: '#FFF5F5',
+  },
+  holidayDateText: {
+    color: '#FF6B6B',
+    fontWeight: '600',
+  },
+  holidayWarningText: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    marginTop: 8,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });

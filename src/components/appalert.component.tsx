@@ -8,7 +8,7 @@ type AppAlertProps = {
 };
 export const AppAlert = (props: AppAlertProps) => {
   Alert.alert(
-    props.title || 'Fazhar',
+    props.title || 'Appointza',
     props.message,
     props.buttons,
     props.options,
