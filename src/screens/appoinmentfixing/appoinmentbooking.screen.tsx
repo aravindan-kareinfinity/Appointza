@@ -105,44 +105,110 @@ export function AppoinmentBookingScreen() {
   const pushNotificationService = useMemo(() => new PushNotificationService(), []);
   
   // Holiday/Leave days configuration
-  const [holidayDates, setHolidayDates] = useState<Date[]>([]);
-  const [holidayReasons, setHolidayReasons] = useState<{[key: string]: string}>({});
+  interface HolidayInfo {
+    date: Date;
+    reason: string;
+    isFullDay: boolean;
+    startTime?: string; // Format: "HH:MM"
+    endTime?: string;   // Format: "HH:MM"
+  }
+  
+  const [holidayDates, setHolidayDates] = useState<HolidayInfo[]>([]);
 
   // Initialize holiday dates (you can modify this to fetch from API)
   const initializeHolidayDates = () => {
-    const holidays: Date[] = [];
-    const reasons: {[key: string]: string} = {};
-    
-    // Add some example holidays - you can replace this with API data
+    const holidays: HolidayInfo[] = [];
     const today = new Date();
     
-    // Example: Mark next 3 days as holidays for testing
+    // Example: Mark next 3 days as full day holidays for testing
     for (let i = 1; i <= 3; i++) {
       const holidayDate = new Date(today);
       holidayDate.setDate(today.getDate() + i);
-      holidays.push(holidayDate);
-      reasons[holidayDate.toDateString()] = `Holiday ${i} - Office Closed`;
+      holidays.push({
+        date: holidayDate,
+        reason: `Holiday ${i} - Office Closed`,
+        isFullDay: true
+      });
     }
     
-    // Example: Mark specific dates as holidays
+    // Example: Mark a specific date as partial day holiday (e.g., half day)
+    const partialHolidayDate = new Date(today);
+    partialHolidayDate.setDate(today.getDate() + 4);
+    holidays.push({
+      date: partialHolidayDate,
+      reason: 'Half Day - Staff Meeting',
+      isFullDay: false,
+      startTime: '09:00',
+      endTime: '12:00'
+    });
+    
+    // Example: Mark another date as partial day holiday (afternoon leave)
+    const afternoonLeaveDate = new Date(today);
+    afternoonLeaveDate.setDate(today.getDate() + 5);
+    holidays.push({
+      date: afternoonLeaveDate,
+      reason: 'Afternoon Leave - Training Session',
+      isFullDay: false,
+      startTime: '14:00',
+      endTime: '18:00'
+    });
+    
+    // Example: Mark specific dates as full day holidays
     // const newYear = new Date(2025, 0, 1); // January 1, 2025
-    // holidays.push(newYear);
-    // reasons[newYear.toDateString()] = 'New Year Holiday';
+    // holidays.push({
+    //   date: newYear,
+    //   reason: 'New Year Holiday',
+    //   isFullDay: true
+    // });
     
     setHolidayDates(holidays);
-    setHolidayReasons(reasons);
   };
 
-  // Check if a date is a holiday
+  // Check if a date is a holiday (full day)
   const isHoliday = (date: Date): boolean => {
     return holidayDates.some(holiday => 
-      holiday.toDateString() === date.toDateString()
+      holiday.date.toDateString() === date.toDateString() && holiday.isFullDay
     );
+  };
+
+  // Check if a date has any holiday (full or partial)
+  const hasHoliday = (date: Date): boolean => {
+    return holidayDates.some(holiday => 
+      holiday.date.toDateString() === date.toDateString()
+    );
+  };
+
+  // Get holiday info for a date
+  const getHolidayInfo = (date: Date): HolidayInfo | null => {
+    return holidayDates.find(holiday => 
+      holiday.date.toDateString() === date.toDateString()
+    ) || null;
+  };
+
+  // Check if a specific time slot is blocked by a partial holiday
+  const isTimeSlotBlocked = (date: Date, timeSlot: string): boolean => {
+    const holidayInfo = getHolidayInfo(date);
+    if (!holidayInfo || holidayInfo.isFullDay) {
+      return false;
+    }
+
+    const slotTime = timeSlot.split(':').slice(0, 2).join(':'); // Convert "HH:MM:SS" to "HH:MM"
+    const startTime = holidayInfo.startTime || '00:00';
+    const endTime = holidayInfo.endTime || '23:59';
+
+    return slotTime >= startTime && slotTime < endTime;
   };
 
   // Get holiday reason for a date
   const getHolidayReason = (date: Date): string => {
-    return holidayReasons[date.toDateString()] || 'Holiday - Office Closed';
+    const holidayInfo = getHolidayInfo(date);
+    if (!holidayInfo) return 'Holiday - Office Closed';
+    
+    if (holidayInfo.isFullDay) {
+      return holidayInfo.reason;
+    } else {
+      return `${holidayInfo.reason} (${holidayInfo.startTime} - ${holidayInfo.endTime})`;
+    }
   };
 
   // Helper function to calculate total amount based on organisation settings
@@ -401,12 +467,23 @@ const [openbefore, setopenbefore] = useState(0);
       }
 
     try {
-      // Check if selected date is a holiday
+      // Check if selected date is a full day holiday
       if (isHoliday(seleteddate)) {
         const holidayReason = getHolidayReason(seleteddate);
         Alert.alert(
           'Cannot Book on Holiday',
           `${holidayReason}\n\nPlease select a different date for your appointment.`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      // Check if selected time slot is blocked by partial holiday
+      if (hasHoliday(seleteddate) && isTimeSlotBlocked(seleteddate, seletedTiming.fromtime)) {
+        const holidayInfo = getHolidayInfo(seleteddate);
+        Alert.alert(
+          'Time Slot Not Available',
+          `${holidayInfo?.reason}\n\nThis time slot is blocked due to leave. Please select a different time.`,
           [{ text: 'OK' }]
         );
         return;
@@ -823,17 +900,17 @@ const [openbefore, setopenbefore] = useState(0);
             onPress={() => setshowdatepicker(true)}
             style={[
               styles.datePickerButton,
-              isHoliday(seleteddate) && styles.holidayDateButton
+              hasHoliday(seleteddate) && styles.holidayDateButton
             ]}>
             <AppView style={styles.datePickerContent}>
               <CustomIcon
-                name={isHoliday(seleteddate) ? CustomIcons.Warning : CustomIcons.Account}
-                color={isHoliday(seleteddate) ? '#FF6B6B' : $.tint_2}
+                name={hasHoliday(seleteddate) ? CustomIcons.Warning : CustomIcons.Account}
+                color={hasHoliday(seleteddate) ? '#FF6B6B' : $.tint_2}
                 size={$.s_small}
               />
               <AppText style={[
                 styles.dateText,
-                isHoliday(seleteddate) && styles.holidayDateText
+                hasHoliday(seleteddate) && styles.holidayDateText
               ]}>
                 {seleteddate.toLocaleDateString('en-US', {
                   weekday: 'short',
@@ -841,12 +918,14 @@ const [openbefore, setopenbefore] = useState(0);
                   day: 'numeric',
                 })}
                 {isHoliday(seleteddate) && ' (Holiday)'}
+                {hasHoliday(seleteddate) && !isHoliday(seleteddate) && ' (Partial Leave)'}
               </AppText>
             </AppView>
           </TouchableOpacity>
-          {isHoliday(seleteddate) && (
+          {hasHoliday(seleteddate) && (
             <AppText style={styles.holidayWarningText}>
-              ⚠️ {getHolidayReason(seleteddate)} - Please select a different date
+              ⚠️ {getHolidayReason(seleteddate)}
+              {isHoliday(seleteddate) ? ' - Please select a different date' : ' - Some time slots may be unavailable'}
             </AppText>
           )}
         </AppView>
@@ -870,6 +949,7 @@ const [openbefore, setopenbefore] = useState(0);
               renderItem={({item}) => {
                 const isSelected = isTimeSlotSelected(item);
                 const isBooked = item.statuscode === 'Booked';
+                const isBlocked = isTimeSlotBlocked(seleteddate, item.fromtime);
 
                 return (
                   <TouchableOpacity
@@ -877,19 +957,24 @@ const [openbefore, setopenbefore] = useState(0);
                       styles.timeSlotButton,
                       isSelected && styles.selectedTimeSlot,
                       isBooked && styles.bookedTimeSlot,
+                      isBlocked && styles.blockedTimeSlot,
                     ]}
-                    disabled={isBooked}
+                    disabled={isBooked || isBlocked}
                     onPress={() => handleTimeSlotSelection(item)}>
                     <AppText
                       style={[
                         styles.timeSlotText,
                         isSelected && styles.selectedTimeSlotText,
                         isBooked && styles.bookedTimeSlotText,
+                        isBlocked && styles.blockedTimeSlotText,
                       ]}>
                       {formatTime(item.fromtime)}
                     </AppText>
                     {isBooked && (
                       <AppText style={styles.bookedText}>Booked</AppText>
+                    )}
+                    {isBlocked && (
+                      <AppText style={styles.blockedText}>Leave</AppText>
                     )}
                   </TouchableOpacity>
                 );
@@ -1061,7 +1146,7 @@ const [openbefore, setopenbefore] = useState(0);
         mode="date"
         setShow={() => setshowdatepicker(false)}
         setDate={v => {
-          // Check if selected date is a holiday
+          // Check if selected date is a full day holiday
           if (isHoliday(v)) {
             const holidayReason = getHolidayReason(v);
             Alert.alert(
@@ -1273,6 +1358,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     opacity: 0.6,
   },
+  blockedTimeSlot: {
+    backgroundColor: '#FFF3CD',
+    borderColor: '#FFC107',
+    opacity: 0.8,
+  },
   timeSlotText: {
     fontSize: 14,
     color: '#333',
@@ -1283,9 +1373,17 @@ const styles = StyleSheet.create({
   bookedTimeSlotText: {
     color: '#999',
   },
+  blockedTimeSlotText: {
+    color: '#856404',
+  },
   bookedText: {
     fontSize: 10,
     color: '#ff4444',
+    marginTop: 4,
+  },
+  blockedText: {
+    fontSize: 10,
+    color: '#856404',
     marginTop: 4,
   },
   noSlotsContainer: {
