@@ -36,7 +36,7 @@ type AppSingleSelectProps<T> = {
 export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
   const [openModal, setOpenModal] = useState(false);
 
-  const [filtereddata, setFiltereddata] = useState<T[]>();
+  const [filtereddata, setFiltereddata] = useState<T[]>(props.data || []);
   const [searchtext, setSearchtext] = useState('');
   const delayedsearchmethod = useMemo(() => createDelayedMethod(), []);
   const [selecteditem, setSelecteditem] = useState<T>();
@@ -47,7 +47,7 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
     }
   }, [props.issubmitted]);
   useEffect(() => {
-    setFiltereddata(props.data);
+    setFiltereddata(props.data || []);
     setSearchtext('');
     if (props.selecteditemid) {
       let selecteditem = props.data.find(
@@ -112,8 +112,11 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
           )}
 
           {selecteditem &&
-            props.keyExtractor(selecteditem).length > 0 &&
-            props.renderItemLabel(selecteditem)}
+            props.keyExtractor(selecteditem).length > 0 && (
+              <AppText style={[$.fs_small, $.text_tint_3]}>
+                {props.renderItemLabel(selecteditem)}
+              </AppText>
+            )}
         </AppView>
 
         {!props.isreadonly && props.onClear && (
@@ -175,6 +178,7 @@ export const AppSingleSelect = <T,>(props: AppSingleSelectProps<T>) => {
             <FlatList
               data={filtereddata}
               style={[$.pt_compact]}
+              keyExtractor={(item, index) => props.keyExtractor(item) || index.toString()}
               renderItem={({item}) => (
                 <TouchableOpacity
                   style={[$.p_compact]}

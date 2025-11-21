@@ -315,13 +315,13 @@ export function LocationScreen(props: LocationScreenProp) {
       {/* Location Picker Button */}
      
 
-      <Button
+      {/* <Button
         title="Select Location on Map"
         variant="outline"
         onPress={() => setShowLocationPicker(true)}
         disabled={isLoading}
         style={[$.mb_normal, $.p_small, $.border_rounded, $.mx_regular]}
-      />
+      /> */}
 
 
     

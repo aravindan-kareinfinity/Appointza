@@ -7,6 +7,7 @@ import {TouchableOpacity} from 'react-native';
 import {ChatScreen} from './screens/chat/chat.screen';
 import {ServiceAvailableScreen} from './screens/servicesavailable/service.screen';
 import {ServiceScreen} from './screens/events/servicelist.screen';
+import {EventScreen} from './screens/events/eventlist.screen';
 import {BussinessDashboardScreen} from './screens/bussinessdashboard/bussinessdashboard.screen';
 import {UserAppoinmentScreen} from './screens/userappointment/userappointment.screen';
 import {useAppSelector} from './redux/hooks.redux';
@@ -23,6 +24,7 @@ export type HomeTabParamList = {
   Account: undefined;
   // Group: undefined;
   Service: undefined;
+  Events: undefined;
   UserDashboard: undefined;
   BussinessDashboard: undefined;
   UserAppoinment: undefined;
@@ -90,19 +92,19 @@ function HomeTabNavigation() {
           </AppView>
         );
       }}
-      initialRouteName={isLoggedIn ? (isCustomer ? "UserDashboard" : "BussinessDashboard") : "Service"}
+      initialRouteName={isLoggedIn ? (isCustomer ? "UserDashboard" : "BussinessDashboard") : "Home"}
       screenOptions={{
         headerShown: false,
       }}>
       
-      {/* Service Screen - Show for everyone EXCEPT when logged in as business */}
+      {/* Home Screen - Show for everyone EXCEPT when logged in as business */}
       {!(isLoggedIn && !isCustomer) && (
         <HomeTab.Screen
-          name="Service"
-          component={ServiceScreen}
+          name="Home"
+          component={HomeScreen}
           options={{
             tabBarIcon: ({focused}) => (
-              <TabBarIcon focused={focused} icon={LucideIcons.Settings} />
+              <TabBarIcon focused={focused} icon={LucideIcons.Home} />
             ),
           }}
         />

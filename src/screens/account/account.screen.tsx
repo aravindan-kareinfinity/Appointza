@@ -159,6 +159,12 @@ export function AccountScreen() {
             showChevron: true,
           },
           {
+            icon: CustomIcons.AppointmentCalendar,
+            label: 'Events',
+            onPress: () => navigation.navigate('EventsManagement'),
+            showChevron: true,
+          },
+          {
             icon: CustomIcons.Supplier,
             label: 'Location',
             onPress: () => navigation.navigate('Organisation'),

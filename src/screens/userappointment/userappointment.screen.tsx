@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, Alert, FlatList, RefreshControl, TouchableOpacity, ScrollView, View, StyleSheet, SafeAreaView} from 'react-native';
+import {ActivityIndicator, Alert, FlatList, RefreshControl, TouchableOpacity, ScrollView, View, StyleSheet, SafeAreaView, Image} from 'react-native';
 import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import {
   CompositeScreenProps,
@@ -22,6 +22,11 @@ import {AppoinmentService} from '../../services/appoinment.service';
 import {OrganisationLocationService} from '../../services/organisationlocation.service';
 import {StaffService} from '../../services/staff.service';
 import {ReferenceValueService} from '../../services/referencevalue.service';
+import {EventBookingService} from '../../services/eventbooking.service';
+import {EventService} from '../../services/event.service';
+import {EventBooking, EventBookingSelectReq} from '../../models/eventbooking.model';
+import {Event, EventSelectReq} from '../../models/event.model';
+import {FilesService} from '../../services/files.service';
 import {
   BookedAppoinmentRes,
   AppoinmentSelectReq,
@@ -73,6 +78,13 @@ export function UserAppoinmentScreen() {
   const [activeTab, setActiveTab] = useState<'upcoming' | 'previous'>('upcoming');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [showFilterSheet, setShowFilterSheet] = useState(false);
+  
+  // Event bookings states
+  const [activeCategoryTab, setActiveCategoryTab] = useState<'services' | 'events'>('services');
+  const [eventBookings, setEventBookings] = useState<EventBooking[]>([]);
+  const [eventDetailsMap, setEventDetailsMap] = useState<Map<number, Event>>(new Map());
+  const [upcomingEventBookings, setUpcomingEventBookings] = useState<EventBooking[]>([]);
+  const [previousEventBookings, setPreviousEventBookings] = useState<EventBooking[]>([]);
 
   // Refs
   const cancelSheetRef = useRef<any>(null);
@@ -87,6 +99,9 @@ export function UserAppoinmentScreen() {
   const usercontext = useAppSelector(selectusercontext);
   const appoinmentservices = useMemo(() => new AppoinmentService(), []);
   const referenceService = useMemo(() => new ReferenceValueService(), []);
+  const eventBookingService = useMemo(() => new EventBookingService(), []);
+  const eventService = useMemo(() => new EventService(), []);
+  const filesService = useMemo(() => new FilesService(), []);
 
   // Load data when screen focuses
   useFocusEffect(
@@ -94,13 +109,113 @@ export function UserAppoinmentScreen() {
       loadInitialData();
     }, []),
   );
+  
+  // Reload data when category tab changes
+  useEffect(() => {
+    if (usercontext.value.userid > 0) {
+      loadInitialData();
+    }
+  }, [activeCategoryTab]);
 
   const loadInitialData = async () => {
     setIsloading(true);
     try {
       if (usercontext.value.userid > 0) {
-        await getuserappoinment();
+        if (activeCategoryTab === 'services') {
+          await getuserappoinment();
+        } else {
+          await getUserEventBookings();
+        }
       }
+    } catch (error: any) {
+      handleError(error);
+    } finally {
+      setIsloading(false);
+    }
+  };
+  
+  // Fetch user event bookings
+  const getUserEventBookings = async () => {
+    try {
+      setIsloading(true);
+      const req = new EventBookingSelectReq();
+      req.user_id = usercontext.value.userid;
+      req.id = 0;
+      req.event_id = 0;
+      req.payment_status = '';
+      req.check_in_status = '';
+      req.confirmation_status = '';
+
+      const bookings = await eventBookingService.select(req);
+      setEventBookings(bookings || []);
+      
+      // Fetch event details for each booking
+      const eventIds = [...new Set(bookings?.map(b => b.event_id) || [])];
+      const eventDetails = new Map<number, Event>();
+      
+      for (const eventId of eventIds) {
+        try {
+          const eventReq = new EventSelectReq();
+          eventReq.id = eventId;
+          eventReq.organisation_id = 0;
+          eventReq.organisation_location_id = 0;
+          eventReq.status = '';
+          eventReq.is_public = true;
+          
+          const events = await eventService.select(eventReq);
+          if (events && events.length > 0) {
+            eventDetails.set(eventId, events[0]);
+          }
+        } catch (error) {
+          console.error(`Error fetching event ${eventId}:`, error);
+        }
+      }
+      
+      setEventDetailsMap(eventDetails);
+      
+      // Separate event bookings into upcoming and previous
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      
+      const upcoming = bookings?.filter(booking => {
+        const event = eventDetails.get(booking.event_id);
+        if (!event) return false;
+        
+        let eventDate: Date | null = null;
+        if (event.event_type === 'single' && event.event_date) {
+          eventDate = new Date(event.event_date);
+        } else if (event.event_type === 'range' && event.from_date) {
+          eventDate = new Date(event.from_date);
+        } else if (event.event_type === 'daily') {
+          // For daily events, consider them as upcoming
+          return true;
+        }
+        
+        if (!eventDate) return false;
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate >= now;
+      }) || [];
+      
+      const previous = bookings?.filter(booking => {
+        const event = eventDetails.get(booking.event_id);
+        if (!event) return false;
+        
+        let eventDate: Date | null = null;
+        if (event.event_type === 'single' && event.event_date) {
+          eventDate = new Date(event.event_date);
+        } else if (event.event_type === 'range' && event.to_date) {
+          eventDate = new Date(event.to_date);
+        } else if (event.event_type === 'daily') {
+          return false; // Daily events are always upcoming
+        }
+        
+        if (!eventDate) return false;
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate < now;
+      }) || [];
+
+      setUpcomingEventBookings(upcoming);
+      setPreviousEventBookings(previous);
     } catch (error: any) {
       handleError(error);
     } finally {
@@ -279,7 +394,11 @@ export function UserAppoinmentScreen() {
     setIsRefreshing(true);
     try {
       if (usercontext.value.userid > 0) {
-        await getuserappoinment();
+        if (activeCategoryTab === 'services') {
+          await getuserappoinment();
+        } else {
+          await getUserEventBookings();
+        }
       }
     } catch (error) {
       handleError(error);
@@ -324,6 +443,223 @@ export function UserAppoinmentScreen() {
 
       return true;
     });
+  };
+
+  // Format event date
+  const formatEventDate = (event: Event): string => {
+    if (event.event_type === 'single' && event.event_date) {
+      return new Date(event.event_date).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } else if (event.event_type === 'range' && event.from_date && event.to_date) {
+      const from = new Date(event.from_date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
+      const to = new Date(event.to_date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      return `${from} - ${to}`;
+    } else if (event.event_type === 'daily') {
+      return 'Daily Recurring';
+    }
+    return 'N/A';
+  };
+
+  const renderEventBookingItem = ({item}: {item: EventBooking}) => {
+    const event = eventDetailsMap.get(item.event_id);
+    if (!event) {
+      return null;
+    }
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'approved':
+          return '#4CAF50';
+        case 'pending':
+          return '#FFC107';
+        case 'rejected':
+        case 'cancelled':
+          return '#F44336';
+        default:
+          return '#FFC107';
+      }
+    };
+
+    const getPaymentStatusColor = (status: string) => {
+      switch (status) {
+        case 'paid':
+          return '#4CAF50';
+        case 'pending':
+          return '#FFC107';
+        case 'failed':
+        case 'refunded':
+          return '#F44336';
+        default:
+          return '#FFC107';
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        style={{
+          marginHorizontal: 8,
+          marginBottom: 16,
+          borderWidth: 1,
+          borderColor: '#e0e0e0',
+          borderRadius: 8,
+          backgroundColor: '#f8f9fa',
+          padding: 16,
+          elevation: 3,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          borderLeftWidth: 4,
+          borderLeftColor: getStatusColor(item.confirmation_status) || $.tint_3
+        }}
+        activeOpacity={0.9}
+        onPress={() => {}}>
+        
+        {/* Header with Date */}
+        <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 16}}>
+          <AppText style={{fontWeight: 'bold', fontSize: 16, color: '#333', flex: 1}}>
+            {formatEventDate(event)}
+          </AppText>
+        </View>
+
+        {/* Event Info */}
+        <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 16}}>
+          <View style={{
+            backgroundColor: '#e9ecef', 
+            padding: 8, 
+            borderRadius: 4,
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: 40, 
+            height: 40
+          }}>
+            <CustomIcon
+              size={24}
+              color="#4a6da7"
+              name={CustomIcons.Calendar}
+            />
+          </View>
+          
+          <View style={{marginLeft: 16, flex: 1}}>
+            <AppText style={{fontWeight: '600', fontSize: 16, color: '#333'}}>
+              {event.event_name}
+            </AppText>
+            {event.location && (
+              <AppText style={{fontWeight: '400', fontSize: 12, color: '#6c757d'}}>
+                {event.location}
+              </AppText>
+            )}
+          </View>
+        </View>
+
+        {/* Status and Payment Info */}
+        <View style={{flexDirection: 'row', marginBottom: 16, gap: 8, flexWrap: 'wrap'}}>
+          {/* Confirmation Status Badge */}
+          <View style={{
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            backgroundColor: '#e9ecef', 
+            padding: 4, 
+            borderRadius: 4,
+            paddingHorizontal: 8
+          }}>
+            <CustomIcon
+              name={
+                item.confirmation_status === 'approved' ? CustomIcons.StatusIndicator :
+                item.confirmation_status === 'rejected' ? CustomIcons.Delete :
+                CustomIcons.TimeCard
+              }
+              size={20}
+              color={getStatusColor(item.confirmation_status)}
+            />
+            <AppText style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#495057'}}>
+              {item.confirmation_status?.toUpperCase() || 'PENDING'}
+            </AppText>
+          </View>
+
+          {/* Payment Status Badge */}
+          <View style={{
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            backgroundColor: '#e9ecef', 
+            padding: 4, 
+            borderRadius: 4,
+            paddingHorizontal: 8
+          }}>
+            <CustomIcon
+              name={item.payment_status === 'paid' ? CustomIcons.OnlinePayment : CustomIcons.CashPayment}
+              size={14}
+              color={getPaymentStatusColor(item.payment_status)}
+            />
+            <AppText style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#495057'}}>
+              {item.payment_status?.toUpperCase() || 'PENDING'}
+            </AppText>
+          </View>
+
+          {/* Number of People Badge */}
+          <View style={{
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            backgroundColor: '#e9ecef', 
+            padding: 4, 
+            borderRadius: 4,
+            paddingHorizontal: 8
+          }}>
+            <CustomIcon
+              size={14}
+              color="#4a6da7"
+              name={CustomIcons.Account}
+            />
+            <AppText style={{marginLeft: 4, fontWeight: '500', fontSize: 12, color: '#495057'}}>
+              {item.number_of_people} {item.number_of_people === 1 ? 'Person' : 'People'}
+            </AppText>
+          </View>
+        </View>
+
+        {/* Booking Details */}
+        <View style={{marginBottom: 16}}>
+          {item.total_amount && item.total_amount > 0 && (
+            <View style={{
+              flexDirection: 'row', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              padding: 8,
+              backgroundColor: '#e9ecef',
+              borderRadius: 4
+            }}>
+              <AppText style={{fontWeight: '600', fontSize: 12, color: '#333'}}>
+                Total Amount
+              </AppText>
+              <AppText style={{fontWeight: '700', fontSize: 14, color: '#4a6da7'}}>
+                ₹{item.total_amount.toLocaleString('en-IN')}
+              </AppText>
+            </View>
+          )}
+          
+          {item.notes && (
+            <View style={{marginTop: 8}}>
+              <AppText style={{fontWeight: '600', fontSize: 12, color: '#6c757d', marginBottom: 4}}>
+                Attendees
+              </AppText>
+              <AppText style={{fontSize: 12, color: '#495057'}}>
+                {item.notes}
+              </AppText>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   const renderAppointmentItem = ({item}: {item: BookedAppoinmentRes}) => (
@@ -700,20 +1036,60 @@ export function UserAppoinmentScreen() {
       <View style={styles.header}>
         <AppText style={styles.headerTitle}>My Appointments</AppText>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity 
-            style={{ marginRight: 16 }}
-            onPress={() => {
-              filterSheetRef.current?.open();
-            }}>
-            <CustomIcon name={CustomIcons.Filter} size={24} color={$.tint_3} />
-          </TouchableOpacity>
+          {activeCategoryTab === 'services' && (
+            <TouchableOpacity 
+              style={{ marginRight: 16 }}
+              onPress={() => {
+                filterSheetRef.current?.open();
+              }}>
+              <CustomIcon name={CustomIcons.Filter} size={24} color={$.tint_3} />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={handleRefresh}>
             <CustomIcon name={CustomIcons.Refresh} size={24} color={$.tint_3} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Tab Buttons */}
+      {/* Category Tab Buttons (Services/Events) */}
+      <View style={[styles.tabContainer, { marginBottom: 0 }]}>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeCategoryTab === 'services' && styles.activeTabButton,
+          ]}
+          onPress={() => {
+            setActiveCategoryTab('services');
+            setActiveTab('upcoming');
+          }}>
+          <AppText
+            style={[
+              styles.tabButtonText,
+              activeCategoryTab === 'services' && styles.activeTabButtonText,
+            ]}>
+            Services
+          </AppText>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeCategoryTab === 'events' && styles.activeTabButton,
+          ]}
+          onPress={() => {
+            setActiveCategoryTab('events');
+            setActiveTab('upcoming');
+          }}>
+          <AppText
+            style={[
+              styles.tabButtonText,
+              activeCategoryTab === 'events' && styles.activeTabButtonText,
+            ]}>
+            Events
+          </AppText>
+        </TouchableOpacity>
+      </View>
+
+      {/* Sub Tab Buttons (Upcoming/Previous) */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[
@@ -749,9 +1125,13 @@ export function UserAppoinmentScreen() {
       {isloading && !isRefreshing ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={$.tint_3} />
-          <AppText style={styles.loadingText}>Loading appointments...</AppText>
+          <AppText style={styles.loadingText}>
+            {activeCategoryTab === 'services' 
+              ? 'Loading appointments...' 
+              : 'Loading event bookings...'}
+          </AppText>
         </View>
-      ) : (
+      ) : activeCategoryTab === 'services' ? (
         <FlatList
           data={getFilteredAppointments(activeTab === 'upcoming' ? upcomingAppointments : previousAppointments)}
           nestedScrollEnabled
@@ -777,6 +1157,42 @@ export function UserAppoinmentScreen() {
                 {activeTab === 'upcoming'
                   ? 'You have no upcoming appointments'
                   : 'You have no previous appointments'}
+              </AppText>
+              <TouchableOpacity
+                style={styles.refreshButton}
+                onPress={handleRefresh}>
+                <AppText style={styles.refreshButtonText}>Refresh</AppText>
+              </TouchableOpacity>
+            </View>
+          }
+          contentContainerStyle={styles.listContentContainer}
+        />
+      ) : (
+        <FlatList
+          data={activeTab === 'upcoming' ? upcomingEventBookings : previousEventBookings}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          keyExtractor={item => item.id.toString()}
+          renderItem={renderEventBookingItem}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[$.tint_3]}
+              tintColor={$.tint_3}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <CustomIcon
+                color={$.tint_5}
+                name={CustomIcons.Calendar}
+                size={48}
+              />
+              <AppText style={styles.emptyText}>
+                {activeTab === 'upcoming'
+                  ? 'You have no upcoming event bookings'
+                  : 'You have no previous event bookings'}
               </AppText>
               <TouchableOpacity
                 style={styles.refreshButton}

@@ -7,88 +7,106 @@ import {
 } from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AppStackParamList} from '../../appstack.navigation';
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {AppView} from '../../components/appview.component';
 import {AppText} from '../../components/apptext.component';
-import {useAppDispatch, useAppSelector} from '../../redux/hooks.redux';
-import {counteractions, selectcounter} from '../../redux/counter.redux';
-import {AppButton} from '../../components/appbutton.component';
 import {$} from '../../styles';
-import {AppTextInput} from '../../components/apptextinput.component';
-import {CustomIcons} from '../../components/customicons.component';
-import {AppSwitch} from '../../components/appswitch.component';
-import {ScrollView, SafeAreaView} from 'react-native';
+import {TouchableOpacity, SafeAreaView} from 'react-native';
+import {ServiceScreen} from '../events/servicelist.screen';
+import {EventScreen} from '../events/eventlist.screen';
+import {Colors} from '../../constants/colors';
+import {DefaultColor} from '../../styles/default-color.style';
 
 type HomeScreenProp = CompositeScreenProps<
   BottomTabScreenProps<HomeTabParamList, 'Home'>,
   NativeStackScreenProps<AppStackParamList>
 >;
+
+type TabType = 'services' | 'events';
+
 export function HomeScreen() {
   const navigation = useNavigation<HomeScreenProp['navigation']>();
   const route = useRoute<HomeScreenProp['route']>();
-  const counter = useAppSelector(selectcounter);
-  const dispatch = useAppDispatch();
-  const updateCounter = () => {
-    dispatch(counteractions.incrementByAmount(1));
-  };
-  const [textinputvalue, setTextinputvalue] = useState('');
-  const [textinputwithiconvalue, setTextinputwithiconvalue] = useState('');
-  const [switchvalue, setSwitchvalue] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('services');
+  const colors = DefaultColor.instance;
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView>
-      <AppView style={$.p_compact}>
-        <AppText style={[$.mb_compact, $.fs_tiny]}>Tiny</AppText>
-        <AppText style={[$.mb_compact, $.fs_extrasmall]}>Extrasmall</AppText>
-        <AppText style={[$.mb_compact, $.fs_small]}>Small</AppText>
-        <AppText style={[$.mb_compact, $.fs_compact]}>Compact</AppText>
-        <AppText style={[$.mb_compact, $.fs_regular]}>Regular</AppText>
-        <AppText style={[$.mb_compact, $.fs_normal]}>Normal</AppText>
-        <AppText style={[$.mb_compact, $.fs_medium]}>Medium</AppText>
-        <AppText style={[$.mb_compact, $.fs_big]}>Big</AppText>
-        <AppText style={[$.mb_compact, $.fs_large]}>Large</AppText>
-        <AppText style={[$.mb_compact, $.fs_huge]}>Huge</AppText>
-        <AppText style={[$.mb_compact, $.fs_massive]}>Massive</AppText>
-        <AppText style={[$.mb_compact, $.fs_enormous]}>Enormous</AppText>
-        <AppText style={[$.mb_compact, $.fs_giant]}>Giant</AppText>
-        <AppText style={[$.mb_compact, $.fs_extralarge]}>Extralarge</AppText>
-        <AppText style={[$.mb_compact, $.fs_colossal]}>Colossal</AppText>
-        <AppTextInput
-          style={[$.mb_compact]}
-          placeholder="Text Input"
-          value={textinputvalue}
-          onChangeText={text => setTextinputvalue(text)}
-        />
-        <AppTextInput
-          icon={CustomIcons.AddAccount}
-          style={[$.mb_compact]}
-          placeholder="Text Input with Icon"
-          value={textinputwithiconvalue}
-          onChangeText={text => setTextinputwithiconvalue(text)}
-        />
-        <AppButton
-          name="Save"
-          style={[$.bg_success, $.mb_compact]}
-       
-          onPress={() => {}}
-        />
-        <AppButton
-          name="Cancel"
-          style={[$.bg_tint_10, $.mb_compact]}
-          
-          onPress={() => {}}
-        />
-        <AppView style={[$.flex_row, $.align_items_center]}>
-          <AppSwitch
-            onValueChange={value => {
-              setSwitchvalue(value);
-            }}
-            value={switchvalue}
-          />
-          <AppText style={[$.pl_compact]}>Switch</AppText>
+    <SafeAreaView style={{flex: 1, backgroundColor: Colors.light.background}}>
+      <AppView style={[$.flex_1, $.bg_tint_11]}>
+        {/* Tab Selector */}
+        <AppView
+          style={[
+            $.flex_row,
+            $.bg_tint_11,
+            $.px_small,
+            $.py_small,
+            {
+              borderBottomWidth: 1,
+              borderBottomColor: 'rgba(0,0,0,0.1)',
+            },
+          ]}>
+          <TouchableOpacity
+            style={[
+              $.flex_1,
+              $.align_items_center,
+              $.py_small,
+              $.px_small,
+              {
+                backgroundColor:
+                  activeTab === 'services' ? colors.tint_1 : 'transparent',
+                borderRadius: 8,
+                marginRight: 6,
+              },
+            ]}
+            onPress={() => setActiveTab('services')}>
+            <AppText
+              style={[
+                $.fw_semibold,
+                $.fs_regular,
+                {
+                  color:
+                    activeTab === 'services' ? colors.tint_11 : colors.tint_3,
+                },
+              ]}>
+              Services
+            </AppText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              $.flex_1,
+              $.align_items_center,
+              $.py_small,
+              $.px_small,
+              {
+                backgroundColor:
+                  activeTab === 'events' ? colors.tint_1 : 'transparent',
+                borderRadius: 8,
+                marginLeft: 6,
+              },
+            ]}
+            onPress={() => setActiveTab('events')}>
+            <AppText
+              style={[
+                $.fw_semibold,
+                $.fs_regular,
+                {
+                  color: activeTab === 'events' ? colors.tint_11 : colors.tint_3,
+                },
+              ]}>
+              Events
+            </AppText>
+          </TouchableOpacity>
         </AppView>
-              </AppView>
-      </ScrollView>
+
+        {/* Content Area */}
+        <AppView style={[$.flex_1]}>
+          {activeTab === 'services' ? (
+            <ServiceScreen />
+          ) : (
+            <EventScreen />
+          )}
+        </AppView>
+      </AppView>
     </SafeAreaView>
   );
 }

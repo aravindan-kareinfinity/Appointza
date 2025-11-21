@@ -25,6 +25,9 @@ import { AppoinmentBookingScreen } from './screens/appoinmentfixing/appoinmentbo
 import { AppointmentTimelineScreen } from './screens/appointmentimeline/appointmenttimeline.screen';
 import { LucideIcon, LucideIcons } from './components/LucideIcons.component';
 import { OTPVerificationScreen } from './screens/otpverification/otpverification.screen';
+import { EventBookingScreen } from './screens/events/eventbooking.screen';
+import { EventsManagementScreen } from './screens/events/eventsmanagement.screen';
+import { BusinessEventBookingsScreen } from './screens/events/businesseventbookings.screen';
 
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
@@ -54,6 +57,11 @@ export type AppStackParamList = {
     mobileNumber: string;
     fromSignup: boolean;
   };
+  EventBooking: {
+    eventId: number;
+  };
+  EventsManagement: undefined;
+  BusinessEventBookings: undefined;
 };
 const colors = DefaultColor.instance.colors;
 const AppTheme = {
@@ -195,9 +203,20 @@ function AppStackNavigation() {
             headerShown: false,
           }}
         />
-  
-       
-  
+        <AppStack.Screen 
+          name="EventBooking" 
+          component={EventBookingScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <AppStack.Screen 
+          name="EventsManagement" 
+          component={EventsManagementScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
       </AppStack.Navigator>
     </NavigationContainer>
   );
