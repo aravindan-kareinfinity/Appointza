@@ -164,24 +164,9 @@ const ExploreServices = () => {
   const loadInitialData = useCallback(async () => {
     setIsLoading(true);
     try {
-      console.log('🔍 Loading organizations...');
-      
-      // Check authentication status
-      const token = localStorage.getItem('auth_token');
-      const userContext = localStorage.getItem('user_context');
-      console.log('🔐 Auth status:', {
-        hasToken: !!token,
-        hasUserContext: !!userContext,
-        userContext: userContext ? JSON.parse(userContext) : null
-      });
-      
       const req = new OrganisationSelectReq();
-      console.log('📤 Request object:', JSON.stringify(req, null, 2));
-      console.log('🌐 API Base URL:', organisationService.baseurl);
-      
       const response = await organisationService.selectOrganisationDetail(req);
-      console.log('✅ Organizations API response:', response);
-      
+
       if (response && Array.isArray(response)) {
         // Filter to only show verified organization locations
         // The server should already filter for isverified=true, but we add client-side validation

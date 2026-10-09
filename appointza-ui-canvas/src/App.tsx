@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "rea
 import { Loader2 } from "lucide-react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SafeArea } from "./components/common/SafeArea";
+import { AppErrorBoundary } from "./components/common/AppErrorBoundary";
 import { GOOGLE_WEB_CLIENT_ID } from "./config/google";
 import { useSafeArea } from "./hooks/useSafeArea";
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -339,7 +340,11 @@ function NativeBootstrap({ children }: { children: ReactNode }) {
 function AppShell() {
   const location = useLocation();
   const publicSurface = isPublicBookingPagePath(location.pathname);
-  const routes = <AppRoutes />;
+  const routes = (
+    <AppErrorBoundary resetKey={location.pathname}>
+      <AppRoutes />
+    </AppErrorBoundary>
+  );
 
   return (
     <NativeBootstrap>
@@ -369,7 +374,9 @@ const App = () => (
           className="min-h-dvh min-h-screen"
           padding={Capacitor.isNativePlatform() ? "all" : "none"}
         >
-          <AppShell />
+          <AppErrorBoundary>
+            <AppShell />
+          </AppErrorBoundary>
         </SafeArea>
       </BrowserRouter>
     </QueryClientProvider>

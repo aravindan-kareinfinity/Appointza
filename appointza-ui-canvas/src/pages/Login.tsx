@@ -186,8 +186,6 @@ const Login = () => {
   };
 
   const processGoogleLogin = async (userContext: any, userInfo: any) => {
-    console.log('✅ GoogleLogin response from /api/Auth/GoogleLogin:', userContext);
-
     if (!userContext || !userContext.userid || userContext.userid <= 0) {
       throw new Error('Invalid login response from server');
     }

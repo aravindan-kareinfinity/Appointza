@@ -1,8 +1,7 @@
 window.APP_CONFIG = {
-  // 1) Backend API — host:port the API runs on. The frontend calls this for /api/*.
-  baseurl: "https://localhost:7117",
-  // 2) Frontend UI — public site URL (login, Google, booking return links).
-  uiBaseUrl: "http://localhost:8083",
+  // URLs/port are NOT set here. Edit appointza-urls.json (next to appointza.exe in the build).
+  baseurl: "",
+  uiBaseUrl: "",
   marketingDomain: "appointza.com",
   domainname: "appointza.com",
 

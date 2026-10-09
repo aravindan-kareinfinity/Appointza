@@ -104,37 +104,14 @@ function appointzaResolveMainAppOrigin() {
       return window.parent.__APPOINTZA_MAIN_ORIGIN__;
     }
   } catch (_) {}
-  try {
-    if (window.APP_CONFIG && window.APP_CONFIG.uiBaseUrl) {
-      var cfgUi = String(window.APP_CONFIG.uiBaseUrl).replace(/\\/+$/, '');
-      var apiBase = window.APP_CONFIG.baseurl
-        ? String(window.APP_CONFIG.baseurl).replace(/\\/+$/, '')
-        : '';
-      try {
-        var cfgParsed = new URL(cfgUi);
-        var isLocal = cfgParsed.hostname === 'localhost' || cfgParsed.hostname === '127.0.0.1';
-        if (isLocal && apiBase && cfgUi === apiBase) {
-          return 'http://localhost:8083';
-        }
-      } catch (_) {}
-      return cfgUi;
-    }
-  } catch (_) {}
   var h = (window.location.hostname || '').toLowerCase();
   if (h === 'localhost' || h === '127.0.0.1' || (h.length > 10 && h.slice(-10) === '.localhost')) {
     var p = window.location.port || '8083';
     return window.location.protocol + '//localhost:' + p;
   }
-  try {
-    if (window.APP_CONFIG && window.APP_CONFIG.uiBaseUrl) {
-      return String(window.APP_CONFIG.uiBaseUrl).replace(/\\/+$/, '');
-    }
-  } catch (_) {}
-  try {
-    if (window.APP_CONFIG && window.APP_CONFIG.baseurl) {
-      return String(window.APP_CONFIG.baseurl).replace(/\\/+$/, '');
-    }
-  } catch (_) {}
+  if (h === 'appointza.com' || (h.length > 14 && h.slice(-14) === '.appointza.com')) {
+    return 'https://appointza.com';
+  }
   return window.location.protocol + '//' + window.location.host;
 }
 function appointzaStashReturnPath(path) {

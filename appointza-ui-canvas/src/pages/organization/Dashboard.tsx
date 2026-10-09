@@ -241,8 +241,6 @@ const OrganizationDashboard = () => {
       // Save back to localStorage
       localStorage.setItem('user_context', JSON.stringify(userContext));
       console.log('✅ Updated user_context.organisationlocationid from', oldLocationId, 'to', locationId);
-      console.log('📦 Updated user_context:', userContext);
-      
       // UPDATE organizationlocationid in a separate key for easy access
       localStorage.setItem('organizationlocationid', locationId.toString());
       console.log('✅ UPDATED organizationlocationid in localStorage:', locationId);

@@ -1,16 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { FilesService } from "@/services/files.service";
+import { getAuthToken, getStoredUserContext } from "@/utils/authSession.util";
 
 /** Image id from persisted login session (same source as sidebar / JWT). */
 export function readStoredProfileImageId(): number {
-  try {
-    const raw = localStorage.getItem("user_context");
-    if (!raw) return 0;
-    const id = Number(JSON.parse(raw).userimageid) || 0;
-    return id > 0 ? id : 0;
-  } catch {
-    return 0;
-  }
+  const id = Number(getStoredUserContext()?.userimageid) || 0;
+  return id > 0 ? id : 0;
 }
 
 /** Prefer saved profile, then auth context, then localStorage. */
@@ -23,19 +18,6 @@ export function resolveProfileImageId(
   const fromAuth = Number(authImageId) || 0;
   if (fromAuth > 0) return fromAuth;
   return readStoredProfileImageId();
-}
-
-function readAccessToken(): string {
-  try {
-    const raw = localStorage.getItem("user_context");
-    if (raw) {
-      const token = JSON.parse(raw).accesstoken;
-      if (token) return token;
-    }
-  } catch {
-    /* ignore */
-  }
-  return localStorage.getItem("auth_token") || "";
 }
 
 /** Load a private Files API image with Bearer auth and expose a blob URL for `<img>`. */
@@ -59,7 +41,7 @@ export function useAuthenticatedProfileImage(imageId: number, version = 0) {
 
       setIsLoading(true);
       try {
-        const token = readAccessToken();
+        const token = getAuthToken();
         const response = await fetch(
           `${filesService.getImageUrl(imageId)}&v=${version}`,
           {

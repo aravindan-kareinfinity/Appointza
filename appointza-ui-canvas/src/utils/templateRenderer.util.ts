@@ -28,42 +28,45 @@ const renderConditionalBlock = (html: string, blockName: string, shouldRender: b
   return html.replace(regex, (_match, innerContent) => (shouldRender ? innerContent : ""));
 };
 
-const applyConditionalSection = (template: string, startMarker: string, endMarker: string, keepContent: boolean) => {
-  const startIdx = template.indexOf(startMarker);
-  const endIdx = template.indexOf(endMarker);
-  if (startIdx < 0 || endIdx <= startIdx) {
-    return template.replaceAll(startMarker, "").replaceAll(endMarker, "");
+/** Rewrites every `start…end` section (a page may contain the same block more than once). */
+const replaceEverySection = (
+  template: string,
+  startMarker: string,
+  endMarker: string,
+  render: (inner: string) => string,
+) => {
+  let output = "";
+  let cursor = 0;
+  while (cursor < template.length) {
+    const startIdx = template.indexOf(startMarker, cursor);
+    if (startIdx < 0) break;
+    const endIdx = template.indexOf(endMarker, startIdx + startMarker.length);
+    if (endIdx < 0) break;
+    output += template.slice(cursor, startIdx);
+    output += render(template.slice(startIdx + startMarker.length, endIdx));
+    cursor = endIdx + endMarker.length;
   }
-
-  if (keepContent) {
-    const inner = template.slice(startIdx + startMarker.length, endIdx);
-    return template.slice(0, startIdx) + inner + template.slice(endIdx + endMarker.length);
-  }
-
-  return template.slice(0, startIdx) + template.slice(endIdx + endMarker.length);
+  output += template.slice(cursor);
+  return output.replaceAll(startMarker, "").replaceAll(endMarker, "");
 };
 
-const applyLoopSection = <T>(
+export const applyConditionalSection = (
+  template: string,
+  startMarker: string,
+  endMarker: string,
+  keepContent: boolean,
+) => replaceEverySection(template, startMarker, endMarker, (inner) => (keepContent ? inner : ""));
+
+export const applyLoopSection = <T>(
   template: string,
   startMarker: string,
   endMarker: string,
   items: T[],
   renderItem: (loopTemplate: string, item: T) => string
-) => {
-  const startIdx = template.indexOf(startMarker);
-  const endIdx = template.indexOf(endMarker);
-  if (startIdx < 0 || endIdx <= startIdx) {
-    return template.replaceAll(startMarker, "").replaceAll(endMarker, "");
-  }
-
-  if (!items || items.length === 0) {
-    return template.slice(0, startIdx) + template.slice(endIdx + endMarker.length);
-  }
-
-  const loopTemplate = template.slice(startIdx + startMarker.length, endIdx);
-  const rendered = items.map((item) => renderItem(loopTemplate, item)).join("");
-  return template.slice(0, startIdx) + rendered + template.slice(endIdx + endMarker.length);
-};
+) =>
+  replaceEverySection(template, startMarker, endMarker, (loopTemplate) =>
+    (items ?? []).map((item) => renderItem(loopTemplate, item)).join(""),
+  );
 
 const formatDateValue = (value: unknown) => {
   if (!value) {
@@ -186,16 +189,18 @@ export const renderSiteTemplateHtml = (templateHtml: string, siteData: SiteDetai
   html = replaceToken(html, "organisationdetail.notes", siteData.organisationdetail?.notes);
   html = replaceToken(html, "organisation.notes", siteData.organisationdetail?.notes);
   html = replaceToken(html, "OrganisationNotes", siteData.organisationdetail?.notes);
-  html = replaceToken(html, "organisationdetail.gstnumber", siteData.organisationdetail?.gstnumber);
+  const gstNumber = (siteData.organisationdetail?.gstnumber || "").trim();
+  for (const token of ["organisationdetail.gstnumber", "organisationgstnumber", "organizationgstnumber", "gstnumber"]) {
+    html = replaceToken(html, token, gstNumber);
+  }
   const locationEmail =
-    (siteData.locationdetail as { email?: string } | undefined)?.email?.trim() || "";
-  html = replaceToken(html, "organisationemail", locationEmail);
-  html = applyConditionalSection(
-    html,
-    "{{#organisationemail}}",
-    "{{/organisationemail}}",
-    !!locationEmail,
-  );
+    (siteData.locationdetail as { email?: string } | undefined)?.email?.trim() ||
+    (siteData.organisationdetail as { email?: string } | undefined)?.email?.trim() ||
+    "";
+  for (const token of ["organisationemail", "organizationemail"]) {
+    html = replaceToken(html, token, locationEmail);
+    html = applyConditionalSection(html, `{{#${token}}}`, `{{/${token}}}`, !!locationEmail);
+  }
 
   html = replaceToken(html, "currentyear", new Date().getFullYear());
   const bookPath = buildBookAppointmentPath(organisationId, siteData.locationdetail?.id || 0);

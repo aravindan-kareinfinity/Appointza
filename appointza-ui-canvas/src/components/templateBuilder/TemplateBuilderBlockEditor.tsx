@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -87,6 +88,34 @@ export function TemplateBuilderBlockEditor({
                 </button>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {block.type === "appointza-organization" && (
+        <div className="space-y-2 rounded-xl border border-stone-200 bg-white p-3">
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor={`${block.id}-show-logo`} className="text-sm">
+              Show logo
+            </Label>
+            <Switch
+              id={`${block.id}-show-logo`}
+              checked={(block.data as { showLogo?: boolean }).showLogo !== false}
+              onCheckedChange={(checked) => onUpdate({ showLogo: checked })}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label htmlFor={`${block.id}-show-gst`} className="text-sm">
+                Show GST number
+              </Label>
+              <p className="text-xs text-stone-500">Hidden automatically if no GST number is saved.</p>
+            </div>
+            <Switch
+              id={`${block.id}-show-gst`}
+              checked={(block.data as { showGst?: boolean }).showGst === true}
+              onCheckedChange={(checked) => onUpdate({ showGst: checked })}
+            />
           </div>
         </div>
       )}

@@ -82,132 +82,16 @@ import { normalizeCatalogTab } from "@/utils/organisationCatalogOfferings.util";
 import { OnboardingPageGuide } from "@/components/onboarding/OrganizationOnboarding";
 import { ServicesEventsExplainer } from "@/components/onboarding/ServicesEventsExplainer";
 import { onboardingStepRoute } from "@/utils/organizationOnboarding.util";
+import { compareDateOnly, isDateOnlyAfterToday, toDateOnlyString } from "@/utils/eventDate.util";
 import {
-  compareDateOnly,
-  formatEventDateOnly,
-  isDateOnlyAfterToday,
-  toDateInputValue,
-  toDateOnlyString,
-  todayDateOnlyString,
-} from "@/utils/eventDate.util";
-
-/** Same date/location line pattern as `PublicBrowseEventsPage` for card consistency. */
-function formatOrganizationEventMetaLine(event: Event): string {
-  const loc = event.location?.trim();
-  let when = "";
-  if (event.event_type === "single" && event.event_date) {
-    when = formatEventDateOnly(event.event_date);
-  } else if (event.event_type === "range" && event.from_date && event.to_date) {
-    when = `${formatEventDateOnly(event.from_date)} â€“ ${formatEventDateOnly(event.to_date)}`;
-  } else if (event.event_type === "daily") {
-    when = "Daily";
-  }
-  const timeRange = formatEventTimeRange(event);
-  if (timeRange) {
-    when = when ? `${when} â€¢ ${timeRange}` : timeRange;
-  }
-  return [when, loc].filter(Boolean).join(" â€¢ ");
-}
-
-type EventDateBucket = "past" | "today" | "future";
-
-function getEventDateBucket(eventItem: Event): EventDateBucket {
-  const today = todayDateOnlyString();
-
-  if (eventItem.event_type === "range" && eventItem.from_date && eventItem.to_date) {
-    if (compareDateOnly(eventItem.to_date, today) < 0) return "past";
-    if (compareDateOnly(eventItem.from_date, today) > 0) return "future";
-    return "today";
-  }
-
-  if (eventItem.event_type === "single" && eventItem.event_date) {
-    const cmp = compareDateOnly(eventItem.event_date, today);
-    if (cmp < 0) return "past";
-    if (cmp > 0) return "future";
-    return "today";
-  }
-
-  return "today";
-}
-
-function eventWhenBadge(bucket: EventDateBucket): { label: string; className: string } {
-  switch (bucket) {
-    case "past":
-      return {
-        label: "Past",
-        className: "bg-stone-100 text-stone-700 border border-stone-200",
-      };
-    case "today":
-      return {
-        label: "Today",
-        className: "bg-sky-100 text-sky-800 border border-sky-200",
-      };
-    case "future":
-      return {
-        label: "Future",
-        className: "bg-emerald-100 text-emerald-800 border border-emerald-200",
-      };
-  }
-}
-
-function tomorrowDateInputMin(): string {
-  const t = new Date();
-  t.setDate(t.getDate() + 1);
-  t.setHours(0, 0, 0, 0);
-  return toDateInputValue(t);
-}
-
-/** Normalize stored time to `HH:mm` for `<input type="time">`. */
-function toTimeInputValue(raw: string | undefined | null): string {
-  if (!raw?.trim()) return "";
-  const match = raw.trim().match(/(\d{1,2}):(\d{2})/);
-  if (!match) return "";
-  return `${match[1].padStart(2, "0")}:${match[2]}`;
-}
-
-function readTimingStartTime(timing?: Event.TimingConfigData): string {
-  const tc = timing as { StartTime?: string; startTime?: string } | undefined;
-  return toTimeInputValue(tc?.StartTime ?? tc?.startTime);
-}
-
-function readTimingEndTime(timing?: Event.TimingConfigData): string {
-  const tc = timing as { EndTime?: string; endTime?: string } | undefined;
-  return toTimeInputValue(tc?.EndTime ?? tc?.endTime);
-}
-
-function readEventStartTime(ev: Event): string {
-  return toTimeInputValue(ev.start_time) || readTimingStartTime(ev.timing_config);
-}
-
-function readEventEndTime(ev: Event): string {
-  return toTimeInputValue(ev.end_time) || readTimingEndTime(ev.timing_config);
-}
-
-function formatTimeForDisplay(raw: string | undefined): string {
-  const value = toTimeInputValue(raw);
-  if (!value) return "";
-  const [h, m] = value.split(":").map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) return value;
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-}
-
-function formatEventTimeRange(ev: Event): string {
-  const start = readEventStartTime(ev);
-  const end = readEventEndTime(ev);
-  if (!start && !end) return "";
-  if (start && end) return `${formatTimeForDisplay(start)} â€“ ${formatTimeForDisplay(end)}`;
-  return formatTimeForDisplay(start || end);
-}
-
-function parseTimeToMinutes(value: string): number | null {
-  const normalized = toTimeInputValue(value);
-  if (!normalized) return null;
-  const [h, m] = normalized.split(":").map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) return null;
-  return h * 60 + m;
-}
+  eventWhenBadge,
+  formatOrganizationEventMetaLine,
+  getEventDateBucket,
+  parseTimeToMinutes,
+  readEventEndTime,
+  readEventStartTime,
+  toTimeInputValue,
+} from "@/utils/organizationEventDisplay.util";
 
 const OrganizationServices = () => {
   const navigate = useNavigate();
@@ -601,7 +485,7 @@ const OrganizationServices = () => {
     serviceToSave.modifiedby = user?.id || 0;
     serviceToSave.modifiedon = new Date();
 
-    // weekday_price always mirrors Monâ€“Fri / single price field
+    // weekday_price always mirrors Mon–Fri / single price field
     serviceToSave.weekday_price = serviceToSave.prize;
 
     if (!serviceToSave.is_price_different) {
@@ -735,7 +619,7 @@ const OrganizationServices = () => {
 
       toast({
         title: existingBookingFormValue ? "Booking form updated" : "Booking form saved",
-        description: `Guests booking â€œ${bookingFormEventName}â€ will see these questions.`,
+        description: `Guests booking “${bookingFormEventName}” will see these questions.`,
       });
 
       resetEventFlow();
@@ -1346,7 +1230,7 @@ const OrganizationServices = () => {
                 {isLoadingEvents ? (
                   <div className="flex h-64 items-center justify-center rounded-xl border border-stone-200 bg-white shadow-none">
                     <Loader2 className="h-8 w-8 animate-spin text-zinc-400" aria-hidden />
-                    <span className="ml-3 text-stone-600">Loading eventsâ€¦</span>
+                    <span className="ml-3 text-stone-600">Loading events…</span>
                   </div>
                 ) : filteredEvents.length === 0 ? (
                   <Card className="rounded-2xl border-stone-200 bg-white shadow-none">

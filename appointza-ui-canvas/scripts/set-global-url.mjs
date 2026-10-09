@@ -1,5 +1,14 @@
 #!/usr/bin/env node
 
+/**
+ * Updates appointza-urls.json (Krios-style). Does NOT touch config.js URLs.
+ *
+ * Usage:
+ *   npm run set:url -- <backendListenOrApiOrigin> <frontendApiBaseUrl>
+ *   npm run set:url -- http://0.0.0.0:5050 ""
+ *   npm run set:url -- http://0.0.0.0:5050 https://appointza.com
+ */
+
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -7,121 +16,43 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uiRoot = path.resolve(__dirname, "..");
-const repoRoot = path.resolve(uiRoot, "..");
-const envPath = path.join(uiRoot, ".env");
+const urlsPath = path.join(uiRoot, "public", "appointza-urls.json");
 
-const apiArg = process.argv[2];
-const uiArg = process.argv[3];
+const listenArg = process.argv[2];
+const apiArg = process.argv[3];
 
-if (!apiArg || !uiArg) {
-  console.error("Set two URLs before build:");
-  console.error("  1) Backend API  — port/host the API runs on (frontend calls this)");
-  console.error("  2) Frontend UI  — public site URL");
+if (listenArg === undefined || apiArg === undefined) {
+  console.error("Set URLs in appointza-urls.json:");
+  console.error("  1) backendListen       - e.g. http://0.0.0.0:5050");
+  console.error("  2) frontendApiBaseUrl  - e.g. https://appointza.com  (or \"\" for same-origin)");
   console.error("");
   console.error("Usage:");
-  console.error("  npm run set:url -- <apiUrl> <uiUrl>");
-  console.error("  npm run set:url -- https://localhost:7117 http://localhost:8083");
-  console.error("  npm run set:url -- https://api.appointza.com https://appointza.com");
+  console.error('  npm run set:url -- http://0.0.0.0:5050 ""');
+  console.error("  npm run set:url -- http://0.0.0.0:5050 https://appointza.com");
   process.exit(1);
 }
 
-const normalizeUrl = (value, label) => {
-  const trimmed = String(value || "").trim().replace(/\/+$/, "");
-  if (!/^https?:\/\//i.test(trimmed)) {
-    throw new Error(`Invalid ${label} "${value}". Use a full URL with http/https.`);
-  }
-  return trimmed;
-};
+const backendListen = String(listenArg || "").trim().replace(/\/+$/, "") || "http://0.0.0.0:5050";
+const frontendApiBaseUrl = String(apiArg || "").trim().replace(/\/+$/, "");
 
-const apiUrl = normalizeUrl(apiArg, "API URL");
-const uiUrl = normalizeUrl(uiArg, "UI URL");
-
-const updateFile = (filePath, transform) => {
-  if (!fs.existsSync(filePath)) {
-    return false;
-  }
-  const original = fs.readFileSync(filePath, "utf8");
-  const updated = transform(original);
-  if (updated !== original) {
-    fs.writeFileSync(filePath, updated, "utf8");
-  }
-  return true;
-};
-
-const replaceConfigUrls = (content) => {
-  let next = content.replace(/\bbaseurl\s*:\s*["'][^"']*["']/g, `baseurl: "${apiUrl}"`);
-  if (/\buiBaseUrl\s*:/.test(next)) {
-    next = next.replace(/\buiBaseUrl\s*:\s*["'][^"']*["']/g, `uiBaseUrl: "${uiUrl}"`);
-  } else {
-    next = next.replace(
-      /\bbaseurl\s*:\s*["'][^"']*["']/,
-      `baseurl: "${apiUrl}",\n  uiBaseUrl: "${uiUrl}"`,
-    );
-  }
-  return next;
-};
-
-const upsertEnvUrls = (content) => {
-  const lines = content.split(/\r?\n/);
-  const setLine = (key, value) => {
-    const prefix = `${key}=`;
-    const idx = lines.findIndex((line) => line.startsWith(prefix) || line.startsWith(`# ${prefix}`));
-    const next = `${key}=${value}`;
-    if (idx >= 0) {
-      lines[idx] = next;
-    } else {
-      lines.push(next);
-    }
-  };
-  setLine("VITE_API_BASE_URL", apiUrl);
-  setLine("VITE_UI_BASE_URL", uiUrl);
-  return `${lines.filter((line, i) => !(line === "" && i === lines.length - 1)).join("\n").replace(/\n*$/, "\n")}`;
-};
-
-const files = [
-  { file: path.join(uiRoot, "public", "config.js"), transform: replaceConfigUrls },
-  {
-    file: path.join(uiRoot, "android", "app", "src", "main", "assets", "www", "config.js"),
-    transform: replaceConfigUrls,
-  },
-  { file: envPath, transform: upsertEnvUrls },
-];
-
-const updated = [];
-const skipped = [];
-
-for (const entry of files) {
-  try {
-    if (entry.file === envPath && !fs.existsSync(envPath)) {
-      fs.writeFileSync(
-        envPath,
-        `VITE_API_BASE_URL=${apiUrl}\nVITE_UI_BASE_URL=${uiUrl}\n`,
-        "utf8",
-      );
-      updated.push(path.relative(repoRoot, envPath));
-      continue;
-    }
-    const exists = updateFile(entry.file, entry.transform);
-    if (exists) {
-      updated.push(path.relative(repoRoot, entry.file));
-    } else {
-      skipped.push(path.relative(repoRoot, entry.file));
-    }
-  } catch (error) {
-    console.error(`Failed to update ${entry.file}`);
-    console.error(error);
-    process.exit(1);
-  }
+if (!/^https?:\/\//i.test(backendListen)) {
+  console.error(`Invalid backendListen "${listenArg}". Use a full URL with http/https.`);
+  process.exit(1);
+}
+if (frontendApiBaseUrl && !/^https?:\/\//i.test(frontendApiBaseUrl)) {
+  console.error(`Invalid frontendApiBaseUrl "${apiArg}". Use a full URL or empty string.`);
+  process.exit(1);
 }
 
-console.log(`Backend API URL (frontend calls this): ${apiUrl}`);
-console.log(`Frontend UI URL:                       ${uiUrl}`);
+const payload = {
+  backendListen,
+  frontendApiBaseUrl,
+};
+
+fs.writeFileSync(urlsPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+
+console.log(`Updated ${path.relative(path.resolve(uiRoot, ".."), urlsPath)}`);
+console.log(`  backendListen:      ${backendListen}`);
+console.log(`  frontendApiBaseUrl: ${frontendApiBaseUrl || "(same origin)"}`);
 console.log("");
-console.log("Updated files:");
-updated.forEach((item) => console.log(`- ${item}`));
-
-if (skipped.length > 0) {
-  console.log("");
-  console.log("Skipped (not found):");
-  skipped.forEach((item) => console.log(`- ${item}`));
-}
+console.log("config.js is unchanged (public map/push keys only).");

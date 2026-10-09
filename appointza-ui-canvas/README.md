@@ -189,19 +189,25 @@ npm run dev
 
 ## Global URL configuration
 
-Edit **`public/config.js`** directly, or run:
+Edit **`public/appointza-urls.json` only** (Krios-style). Do not put URLs in `config.js`.
 
 ```sh
-npm run set:url -- https://your-domain.com
+npm run set:url -- http://0.0.0.0:5050 ""
+npm run set:url -- http://0.0.0.0:5050 https://appointza.com
 ```
 
-This updates `public/config.js` (and Android assets if present). Same file is used for **dev** (`npm run dev`) and **production** (`npm run build` / `.\build-appointza.ps1`).
+| File | Purpose |
+|------|---------|
+| `public/appointza-urls.json` | URLs (`backendListen`, `frontendApiBaseUrl`) |
+| `public/config.js` | Public browser keys only: Google Maps, VAPID (no URLs, no secrets) |
 
 **Full deploy (from repo root):**
 
 ```powershell
 .\build-appointza.ps1
 ```
+
+After deploy, edit only `<build>\appointza-urls.json` (next to `appointza.exe`) and restart.
 
 **UI dev only** (from this folder):
 
@@ -215,7 +221,7 @@ npm run dev
 npm run cap:sync
 ```
 
-Build output: `../appointzabuild/appointzaproduction/wwwroot/`
+Build output: `D:/aravindan/build/appointza/wwwroot/`
 
 **Edit a file directly in GitHub**
 

@@ -69,17 +69,6 @@ const UserDashboard = () => {
 
   // Load appointments
   const loadAppointments = useCallback(async () => {
-    console.log('🔍 Dashboard loadAppointments called:', { 
-      isAuthenticated, 
-      user, 
-      userType: user?.id,
-      localStorage: {
-        auth_token: !!localStorage.getItem('auth_token'),
-        user_type: localStorage.getItem('user_type'),
-        user_context: localStorage.getItem('user_context')
-      }
-    });
-    
     if (!isAuthenticated || !user?.id) {
       console.log('❌ Dashboard: Not authenticated or no user ID');
       setIsLoading(false);

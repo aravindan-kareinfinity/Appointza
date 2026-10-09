@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import UserBottomNav from './UserBottomNav';
 import OrganizationBottomNav from './OrganizationBottomNav';
+import { getStoredUserContext, hasAuthSession } from '@/utils/authSession.util';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -24,9 +25,7 @@ const Header = () => {
 
   // Show bottom nav on small screens only if user is authenticated
   const isMobile = window.innerWidth < 768;
-  const token = localStorage.getItem('auth_token');
-  const userContextStr = localStorage.getItem('user_context');
-  const isAuthenticated = !!(token && userContextStr);
+  const isAuthenticated = hasAuthSession() && !!getStoredUserContext();
   const showBottomNav = isMobile && isAuthenticated;
   // Determine user type (basic example, adjust as needed)
   const userType = localStorage.getItem('user_type');

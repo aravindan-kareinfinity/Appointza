@@ -515,8 +515,6 @@ const Register = () => {
         userInfo.picture
       );
       
-      console.log('✅ GoogleLogin response from /api/Auth/GoogleLogin:', userContext);
-      
       if (!userContext || !userContext.userid || userContext.userid <= 0) {
         throw new Error('Invalid login response from server');
       }

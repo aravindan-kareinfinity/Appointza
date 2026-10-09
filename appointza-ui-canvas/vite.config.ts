@@ -1,4 +1,4 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import fs from "fs";
@@ -8,54 +8,63 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function readPublicConfigField(name: string): string {
-  const configPath = path.resolve(__dirname, "public/config.js");
-  const raw = fs.readFileSync(configPath, "utf8");
-  const match = raw.match(new RegExp(`\\b${name}\\s*:\\s*["']([^"']+)["']`));
-  return (match?.[1] || "").replace(/\/+$/, "");
-}
-
 function stripSlash(url: string): string {
   return String(url || "").replace(/\/+$/, "");
 }
 
-function localUiPort(uiBaseUrl: string, fallback = 8083): number {
+function listenToBrowserOrigin(listenUrl: string): string {
+  const value = stripSlash(listenUrl);
+  if (!value) return "http://localhost:5050";
   try {
-    const parsed = new URL(uiBaseUrl);
-    const host = parsed.hostname.toLowerCase();
-    if (host !== "localhost" && host !== "127.0.0.1") return fallback;
-    if (parsed.port) return Number(parsed.port);
-    return parsed.protocol === "https:" ? 443 : 80;
+    const parsed = new URL(value);
+    if (parsed.hostname === "0.0.0.0" || parsed.hostname === "::" || parsed.hostname === "[::]") {
+      parsed.hostname = "localhost";
+    }
+    parsed.pathname = "";
+    parsed.search = "";
+    parsed.hash = "";
+    return stripSlash(parsed.toString());
   } catch {
-    return fallback;
+    return value
+      .replace(/:\/\/0\.0\.0\.0/gi, "://localhost")
+      .replace(/:\/\/\[::\]/gi, "://localhost");
   }
 }
 
-function stampConfigFile(filePath: string, apiUrl: string, uiUrl: string) {
-  if (!fs.existsSync(filePath)) return;
-  let raw = fs.readFileSync(filePath, "utf8");
-  raw = raw.replace(/\bbaseurl\s*:\s*["'][^"']*["']/, `baseurl: "${apiUrl}"`);
-  if (/\buiBaseUrl\s*:/.test(raw)) {
-    raw = raw.replace(/\buiBaseUrl\s*:\s*["'][^"']*["']/, `uiBaseUrl: "${uiUrl}"`);
+function readAppointzaUrls(filePath: string): { backendListen: string; frontendApiBaseUrl: string } | null {
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    return {
+      backendListen: String(parsed.backendListen || "").trim().replace(/\/+$/, ""),
+      frontendApiBaseUrl: String(parsed.frontendApiBaseUrl || "").trim().replace(/\/+$/, ""),
+    };
+  } catch {
+    return null;
   }
-  fs.writeFileSync(filePath, raw, "utf8");
+}
+
+function localDevPort(fallback = 8083): number {
+  const fromEnv = Number(process.env.PORT || process.env.VITE_PORT || "");
+  return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : fallback;
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, __dirname, "");
-  const apiBaseUrl = stripSlash(env.VITE_API_BASE_URL || readPublicConfigField("baseurl"));
-  const uiBaseUrl = stripSlash(
-    env.VITE_UI_BASE_URL || readPublicConfigField("uiBaseUrl") || "http://localhost:8083",
-  );
+  const buildRoot = stripSlash(
+    process.env.APPOINTZA_BUILD_OUT || "D:/aravindan/build/appointza",
+  ).replace(/\\/g, "/");
+  const wwwrootOutDir = path.resolve(`${buildRoot}/wwwroot`);
+  // Single URL/port file in the build: next to appointza.exe (the server serves it to the browser).
+  const urlsBuildPath = path.resolve(buildRoot, "appointza-urls.json");
+  const urlsPublicPath = path.resolve(__dirname, "public/appointza-urls.json");
 
-  if (!apiBaseUrl) {
-    throw new Error(
-      "Backend API URL is missing. Set VITE_API_BASE_URL in .env or baseurl in public/config.js",
-    );
-  }
+  const urls =
+    readAppointzaUrls(urlsBuildPath) ||
+    readAppointzaUrls(urlsPublicPath) ||
+    { backendListen: "http://0.0.0.0:5050", frontendApiBaseUrl: "" };
 
-  const devPort = localUiPort(uiBaseUrl);
-  let resolvedOutDir = path.resolve(__dirname, "../appointzabuild/appointzaproduction/wwwroot");
+  const proxyTarget = listenToBrowserOrigin(urls.backendListen || "http://0.0.0.0:5050");
+  const devPort = localDevPort(8083);
 
   return {
     server: {
@@ -65,12 +74,12 @@ export default defineConfig(({ mode }) => {
       allowedHosts: true,
       proxy: {
         "/api": {
-          target: apiBaseUrl,
+          target: proxyTarget,
           changeOrigin: true,
-          rewrite: (path) => path,
+          rewrite: (p) => p,
         },
         "/health": {
-          target: apiBaseUrl,
+          target: proxyTarget,
           changeOrigin: true,
         },
       },
@@ -82,22 +91,28 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
     },
     build: {
-      outDir: "../appointzabuild/appointzaproduction/wwwroot",
+      outDir: wwwrootOutDir,
       emptyOutDir: true,
     },
+    esbuild:
+      mode === "production"
+        ? { pure: ["console.log", "console.info", "console.debug"], drop: ["debugger"] }
+        : undefined,
     plugins: [
       react(),
       mode === "development" && componentTagger(),
       {
-        name: "appointza-stamp-config-urls",
-        configResolved(config) {
-          resolvedOutDir = path.resolve(config.root, config.build.outDir);
-        },
+        name: "appointza-urls-single-file",
         closeBundle() {
-          stampConfigFile(path.join(resolvedOutDir, "config.js"), apiBaseUrl, uiBaseUrl);
+          // Vite copies public/ into wwwroot; drop that copy so only the file next to the exe exists.
+          fs.rmSync(path.join(wwwrootOutDir, "appointza-urls.json"), { force: true });
+          // Keep an operator-edited build file; seed it from public/ only on the first build.
+          if (!fs.existsSync(urlsBuildPath) && fs.existsSync(urlsPublicPath)) {
+            fs.mkdirSync(path.dirname(urlsBuildPath), { recursive: true });
+            fs.copyFileSync(urlsPublicPath, urlsBuildPath);
+          }
           console.log("");
-          console.log(`[appointza] Backend API URL (frontend calls this): ${apiBaseUrl}`);
-          console.log(`[appointza] Frontend UI URL:                       ${uiBaseUrl}`);
+          console.log(`[appointza] URL/port config: ${urlsBuildPath}`);
           console.log("");
         },
       },

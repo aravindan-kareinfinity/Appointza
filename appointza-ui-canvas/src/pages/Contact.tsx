@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Phone, MapPin, Clock, Loader2 } from "lucide-react";
 import { environment } from "@/utils/environment";
+import { getAuthHeaders } from "@/utils/authSession.util";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ContactFormData {
@@ -42,13 +43,10 @@ const Contact = () => {
       // When the visitor is logged in (org owner or staff), forward both:
       //   - the JWT, so the server can read RequestState.usercontext, and
       //   - the explicit OrganisationId, so the enquiry is attributed to that org.
-      const token = localStorage.getItem('auth_token') ?? localStorage.getItem('token');
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
       };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
 
       const response = await fetch(`${environment.baseurl}/api/contact`, {
         method: 'POST',

@@ -1,163 +1,88 @@
-// Runtime URLs from public/config.js (and VITE_API_BASE_URL / VITE_UI_BASE_URL at build).
-// baseurl  = backend API the frontend calls
-// uiBaseUrl = frontend site URL
+// Single source of truth for URLs: public/appointza-urls.json.
+//   - main.tsx fetches it before boot and sets window.__APPOINTZA_API_URL__ (frontendApiBaseUrl).
+//   - vite.config.ts reads backendListen from it for the dev /api proxy.
+//   - The .NET API reads the same file for its listen port.
+// config.js only carries public browser keys (maps, push).
 import { isOrganisationSubdomainHost } from "@/utils/orgPublicSiteUrl.util";
 
+const PUBLIC_DOMAIN = "appointza.com";
 const LOCAL_DEV_UI_ORIGIN = "http://localhost:8083";
 
-const normalizeBaseUrl = (url: string) => {
-  if (!url) {
-    return "";
+declare global {
+  interface Window {
+    __APPOINTZA_API_URL__?: string;
+    APP_CONFIG?: AppConfig;
   }
-
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url.replace(/\/+$/, "");
-  }
-
-  return `https://${url.replace(/\/+$/, "")}`;
-};
+}
 
 type AppConfig = {
-  baseurl?: string;
-  templateBaseUrl?: string;
-  uiBaseUrl?: string;
-  marketingDomain?: string;
-  domainname?: string;
+  googleMapsApiKey?: string;
+  vapidKey?: string;
   [key: string]: unknown;
 };
 
-const getRawAppConfig = (): AppConfig => {
-  if (typeof window !== "undefined" && (window as any).APP_CONFIG) {
-    return (window as any).APP_CONFIG as AppConfig;
-  }
-  return {};
-};
+const stripSlash = (url: string) => url.replace(/\/+$/, "");
+const isLoopback = (url: string) => /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(url);
 
-const getConfig = () => {
-  const raw = getRawAppConfig();
-  const pageOrigin =
-    typeof window !== "undefined" && window.location?.origin ? window.location.origin : "";
-  const baseurl = normalizeBaseUrl(raw.baseurl || pageOrigin);
-  const uiBaseUrl =
-    raw.uiBaseUrl ||
-    (typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1" ||
-      window.location.hostname.endsWith(".localhost"))
-      ? `http://localhost:${window.location.port || "8083"}`
-      : baseurl);
+/** Dev: "" (relative /api through the Vite proxy). Prod: appointza-urls.json, else page origin. */
+function resolveApiBaseUrl(): string {
+  if (import.meta.env.DEV || typeof window === "undefined") return "";
+  const configured = stripSlash(String(window.__APPOINTZA_API_URL__ ?? "").trim());
+  if (configured && !isLoopback(configured)) return configured;
+  return window.location?.origin ?? "";
+}
 
-  return {
-    ...raw,
-    baseurl,
-    templateBaseUrl: normalizeBaseUrl(raw.templateBaseUrl || (baseurl ? `${baseurl}/template` : "")),
-    uiBaseUrl,
-    marketingDomain: raw.marketingDomain || "appointza.com",
-    domainname: raw.domainname || "appointza.com",
-  };
-};
+const getConfig = () => ({
+  ...(typeof window !== "undefined" ? window.APP_CONFIG : undefined),
+  baseurl: resolveApiBaseUrl(),
+});
 
-/** Always reads current `window.APP_CONFIG` so API base URL is never "stuck" from an early module init (e.g. Vite :8083). */
-export const environment = new Proxy(
-  {} as ReturnType<typeof getConfig> & { baseurl: string; templateBaseUrl: string },
-  {
-    get(_, prop: string) {
-      return (getConfig() as any)[prop];
-    }
-  }
-) as ReturnType<typeof getConfig> & { baseurl: string; templateBaseUrl: string };
+/** Always reads current runtime values. */
+export const environment = new Proxy({} as ReturnType<typeof getConfig>, {
+  get(_, prop: string) {
+    return (getConfig() as Record<string, unknown>)[prop];
+  },
+});
 
-const getDomainFromBaseUrl = (baseUrl: string) => {
-  try {
-    const hostname = new URL(baseUrl).hostname.toLowerCase();
-    return hostname.startsWith('www.') ? hostname.slice(4) : hostname;
-  } catch {
-    return '';
-  }
-};
+export function getApiBaseUrl(): string {
+  return resolveApiBaseUrl();
+}
 
 export function getMarketingDomain(): string {
-  const config = getConfig() as { marketingDomain?: string; domainname?: string };
-  if (config.marketingDomain) {
-    return config.marketingDomain;
-  }
-  if (config.domainname) {
-    return config.domainname;
-  }
-  const apiDomain = getAppDomain();
-  if (apiDomain === "localhost" || apiDomain === "127.0.0.1") {
-    return "appointza.com";
-  }
-  return apiDomain;
+  return PUBLIC_DOMAIN;
 }
 
-/** API base URL from `APP_CONFIG.baseurl` in public/config.js. */
-export function getApiBaseUrl(): string {
-  return getConfig().baseurl;
-}
-
-/**
- * Host for org public booking sites: `{slug}.{this}`.
- * Always `appointza.com` — never the local UI host (localhost:8083).
- */
 export function getOrganisationPublicSiteDomain(): string {
-  return "appointza.com";
+  return PUBLIC_DOMAIN;
 }
 
-/** Org subdomain parent host — from config (`domainname` or `baseurl` in local dev). */
 export function getDomainName(): string {
-  return getOrganisationPublicSiteDomain();
+  return PUBLIC_DOMAIN;
 }
 
-function normalizeUiBaseUrlFromConfig(raw?: string): string | null {
-  if (!raw) return null;
-  const normalized = normalizeBaseUrl(raw);
-  const apiBase = normalizeBaseUrl(getRawAppConfig().baseurl || "");
-  try {
-    const parsed = new URL(normalized);
-    const isLocal =
-      parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
-    // uiBaseUrl must not point at the API host in local dev.
-    if (isLocal && apiBase && normalized === apiBase) {
-      return LOCAL_DEV_UI_ORIGIN;
-    }
-  } catch {
-    return normalized;
-  }
-  return normalized;
-}
-
-/** UI origin for login / Google Sign-In — never an org subdomain or API port. */
+/** UI origin for login / Google Sign-In — never an org subdomain. */
 export function getUiBaseUrl(): string {
   if (typeof window !== "undefined") {
     if (!isOrganisationSubdomainHost(window.location.host)) {
       return window.location.origin;
     }
-
     const h = window.location.hostname.toLowerCase();
     if (h.endsWith(".localhost") || h === "localhost" || h === "127.0.0.1") {
-      const fromConfig = normalizeUiBaseUrlFromConfig(
-        (getConfig() as { uiBaseUrl?: string }).uiBaseUrl,
-      );
-      return fromConfig ?? LOCAL_DEV_UI_ORIGIN;
+      return LOCAL_DEV_UI_ORIGIN;
     }
   }
-
-  const fromConfig = normalizeUiBaseUrlFromConfig(
-    (getConfig() as { uiBaseUrl?: string }).uiBaseUrl,
-  );
-  if (fromConfig) {
-    return fromConfig;
-  }
-
-  return normalizeBaseUrl(`https://${getMarketingDomain()}`);
+  return `https://${PUBLIC_DOMAIN}`;
 }
 
-/** Browser UI origin. API services must use `environment.baseurl` instead. */
 export function getAppBaseUrl(): string {
   return getUiBaseUrl();
 }
 
 export function getAppDomain(): string {
-  return getDomainFromBaseUrl(getAppBaseUrl()) || 'appointza.com';
+  try {
+    const hostname = new URL(getAppBaseUrl()).hostname.toLowerCase();
+    return (hostname.startsWith("www.") ? hostname.slice(4) : hostname) || PUBLIC_DOMAIN;
+  } catch {
+    return PUBLIC_DOMAIN;
+  }
 }

@@ -2,7 +2,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Must run before any module bundle so window.APP_CONFIG exists (API baseurl from /config.js). -->
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-WN5T5SND');</script>
+    <!-- End Google Tag Manager -->
+    <!-- Public browser keys (maps, push). URLs come from /appointza-urls.json, loaded in main.tsx. -->
     <script src="/config.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -16,7 +23,7 @@
     <meta name="keywords" content="slot based booking system, online booking platform, appointment booking software, service booking system, event booking platform, multi-location booking software, staff management booking system, online scheduling software, slot booking software for services, event management and booking system, appointment scheduling platform, booking software with payment tracking, service booking with WhatsApp notification, automated booking confirmation system, role based staff management system, business booking management software, slot based service booking platform for businesses, online appointment booking system with WhatsApp integration, event booking platform with direct payment to host, multi location service booking software with staff roles, booking management system with analytics dashboard, customized booking website for organizations, booking software with payment status tracking, appointment booking software for salons clinics events, WhatsApp notification booking system, Razorpay integrated booking software, payment tracking booking platform, staff role management software, customer management booking system, weekly revenue analytics dashboard, booking system with admin panel, SaaS booking platform, cloud based booking management system, enterprise booking software, white label booking platform, customizable booking software" />
     <meta name="author" content="Appointza" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-    <link rel="canonical" href="/" />
+    <link rel="canonical" href="https://appointza.com/" />
     <script>
       (function () {
         function isPublicOrgTemplateSurface() {
@@ -49,10 +56,10 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="/" />
+    <meta property="og:url" content="https://appointza.com/" />
     <meta property="og:title" content="Slot Based Booking System | Online Booking Platform | Appointment Booking Software" />
     <meta property="og:description" content="Slot based booking system with WhatsApp integration. Online appointment booking software for salons, spas, events with payment tracking, multi-location support, staff management, and analytics dashboard." />
-    <meta property="og:image" content="/lovable-uploads/6205c671-a6b9-4927-8268-bd1fa436cd0b.png" />
+    <meta property="og:image" content="https://appointza.com/lovable-uploads/6205c671-a6b9-4927-8268-bd1fa436cd0b.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="Appointza" />
@@ -60,31 +67,13 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="/" />
+    <meta name="twitter:url" content="https://appointza.com/" />
     <meta name="twitter:title" content="Slot Based Booking System | Online Booking Platform | Appointment Booking Software" />
     <meta name="twitter:description" content="Slot based booking system with WhatsApp integration. Online appointment booking software with payment tracking, multi-location support, and analytics dashboard." />
-    <meta name="twitter:image" content="/lovable-uploads/6205c671-a6b9-4927-8268-bd1fa436cd0b.png" />
+    <meta name="twitter:image" content="https://appointza.com/lovable-uploads/6205c671-a6b9-4927-8268-bd1fa436cd0b.png" />
     <meta name="twitter:site" content="@appointza" />
     <meta name="twitter:creator" content="@appointza" />
-    <script>
-      (function () {
-        var cfg = window.APP_CONFIG || {};
-        var ui = String(cfg.uiBaseUrl || "").replace(/\/+$/, "");
-        var api = String(cfg.baseurl || "").replace(/\/+$/, "");
-        if (!ui && !api) return;
-        var home = (ui || api) + "/";
-        var image = (ui || api) + "/lovable-uploads/6205c671-a6b9-4927-8268-bd1fa436cd0b.png";
-        var canonical = document.querySelector('link[rel="canonical"]');
-        if (canonical) canonical.setAttribute("href", home);
-        document.querySelectorAll('meta[property="og:url"], meta[name="twitter:url"]').forEach(function (el) {
-          el.setAttribute("content", home);
-        });
-        document.querySelectorAll('meta[property="og:image"], meta[name="twitter:image"]').forEach(function (el) {
-          el.setAttribute("content", image);
-        });
-      })();
-    </script>
-    
+
     <!-- Additional SEO -->
     <meta name="theme-color" content="#1AAFCC" />
     <meta name="application-name" content="Appointza" />
@@ -98,6 +87,10 @@
   </head>
 
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WN5T5SND"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
     <script>
       (function () {

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreditCard, Save, Plus, Trash2, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { environment } from "@/utils/environment";
+import { getAuthHeaders } from "@/utils/authSession.util";
 import { PaymentService, CreatePaymentOrderReq, VerifyPaymentReq } from "@/services/payment.service";
 import { loadScript } from "@/utils/razorpay.util";
 import { useOrganisationLocations } from "@/hooks/useOrganisationLocations";
@@ -212,7 +213,7 @@ const PaymentSettings = ({ embedded = false }: { embedded?: boolean }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(payload)
       });
@@ -385,7 +386,7 @@ const PaymentSettings = ({ embedded = false }: { embedded?: boolean }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           item: {
@@ -444,7 +445,7 @@ const PaymentSettings = ({ embedded = false }: { embedded?: boolean }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           item: id

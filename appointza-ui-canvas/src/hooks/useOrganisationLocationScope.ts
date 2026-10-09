@@ -5,19 +5,12 @@ import {
   getCurrentLocationFromStorage,
   getLocationDisplayName,
 } from "@/utils/location.util";
+import { getStoredUserContext } from "@/utils/authSession.util";
 
 function readStoredLocationId(): number {
-  try {
-    const fromKey = Number(localStorage.getItem("organizationlocationid") || 0);
-    if (fromKey > 0) return fromKey;
-
-    const userContextStr = localStorage.getItem("user_context");
-    if (!userContextStr) return 0;
-    const userContext = JSON.parse(userContextStr);
-    return Number(userContext?.organisationlocationid || 0);
-  } catch {
-    return 0;
-  }
+  const fromKey = Number(localStorage.getItem("organizationlocationid") || 0);
+  if (fromKey > 0) return fromKey;
+  return Number(getStoredUserContext()?.organisationlocationid || 0);
 }
 
 /** Resolves the active organisation location from dashboard selection — no API fetch. */

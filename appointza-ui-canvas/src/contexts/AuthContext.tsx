@@ -35,7 +35,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (token && userContextStr) {
         try {
         const userContext = JSON.parse(userContextStr);
-        console.log('AuthContext: Full user context data:', userContext);
         
         // Determine user type based on stored data
         let determinedUserType: 'user' | 'organization' = 'user';

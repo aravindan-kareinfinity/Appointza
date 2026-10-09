@@ -1,5 +1,6 @@
 import axios, { AxiosRequestHeaders } from 'axios';
 import { isUnauthorizedApiError } from '@/utils/apiAuth.util';
+import { getAuthToken } from '@/utils/authSession.util';
 
 function notifySessionExpiredIfNeeded(error: unknown) {
   if (!isUnauthorizedApiError(error)) return;
@@ -15,14 +16,9 @@ export class AxiosHelperUtils {
 
   createAuthorizationHeader(headers: any, skipAuthorization: boolean = false) {
     if (!skipAuthorization) {
-      // Get token from localStorage (similar to Redux in mobile)
-      const userContext = localStorage.getItem('user_context');
-      if (userContext) {
-        const user = JSON.parse(userContext);
-        const token = user.accesstoken;
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
     }
     headers['Accept'] = headers?.Accept || 'application/json';

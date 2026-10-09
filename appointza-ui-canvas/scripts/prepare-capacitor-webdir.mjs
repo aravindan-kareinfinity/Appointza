@@ -7,7 +7,9 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uiRoot = path.resolve(__dirname, "..");
-const sourceDir = path.resolve(uiRoot, "..", "appointzabuild", "appointzaproduction", "wwwroot");
+const sourceDir = process.env.APPOINTZA_BUILD_OUT
+  ? path.resolve(process.env.APPOINTZA_BUILD_OUT, "wwwroot")
+  : path.resolve("D:/aravindan/build/appointza/wwwroot");
 const targetDir = path.resolve(uiRoot, "dist");
 
 if (!fs.existsSync(sourceDir)) {

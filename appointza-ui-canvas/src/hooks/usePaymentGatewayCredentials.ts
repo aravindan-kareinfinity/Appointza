@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { environment } from '@/utils/environment';
+import { getAuthHeaders } from '@/utils/authSession.util';
 
 export type PaymentGatewayCredential = {
   id: number;
@@ -30,7 +31,7 @@ export async function fetchPaymentGatewayCredentials(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+      ...getAuthHeaders(),
     },
     body: JSON.stringify({
       item: {

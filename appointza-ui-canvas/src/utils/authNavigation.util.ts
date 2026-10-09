@@ -3,6 +3,7 @@ import { getUiBaseUrl } from "@/utils/environment";
 import { resolvePostLoginPath } from "@/utils/postAuthNavigation";
 import { isOrganisationSubdomainHost } from "@/utils/orgPublicSiteUrl.util";
 import { hydrateAuthFromSharedCookie } from "@/utils/authStorage.util";
+import { hasAuthSession } from "@/utils/authSession.util";
 
 declare global {
   interface Window {
@@ -52,7 +53,7 @@ export function mustUseMainAppForAuth(): boolean {
 
 export function isUserLoggedIn(): boolean {
   hydrateAuthFromSharedCookie();
-  return !!localStorage.getItem("auth_token");
+  return hasAuthSession();
 }
 
 /** Current page path for login return (pathname + search + hash). */
