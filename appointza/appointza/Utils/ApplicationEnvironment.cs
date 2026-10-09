@@ -12,9 +12,9 @@ namespace appointza.Utils
         public ApplicationEnvironmentFirebaseConfigData firebase { get; set; } = new ApplicationEnvironmentFirebaseConfigData();
         public ApplicationEnvironmentWhatsAppConfigData whatsapp { get; set; } = new ApplicationEnvironmentWhatsAppConfigData();
         public ApplicationEnvironmentRedisConfigData redis { get; set; } = new ApplicationEnvironmentRedisConfigData();
-        /// <summary>Public app/API origin; overridden from appointzabuild <c>config.js</c> when present (same as UI <c>baseurl</c>).</summary>
+        /// <summary>Public app/API origin; from appointza-urls.json when present.</summary>
         public string baseUrl { get; set; }
-        /// <summary>Optional template host path; from <c>config.js</c> <c>templateBaseUrl</c> (same as UI).</summary>
+        /// <summary>Optional template host path; derived from appointza-urls / baseUrl.</summary>
         public string templateBaseUrl { get; set; }
     }
     public class ApplicationEnvironmentAwsS3ConfigData

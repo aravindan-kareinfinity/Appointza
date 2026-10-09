@@ -529,15 +529,13 @@ namespace appointza.Controllers
         return window.parent.__APPOINTZA_MAIN_ORIGIN__;
       }
     } catch (_) {}
-    try {
-      if (window.APP_CONFIG && window.APP_CONFIG.uiBaseUrl) {
-        return String(window.APP_CONFIG.uiBaseUrl).replace(/\/+$/, '');
-      }
-    } catch (_) {}
     var h = (window.location.hostname || '').toLowerCase();
     if (h === 'localhost' || h === '127.0.0.1' || (h.length > 10 && h.slice(-10) === '.localhost')) {
       var p = window.location.port || '8083';
       return window.location.protocol + '//localhost:' + p;
+    }
+    if (h === 'appointza.com' || (h.length > 14 && h.slice(-14) === '.appointza.com')) {
+      return 'https://appointza.com';
     }
     return window.location.protocol + '//' + window.location.host;
   }

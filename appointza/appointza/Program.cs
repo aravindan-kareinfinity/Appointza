@@ -6,20 +6,28 @@ using appointza.integrations.Authentication.Middlewares;
 using appointza.Middlewares;
 using appointza.Utils;
 
-var builder = WebApplication.CreateBuilder(args);
+var contentRoot = AppContext.BaseDirectory;
+var wwwrootCandidate = Path.Combine(contentRoot, "wwwroot");
+var hasWwwroot = Directory.Exists(wwwrootCandidate);
 
-// CONFIGURATION: align server with the same config.js the SPA loads (public/config.js → wwwroot/config.js)
-if (AppointzaConfigJsParser.TryLoad(out var configJsBaseUrl, out var configJsTemplateUrl, out var configJsPath))
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
-    var pairs = new List<KeyValuePair<string, string?>>
-    {
-        new("ApplicationSettings:baseUrl", configJsBaseUrl)
-    };
-    if (!string.IsNullOrWhiteSpace(configJsTemplateUrl))
-        pairs.Add(new KeyValuePair<string, string?>("ApplicationSettings:templateBaseUrl", configJsTemplateUrl));
-    builder.Configuration.AddInMemoryCollection(pairs!);
-    Console.WriteLine($"✅ URLs from config.js ({configJsPath}): baseurl={configJsBaseUrl}");
-}
+    Args = args,
+    ContentRootPath = hasWwwroot ? contentRoot : Directory.GetCurrentDirectory(),
+    WebRootPath = hasWwwroot ? wwwrootCandidate : "wwwroot",
+});
+
+// Server port + frontend API URL: appointza-urls.json next to the exe
+var appointzaUrls = AppointzaUrls.Load();
+appointzaUrls.BindKestrel(builder);
+
+var serverApiBase = appointzaUrls.ResolveServerApiBaseUrl();
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+    ["ApplicationSettings:baseUrl"] = serverApiBase,
+    ["ApplicationSettings:templateBaseUrl"] = $"{serverApiBase}/template"
+});
+Console.WriteLine($"  apiBaseUrl (server): {serverApiBase}");
 
 // CONFIGURATION
 builder.Services.Configure<ApplicationEnvironment>(
@@ -82,13 +90,12 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Configure static files to serve from appointzabuild/production/wwwroot
-// Prefer the wwwroot next to the published exe (production host); only then fall back to monorepo path.
+// Prefer the wwwroot next to the published exe (no machine-specific paths).
 var staticPathCandidates = new[]
 {
     Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "wwwroot")),
+    Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "wwwroot")),
     Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
-    Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "appointzabuild", "production", "wwwroot")),
 };
 
 var appointzaBuildPath = staticPathCandidates.FirstOrDefault(Directory.Exists);
@@ -102,6 +109,19 @@ if (!Directory.Exists(wwwrootPath))
 }
 
 var wwwrootProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(wwwrootPath);
+
+// The UI fetches this before it boots; must run before static files so no wwwroot copy can shadow it.
+var browserUrlsPayload = appointzaUrls.ToBrowserPayload();
+app.Use(async (ctx, next) =>
+{
+    if (string.Equals(ctx.Request.Path.Value, AppointzaUrls.RequestPath, StringComparison.OrdinalIgnoreCase))
+    {
+        ctx.Response.Headers.CacheControl = "no-store";
+        await ctx.Response.WriteAsJsonAsync(browserUrlsPayload);
+        return;
+    }
+    await next();
+});
 
 app.UseDefaultFiles(new DefaultFilesOptions
 {

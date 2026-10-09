@@ -10,18 +10,18 @@ From the **repo root** (UI + server, single output folder):
 .\build-appointza.ps1
 ```
 
-Output: `appointzabuild/appointzaproduction/` (`appointza.exe` + `wwwroot/` + `config.js`)
+Output: `D:\aravindan\build\appointza\` (`appointza.exe` + `wwwroot/` + `config.js`)
 
 **Manual server-only publish:**
 ```bash
 dotnet restore appointza/appointza.csproj
 dotnet build appointza/appointza.csproj -c Release
-dotnet publish appointza/appointza.csproj -c Release -o ./publish --self-contained false
+dotnet publish appointza/appointza.csproj -c Release -o D:\aravindan\build\appointza --self-contained false
 ```
 
 ## Build Output
 
-The production build is published to: `appointzabuild/appointzaproduction/`
+The production build is published to: `D:\aravindan\build\appointza\`
 
 ## Prerequisites on Target Server
 
@@ -189,10 +189,9 @@ sudo systemctl restart appointza
 
 Before deployment, ensure these files are properly configured:
 
-1. **appsettings.json** - Production configuration
-2. **appsettings.Development.json** - Should not be used in production
-3. **log4net.config** - Logging configuration
-4. **appointza-a0d00-firebase-adminsdk-fbsvc-6b82ca7db4.json** - Firebase credentials
+1. **appsettings.json** - Server configuration (only settings file in the build output)
+2. **log4net.config** - Logging configuration
+3. **appointza-a0d00-firebase-adminsdk-fbsvc-6b82ca7db4.json** - Firebase credentials
 
 ## Security Checklist
 

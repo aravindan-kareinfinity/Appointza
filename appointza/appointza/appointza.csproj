@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <OutputPath>..\..\appointzabuild\production\</OutputPath>
+    <OutputPath>D:\aravindan\build\appointza\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
@@ -36,6 +36,9 @@
     <EmbeddedResource Remove="Database\Tools\**\*" />
     <None Remove="Database\Tools\**\*.cs" />
     <Content Remove="Database\Tools\**\*" />
+    <Compile Remove="_build_out\**" />
+    <Content Remove="_build_out\**" />
+    <None Remove="_build_out\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,6 +49,12 @@
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <!-- Publish only appsettings.json; example stays in repo for first-time setup -->
+  <ItemGroup>
+    <Content Remove="appsettings.example.json" />
+    <None Include="appsettings.example.json" />
   </ItemGroup>
 
 </Project>
