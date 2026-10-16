@@ -3,7 +3,7 @@
 .SYNOPSIS
   Run API + all product UIs on separate ports.
 
-  API        http://localhost:5000
+  API        http://localhost:<port from appointza-urls.json>
   Webzys     http://localhost:8081
   Appointza  http://localhost:8083
   Campusza   http://localhost:8087
@@ -23,10 +23,7 @@ param(
 $ErrorActionPreference = "Stop"
 $root = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
 
-$apiExe = Join-Path $root "appointzabuild\appointzaproduction\appointza.exe"
-if (-not (Test-Path $apiExe)) {
-    $apiExe = Join-Path $root "appointzabuild\production\appointza.exe"
-}
+$apiExe = "D:\aravindan\build\appointza\appointza.exe"
 function Resolve-ServerProjectPath {
     param([string]$RepoRoot)
     $candidates = @(
@@ -40,6 +37,20 @@ function Resolve-ServerProjectPath {
 }
 
 $serverProj = Resolve-ServerProjectPath -RepoRoot $root
+
+function Get-ApiPort {
+    foreach ($file in @(
+        (Join-Path (Split-Path $apiExe) "appointza-urls.json"),
+        (Join-Path $root "appointza-ui-canvas\public\appointza-urls.json")
+    )) {
+        if (-not (Test-Path $file)) { continue }
+        $listen = [string](Get-Content -Raw -Path $file | ConvertFrom-Json).backendListen
+        if ($listen -match ':(\d+)/?$') { return [int]$Matches[1] }
+    }
+    return 5050
+}
+
+$apiPort = Get-ApiPort
 
 $uis = @(
     @{ Name = "Webzys";    Folder = "Webzys";             Port = 8081 },
@@ -73,21 +84,21 @@ Write-Host "Appointza multi-port local run" -ForegroundColor Green
 Write-Host "================================" -ForegroundColor Green
 
 if (-not $SkipApi) {
-    $existing = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue
+    $existing = Get-NetTCPConnection -LocalPort $apiPort -State Listen -ErrorAction SilentlyContinue
     if ($existing) {
-        Write-Host "API already listening on :5000" -ForegroundColor Yellow
+        Write-Host "API already listening on :$apiPort" -ForegroundColor Yellow
     } elseif (Test-Path $apiExe) {
-        Write-Host "Starting API: $apiExe (port 5000)" -ForegroundColor Cyan
+        Write-Host "Starting API: $apiExe (port $apiPort)" -ForegroundColor Cyan
         Start-Process -FilePath $apiExe -WorkingDirectory (Split-Path $apiExe) -WindowStyle Normal
     } elseif (Test-Path $serverProj) {
-        Write-Host "Starting API via dotnet run (http://localhost:5000) ..." -ForegroundColor Cyan
+        Write-Host "Starting API via dotnet run (http://localhost:$apiPort) ..." -ForegroundColor Cyan
         $serverDir = Split-Path $serverProj
         Start-Process -FilePath "cmd.exe" -ArgumentList @(
             "/c",
-            "set ASPNETCORE_URLS=http://localhost:5000& dotnet run --launch-profile appointza"
+            "dotnet run --launch-profile appointza"
         ) -WorkingDirectory $serverDir -WindowStyle Normal
     } else {
-        Write-Host "API not found (no appointza.exe and no csproj). Start it manually on :5000." -ForegroundColor Red
+        Write-Host "API not found (no appointza.exe and no csproj). Start it manually on :$apiPort." -ForegroundColor Red
     }
 }
 
@@ -104,10 +115,10 @@ foreach ($ui in $uis) {
 
 Write-Host ""
 Write-Host "Open:" -ForegroundColor Green
-Write-Host "  API        http://localhost:5000"
+Write-Host "  API        http://localhost:$apiPort"
 Write-Host "  Webzys     http://localhost:8081"
 Write-Host "  Appointza  http://localhost:8083"
 Write-Host "  Campusza   http://localhost:8087"
 Write-Host "  Stay       http://localhost:8088"
 Write-Host ""
-Write-Host "Each UI proxies /api to http://localhost:5000" -ForegroundColor DarkGray
+Write-Host "Appointza UI proxies /api to http://localhost:$apiPort" -ForegroundColor DarkGray
