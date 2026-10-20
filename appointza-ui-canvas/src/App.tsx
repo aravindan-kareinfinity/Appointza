@@ -52,6 +52,7 @@ const TemplateBuilder = lazy(() => import("./pages/organization/TemplateBuilder"
 const OrganizationSettings = lazy(() => import("./pages/organization/Settings"));
 const OrganizationProfile = lazy(() => import("./pages/organization/Profile"));
 const PaymentSettings = lazy(() => import("./pages/organization/PaymentSettings"));
+const ReferenceValuesPage = lazy(() => import("./pages/organization/ReferenceValues"));
 const ClientManagement = lazy(() => import("./pages/organization/ClientManagement"));
 const OnSpotRegistration = lazy(() => import("./pages/organization/OnSpotRegistration"));
 const ClientBookAppointment = lazy(() => import("./pages/organization/ClientBookAppointment"));
@@ -74,6 +75,11 @@ const RoomBookingPage = lazy(() => import("./pages/RoomBookingPage"));
 const OrganizationAssets = lazy(() => import("./pages/organization/Assets"));
 const EventBookings = lazy(() => import("./pages/organization/EventBookings"));
 const OrganizationLeads = lazy(() => import("./pages/organization/Leads"));
+const CrmLayout = lazy(() => import("./pages/organization/CrmLayout"));
+const CrmDashboard = lazy(() => import("./pages/organization/crm/CrmDashboard"));
+const CrmUnifiedInbox = lazy(() => import("./pages/organization/crm/CrmUnifiedInbox"));
+const CrmComingSoon = lazy(() => import("./pages/organization/crm/CrmComingSoon"));
+const CrmCatalogue = lazy(() => import("./pages/organization/CrmCatalogue"));
 const HospitalityContentPage = lazy(() => import("./pages/organization/HospitalityContent"));
 const OrganisationLegacyRedirect = lazy(() => import("./pages/organization/OrganisationLegacyRedirect"));
 const RoomDefinitionsPage = lazy(() => import("./pages/organization/RoomDefinitions"));
@@ -260,7 +266,22 @@ const AppRoutes = () => {
           <Route path="appointments" element={<OrganizationAppointments />} />
           <Route path="calendar" element={<OrganizationCalendar />} />
           <Route path="event-bookings" element={<EventBookings />} />
-          <Route path="leads" element={<OrganizationLeads />} />
+          <Route path="crm" element={<CrmLayout />}>
+            <Route index element={<CrmDashboard />} />
+            <Route path="contacts" element={<OrganizationLeads />} />
+            <Route path="leads" element={<Navigate to="/organization/crm/contacts" replace />} />
+            <Route path="pipeline" element={<CrmComingSoon title="Sales Pipeline" description="Track lead stages from new enquiry through conversion. This board is next to build." />} />
+            <Route path="inbox" element={<CrmUnifiedInbox />} />
+            <Route path="email-campaigns" element={<CrmComingSoon title="Email Campaigns" description="Send bulk or scheduled email. Conversations stay in Unified Inbox — this is for campaigns only." />} />
+            <Route path="whatsapp-campaigns" element={<CrmComingSoon title="WhatsApp Campaigns" description="Send bulk or scheduled WhatsApp messages. Chats stay in Unified Inbox — this is for campaigns only." />} />
+            <Route path="templates" element={<CrmComingSoon title="Message Templates" description="Create and manage Email and WhatsApp message templates for campaigns, booking confirmations, and reminders. Separate from your public website templates under Settings." />} />
+            <Route path="tasks" element={<CrmComingSoon title="Tasks & Follow-ups" description="Assign reminders and next steps on leads and conversations." />} />
+            <Route path="reports" element={<CrmComingSoon title="CRM Reports" description="Conversion, response time, and campaign performance for your organisation." />} />
+            <Route path="business-profile" element={<CrmCatalogue />} />
+            <Route path="catalogue" element={<Navigate to="/organization/crm/business-profile" replace />} />
+            <Route path="clients" element={<Navigate to="/organization/clients" replace />} />
+          </Route>
+          <Route path="leads" element={<Navigate to="/organization/crm/contacts" replace />} />
           <Route path="loyalty" element={<Navigate to="/organization/profile?tab=loyalty" replace />} />
           <Route path="locations" element={<LocationsScreen />} />
           <Route path="staff" element={<StaffManagement />} />
@@ -269,6 +290,7 @@ const AppRoutes = () => {
           <Route path="template-builder" element={<TemplateBuilder />} />
           <Route path="settings" element={<OrganizationSettings />} />
           <Route path="profile" element={<OrganizationProfile />} />
+          <Route path="reference-values" element={<ReferenceValuesPage />} />
           <Route path="payment-settings" element={<PaymentSettings />} />
           <Route path="booking-page" element={<Navigate to="/organization/profile?tab=templates" replace />} />
           <Route path="clients" element={<ClientManagement />} />

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { OrganizationPageShell } from "@/components/layout/OrganizationPageShell";
 import { 
@@ -22,12 +23,13 @@ import {
   Plus, 
   Trash, 
   Loader2, 
-  Settings,
   X,
   Save,
   Package,
   AlertCircle,
   ArrowRight,
+  Copy,
+  Pencil,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
@@ -322,6 +324,34 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
       ...prev,
       [dayId]: prev[dayId].filter(slot => slot.localid !== slotId),
     }));
+  };
+
+  const formatSlotClock = (value: Date | string | undefined) => {
+    if (!value) return "";
+    if (value instanceof Date) {
+      return value.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+    }
+    return String(value).slice(0, 5);
+  };
+
+  const parseClockToDate = (clock: string) => {
+    const [hours, minutes] = clock.split(":");
+    const date = new Date();
+    date.setHours(parseInt(hours || "0", 10), parseInt(minutes || "0", 10), 0, 0);
+    return date;
+  };
+
+  /** Open = has hours; Closed = empty list for that day. */
+  const setDayOpen = (dayId: number, open: boolean) => {
+    if (open) {
+      if ((dayTimeSlots[dayId]?.length ?? 0) === 0) addTimeSlot(dayId);
+      return;
+    }
+    setDayTimeSlots((prev) => ({ ...prev, [dayId]: [] }));
   };
 
   // Update time slot
@@ -866,13 +896,6 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
   }
 
   const hasSingleLocation = locations.length === 1;
-  const pageDescription = inOnboarding
-    ? hasSingleLocation
-      ? "Set open/close times for each day, then save."
-      : "Pick a location, set open/close times for each day, then save."
-    : hasSingleLocation
-      ? "Set working hours and leave schedules for your location."
-      : "Manage working hours and leave schedules for each location.";
 
   const returnToSingleLocationHours = () => {
     if (!hasSingleLocation) return;
@@ -1013,179 +1036,182 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
           </div>
         )}
 
-        {/* Timing Form Card */}
+        {/* Timing Form — simple week schedule */}
         {showTimingForm && selectedLocation && (
-          <Card className={cn(org.card, "w-full overflow-hidden rounded-2xl border-stone-200 bg-white shadow-none")}>
-            <CardHeader className="space-y-1 border-b border-stone-200 bg-white p-5 sm:p-6">
-              <div className="flex items-start sm:items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="truncate text-lg font-semibold text-appointza-navy sm:text-xl">
-                    {selectedLocation.name}
-                  </CardTitle>
-                  <CardDescription className="mt-1 text-sm text-stone-500">
-                    Set opening and closing times for each day of the week.
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setShowTimingForm(false);
-                    setSelectedLocation(null);
-                  }}
-                  className={cn("flex-shrink-0", hasSingleLocation && "hidden")}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+          <div className="w-full overflow-hidden rounded-xl border border-[#e6eaf0] bg-white shadow-none">
+            <div className="flex flex-col gap-3 border-b border-[#e6eaf0] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2]">
+                  Weekly hours
+                </p>
+                <h3 className="truncate text-[16px] font-semibold text-[#1a1a1a]">
+                  When are you open?
+                </h3>
+                <p className="mt-0.5 text-[13px] text-[#667085]">
+                  Turn a day on, set open → close, then save.
+                  {selectedLocation.name ? (
+                    <>
+                      {" "}
+                      Place: <span className="font-medium text-[#344054]">{selectedLocation.name}</span>
+                    </>
+                  ) : null}
+                </p>
               </div>
-              {!inOnboarding && hasSingleLocation && (
+              <div className="flex flex-wrap items-center gap-2">
+                {!inOnboarding ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleLocationSelectForLeave(selectedLocation)}
+                    className={cn(org.btnOutline, "h-8")}
+                  >
+                    <Calendar className="h-3.5 w-3.5" />
+                    Day off
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => handleLocationSelectForLeave(locations[0])}
-                  className={cn(org.btnOutline, "mt-3 min-h-10 w-full touch-manipulation sm:w-auto")}
+                  onClick={applyMondayToAllDays}
+                  disabled={isSavingTimings}
+                  className={cn(org.btnOutline, "h-8")}
                 >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Book leave
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy Mon to all
                 </Button>
-              )}
-            </CardHeader>
-            <CardContent className="space-y-5 p-5 sm:p-6">
-            <div className="space-y-4 sm:space-y-5">
-              {/* Settings */}
-              <Card className={cn(org.panel, "rounded-xl border-stone-200 bg-white shadow-none")}>
-                <CardHeader className="pb-3">
-                  <CardTitle className={org.title}>Opening hours</CardTitle>
-                  <p className="text-sm text-stone-500">
-                    Counters and booking window are organisation options under{" "}
-                    <button
-                      type="button"
-                      className="font-medium text-blue-600 hover:underline"
-                      onClick={() => navigate("/organization/profile?tab=organization")}
-                    >
-                      Profile → Organization
-                    </button>
-                    .
-                  </p>
-                </CardHeader>
-              </Card>
-
-              {daysOfWeek.map((day) => (
-                <Card key={day.id} className={cn(org.panel, "rounded-xl border-stone-200 bg-white shadow-none")}>
-                  <CardHeader className="pb-3">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <CardTitle className="text-base font-semibold text-appointza-navy sm:text-lg">
-                        {day.label}
-                      </CardTitle>
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        {day.id === 1 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={applyMondayToAllDays}
-                            className={cn(org.btnOutline, "h-10 w-full sm:w-auto")}
-                          >
-                            <Settings className="mr-2 h-4 w-4" />
-                            Apply Mon to all days
-                          </Button>
-                        )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addTimeSlot(day.id)}
-                          className={cn(org.btnOutline, "h-10 w-full sm:w-auto")}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add hours
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {!dayTimeSlots[day.id]?.length ? (
-                      <p className="rounded-xl border border-dashed border-stone-200 bg-stone-50/80 px-4 py-6 text-center text-sm text-stone-500">
-                        Closed — tap &ldquo;Add hours&rdquo; to set opening times
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                         {dayTimeSlots[day.id]?.map((slot) => (
-                           <div
-                             key={slot.localid}
-                             className="flex flex-col gap-2 rounded-xl border border-stone-200 bg-white p-3 sm:flex-row sm:items-center"
-                           >
-                             <div className="flex flex-1 items-center gap-2">
-                               <Clock className="h-4 w-4 shrink-0 text-blue-600" />
-                               <Input
-                                 type="time"
-                                 value={slot.start_time instanceof Date
-                                   ? slot.start_time.toLocaleTimeString('en-GB', {
-                                       hour: '2-digit',
-                                       minute: '2-digit',
-                                       hour12: false
-                                     })
-                                   : ''}
-                                 onChange={(e) => {
-                                   const [hours, minutes] = e.target.value.split(':');
-                                   const date = new Date();
-                                   date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                                   updateTimeSlot(day.id, slot.localid, 'start_time', date);
-                                 }}
-                                 className={cn(org.input, "h-11 flex-1")}
-                               />
-                             </div>
-
-                             <span className="text-center text-xs font-medium text-stone-400 sm:px-1">to</span>
-
-                             <div className="flex flex-1 items-center gap-2">
-                               <Clock className="h-4 w-4 shrink-0 text-blue-600" />
-                               <Input
-                                 type="time"
-                                 value={slot.end_time instanceof Date
-                                   ? slot.end_time.toLocaleTimeString('en-GB', {
-                                       hour: '2-digit',
-                                       minute: '2-digit',
-                                       hour12: false
-                                     })
-                                   : ''}
-                                 onChange={(e) => {
-                                   const [hours, minutes] = e.target.value.split(':');
-                                   const date = new Date();
-                                   date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                                   updateTimeSlot(day.id, slot.localid, 'end_time', date);
-                                 }}
-                                 className={cn(org.input, "h-11 flex-1")}
-                               />
-                             </div>
-
-                             <Button
-                               type="button"
-                               variant="outline"
-                               size="sm"
-                               onClick={() => removeTimeSlot(day.id, slot.localid)}
-                               className={cn(
-                                 org.btnOutline,
-                                 "h-10 w-full shrink-0 border-red-100 text-red-600 hover:bg-red-50 sm:w-10 sm:px-0",
-                               )}
-                             >
-                               <Trash className="h-4 w-4" />
-                             </Button>
-                           </div>
-                         ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                {!hasSingleLocation ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setShowTimingForm(false);
+                      setSelectedLocation(null);
+                    }}
+                    className="h-8 w-8 text-[#7a8494] hover:bg-[#f4f6f9] hover:text-[#1a1a1a]"
+                    aria-label="Close"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                ) : null}
+              </div>
             </div>
 
-            <div className={cn(
-              "flex flex-col-reverse gap-2 border-t border-stone-200 pt-5 sm:flex-row sm:justify-end",
-              hasSingleLocation && "sm:justify-end",
-            )}>
-              {!hasSingleLocation && (
+            {isFetchingTimings ? (
+              <div className="flex items-center justify-center gap-2 px-4 py-12 text-[13px] text-[#667085]">
+                <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
+                Loading hours…
+              </div>
+            ) : (
+              <div className="divide-y divide-[#eef1f5]">
+                {daysOfWeek.map((day) => {
+                  const slots = dayTimeSlots[day.id] ?? [];
+                  const isOpen = slots.length > 0;
+                  return (
+                    <div
+                      key={day.id}
+                      className={cn(
+                        "flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-start sm:gap-4 sm:px-5",
+                        !isOpen && "bg-[#fafbfc]",
+                      )}
+                    >
+                      <div className="flex min-w-[8.5rem] items-center justify-between gap-3 sm:pt-1.5">
+                        <div>
+                          <p className="text-[14px] font-semibold text-[#1a1a1a]">{day.label}</p>
+                          <p
+                            className={cn(
+                              "text-[12px] font-medium",
+                              isOpen ? "text-[#2a5af5]" : "text-[#98a2b3]",
+                            )}
+                          >
+                            {isOpen ? "Open" : "Closed"}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={isOpen}
+                          onCheckedChange={(checked) => setDayOpen(day.id, checked)}
+                          aria-label={`${day.label} ${isOpen ? "open" : "closed"}`}
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1 space-y-2">
+                        {!isOpen ? (
+                          <p className="rounded-md border border-dashed border-[#e6eaf0] bg-white px-3 py-2.5 text-[13px] text-[#98a2b3] sm:mt-0.5">
+                            Closed all day — flip the switch to set times
+                          </p>
+                        ) : (
+                          <>
+                            {slots.map((slot) => (
+                              <div
+                                key={slot.localid}
+                                className="flex flex-col gap-2 rounded-md border border-[#e6eaf0] bg-white p-2 sm:flex-row sm:items-center sm:gap-2"
+                              >
+                                <div className="flex min-w-0 flex-1 items-center gap-2">
+                                  <Label className="sr-only">Opens</Label>
+                                  <Input
+                                    type="time"
+                                    value={formatSlotClock(slot.start_time)}
+                                    onChange={(e) =>
+                                      updateTimeSlot(
+                                        day.id,
+                                        slot.localid,
+                                        "start_time",
+                                        parseClockToDate(e.target.value),
+                                      )
+                                    }
+                                    className={cn(org.input, "h-9 flex-1 tabular-nums")}
+                                  />
+                                  <span className="shrink-0 text-[12px] font-medium text-[#98a2b3]">
+                                    to
+                                  </span>
+                                  <Label className="sr-only">Closes</Label>
+                                  <Input
+                                    type="time"
+                                    value={formatSlotClock(slot.end_time)}
+                                    onChange={(e) =>
+                                      updateTimeSlot(
+                                        day.id,
+                                        slot.localid,
+                                        "end_time",
+                                        parseClockToDate(e.target.value),
+                                      )
+                                    }
+                                    className={cn(org.input, "h-9 flex-1 tabular-nums")}
+                                  />
+                                </div>
+                                {slots.length > 1 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeTimeSlot(day.id, slot.localid)}
+                                    className="inline-flex h-9 w-full items-center justify-center rounded-md border border-[#e6eaf0] text-[#667085] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 sm:w-9"
+                                    aria-label="Remove hours"
+                                  >
+                                    <Trash className="h-3.5 w-3.5" />
+                                  </button>
+                                ) : null}
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => addTimeSlot(day.id)}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium text-[#2a5af5] transition-colors hover:bg-[#eef4ff]"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Add another time
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className={cn(org.saveBar, "flex-wrap gap-2")}>
+              {!hasSingleLocation ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -1193,27 +1219,26 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
                     setShowTimingForm(false);
                     setSelectedLocation(null);
                   }}
-                  className={cn(org.btnOutline, "min-h-11 w-full sm:w-auto")}
+                  className={cn(org.btnOutline, "h-9")}
                 >
-                  Cancel
+                  Back
                 </Button>
-              )}
+              ) : null}
               <Button
                 type="button"
                 onClick={saveTimingData}
-                disabled={isSavingTimings}
-                className={cn(org.btnPrimary, "min-h-11 w-full sm:w-auto")}
+                disabled={isSavingTimings || isFetchingTimings}
+                className={org.saveBtn}
               >
                 {isSavingTimings ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save className="h-4 w-4" />
                 )}
-                Save business hours
+                Save
               </Button>
             </div>
-            </CardContent>
-          </Card>
+          </div>
         )}
 
         {/* Leave Form Card */}
@@ -1509,7 +1534,7 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
                               onClick={() => handleEditLeave(leave)}
                               className={cn(org.btnOutline, "min-h-9 w-full sm:w-auto")}
                             >
-                              <Settings className="mr-2 h-4 w-4" />
+                              <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </Button>
                             <Button
@@ -1556,7 +1581,7 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
         <SettingsEmbeddedHeader
           icon={Clock}
           title="Business Hours"
-          description="Manage your business hours and leave schedules."
+          description="Say which days you are open, and from what time to what time."
         />
         <div className={settingsEmbedded.sectionBody}>{timingContent}</div>
       </OrganizationPageShell>
@@ -1577,11 +1602,7 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
           />
         </div>
       )}
-      <header className="org-page-header">
-        <h1 className="org-title">Business Hours</h1>
-        <p className="org-description">{pageDescription}</p>
-      </header>
-      <div className="org-panel-section space-y-5">{timingContent}</div>
+      <div className="org-panel-section space-y-5 pt-4">{timingContent}</div>
     </div>
   );
 };

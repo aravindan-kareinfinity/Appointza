@@ -7,7 +7,7 @@ const Privacy = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Helmet>
-        <title>Privacy Policy - Napz</title>
+        <title>Privacy Policy - Appointza</title>
       </Helmet>
       
       <Header />
@@ -15,7 +15,7 @@ const Privacy = () => {
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-4xl">
           <div className="bg-white rounded-lg shadow-lg p-8">
-            <h1 className="text-3xl font-bold text-appointza-navy mb-2">Privacy Policy for Napz</h1>
+            <h1 className="text-3xl font-bold text-appointza-navy mb-2">Privacy Policy for Appointza</h1>
             <p className="text-gray-600 mb-8">Effective Date: January 15, 2025 | Last Updated: September 27, 2026</p>
             
             <div className="space-y-8">

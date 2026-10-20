@@ -90,8 +90,8 @@ export function OrganizationSidebarLocation({ collapsed }: OrganizationSidebarLo
 
   if (isLoading && locations.length === 0) {
     return (
-      <div className={cn("border-b border-zinc-800", collapsed ? "px-2 py-3" : "px-3 py-3")}>
-        <p className={cn("text-[11px] text-zinc-500", collapsed && "text-center")}>…</p>
+      <div className={cn("border-b border-[#e6eaf0]", collapsed ? "px-2 py-3" : "px-3 py-3")}>
+        <p className={cn("text-[11px] text-[#9aa3b2]", collapsed && "text-center")}>…</p>
       </div>
     );
   }
@@ -100,8 +100,8 @@ export function OrganizationSidebarLocation({ collapsed }: OrganizationSidebarLo
 
   if (collapsed) {
     return (
-      <div className="border-b border-zinc-800 px-2 py-3" title={label || "Location"}>
-        <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-zinc-300">
+      <div className="border-b border-[#e6eaf0] px-2 py-3" title={label || "Location"}>
+        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-md bg-[#f4f6f9] text-[#7a8494]">
           <MapPin className="h-4 w-4" aria-hidden />
         </div>
       </div>
@@ -109,18 +109,18 @@ export function OrganizationSidebarLocation({ collapsed }: OrganizationSidebarLo
   }
 
   return (
-    <div className="space-y-2 border-b border-zinc-800 px-3 py-3">
-      <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+    <div className="space-y-1.5 border-b border-[#e6eaf0] px-3 py-3">
+      <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2]">
         <MapPin className="h-3 w-3" aria-hidden />
         Location
       </p>
       {isStaff || locations.length <= 1 ? (
-        <p className="truncate text-sm font-medium text-white" title={label}>
+        <p className="truncate text-[13px] font-medium text-[#1a1a1a]" title={label}>
           {label || "No location"}
         </p>
       ) : (
         <Select value={selectedId > 0 ? String(selectedId) : undefined} onValueChange={handleChange}>
-          <SelectTrigger className="h-9 border-zinc-700 bg-zinc-900 text-left text-sm text-white shadow-none hover:border-zinc-500 focus:border-zinc-500 focus:ring-0 [&>span]:line-clamp-1">
+          <SelectTrigger className="h-8 border-[#e6eaf0] bg-white text-left text-[13px] text-[#1a1a1a] shadow-none hover:border-[#cfd6e0] focus:border-[#2a5af5] focus:ring-0 [&>span]:line-clamp-1">
             <SelectValue placeholder="Select location" />
           </SelectTrigger>
           <SelectContent>

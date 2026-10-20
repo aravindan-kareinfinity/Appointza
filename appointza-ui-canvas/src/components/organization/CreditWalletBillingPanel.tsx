@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   getSubscriptionApiErrorMessage,
   SubscriptionService,
 } from "@/services/subscription.service";
-import type { CreditWalletStatusRes } from "@/models/subscription.model";
+import type { CreditWalletStatusRes, CreditWalletPack } from "@/models/subscription.model";
 import { useWalletRecharge } from "@/hooks/useWalletRecharge";
 import { Loader2, Star, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -83,8 +89,18 @@ export function CreditWalletBillingPanel({ organisationId: organisationIdProp }:
 
   const bookingsFromCredits = (credits: number) => Math.floor(credits / creditsPerBooking);
 
+  const packMeta = (pack: CreditWalletPack) => {
+    const bookingCount = bookingsFromCredits(pack.credits);
+    const price = pack.price_label || `₹${pack.price_inr.toLocaleString("en-IN")}`;
+    const busy = payingPackId !== null;
+    const thisPackPaying = payingPackId === pack.id;
+    return { bookingCount, price, busy, thisPackPaying };
+  };
+
+  const defaultOpenPack = packs.find((p) => p.highlighted)?.id ?? packs[0]?.id;
+
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-5 sm:space-y-6">
+    <div className="mx-auto w-full max-w-4xl space-y-5 sm:space-y-6">
       {/* Balance */}
       <section className="rounded-2xl border border-stone-200 bg-gradient-to-br from-blue-50 to-white p-4 sm:rounded-3xl sm:p-6">
         <div className="flex items-start gap-3">
@@ -106,7 +122,7 @@ export function CreditWalletBillingPanel({ organisationId: organisationIdProp }:
         </p>
       </section>
 
-      {/* Packs */}
+      {/* Packs — 2 cards on web, accordion on mobile */}
       <section className="space-y-3">
         <div>
           <h2 className="text-base font-semibold text-appointza-navy sm:text-lg">Credit packs</h2>
@@ -121,25 +137,22 @@ export function CreditWalletBillingPanel({ organisationId: organisationIdProp }:
             <code className="text-xs">subscription_plans</code> and refresh.
           </div>
         ) : (
-          <ul className="grid gap-3">
-            {packs.map((pack) => {
-              const bookingCount = bookingsFromCredits(pack.credits);
-              const price = pack.price_label || `₹${pack.price_inr.toLocaleString("en-IN")}`;
-              const busy = payingPackId !== null;
-              const thisPackPaying = payingPackId === pack.id;
-
-              return (
-                <li
-                  key={pack.id}
-                  className={cn(
-                    "rounded-2xl border bg-white p-4 sm:p-5",
-                    pack.highlighted
-                      ? "border-blue-300 ring-1 ring-blue-100"
-                      : "border-stone-200",
-                  )}
-                >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
-                    <div className="min-w-0 space-y-1.5">
+          <>
+            {/* Desktop / tablet: 2-column cards */}
+            <ul className="hidden gap-4 md:grid md:grid-cols-2">
+              {packs.map((pack) => {
+                const { bookingCount, price, busy, thisPackPaying } = packMeta(pack);
+                return (
+                  <li
+                    key={pack.id}
+                    className={cn(
+                      "flex flex-col rounded-2xl border bg-white p-5",
+                      pack.highlighted
+                        ? "border-blue-300 ring-1 ring-blue-100"
+                        : "border-stone-200",
+                    )}
+                  >
+                    <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-base font-semibold text-appointza-navy">{pack.name}</h3>
                         {pack.highlighted ? (
@@ -154,17 +167,14 @@ export function CreditWalletBillingPanel({ organisationId: organisationIdProp }:
                         <span className="text-stone-400"> · </span>
                         ≈ {bookingCount.toLocaleString("en-IN")} bookings
                       </p>
-                      <p className="text-xl font-bold tabular-nums text-blue-700 sm:text-2xl">
-                        {price}
-                      </p>
+                      <p className="text-2xl font-bold tabular-nums text-blue-700">{price}</p>
                     </div>
-
                     <Button
                       type="button"
                       disabled={busy}
                       className={cn(
                         org.btnPrimary,
-                        "h-11 min-h-11 w-full touch-manipulation rounded-xl bg-none bg-blue-600 shadow-none hover:bg-blue-700 sm:w-auto sm:min-w-[8.5rem]",
+                        "mt-4 h-11 min-h-11 w-full touch-manipulation rounded-xl bg-none bg-blue-600 shadow-none hover:bg-blue-700",
                       )}
                       onClick={() => void rechargePack(pack.id)}
                     >
@@ -177,11 +187,75 @@ export function CreditWalletBillingPanel({ organisationId: organisationIdProp }:
                         "Recharge"
                       )}
                     </Button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Mobile: accordion */}
+            <Accordion
+              type="single"
+              collapsible
+              defaultValue={defaultOpenPack ? String(defaultOpenPack) : undefined}
+              className="rounded-2xl border border-stone-200 bg-white md:hidden"
+            >
+              {packs.map((pack) => {
+                const { bookingCount, price, busy, thisPackPaying } = packMeta(pack);
+                return (
+                  <AccordionItem
+                    key={pack.id}
+                    value={String(pack.id)}
+                    className={cn(
+                      "border-stone-200 px-4 last:border-b-0",
+                      pack.highlighted && "bg-blue-50/40",
+                    )}
+                  >
+                    <AccordionTrigger className="gap-3 py-3.5 text-left hover:no-underline">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-appointza-navy">{pack.name}</span>
+                          {pack.highlighted ? (
+                            <Badge className="gap-0.5 bg-blue-600 hover:bg-blue-600">
+                              <Star className="h-3 w-3 fill-current" />
+                              Best value
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <p className="mt-0.5 text-sm font-bold tabular-nums text-blue-700">
+                          {price}
+                        </p>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4">
+                      <p className="mb-3 text-sm text-stone-600">
+                        {pack.credits.toLocaleString("en-IN")} credits
+                        <span className="text-stone-400"> · </span>
+                        ≈ {bookingCount.toLocaleString("en-IN")} bookings
+                      </p>
+                      <Button
+                        type="button"
+                        disabled={busy}
+                        className={cn(
+                          org.btnPrimary,
+                          "h-11 min-h-11 w-full touch-manipulation rounded-xl bg-none bg-blue-600 shadow-none hover:bg-blue-700",
+                        )}
+                        onClick={() => void rechargePack(pack.id)}
+                      >
+                        {thisPackPaying ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Paying…
+                          </>
+                        ) : (
+                          "Recharge"
+                        )}
+                      </Button>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          </>
         )}
       </section>
 

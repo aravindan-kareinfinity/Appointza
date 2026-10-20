@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { ArrowRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,8 +24,61 @@ import {
 } from "@/models/hospitality.model";
 import { hospitalityService } from "@/services/hospitality.service";
 import { formatRoomTypeLabel } from "@/utils/roomAmenities.util";
+import { cn } from "@/lib/utils";
+import { org } from "@/lib/orgTheme";
 
 type PersistFn<T> = (items: T[]) => Promise<void>;
+
+const hospCardClass =
+  "cursor-pointer rounded-xl border border-[#e2e8f0] bg-white p-3.5 text-left shadow-none transition-colors hover:border-[#cfd8f0]";
+const hospEmptyClass =
+  "rounded-xl border border-dashed border-[#e6eaf0] bg-white px-4 py-10 text-center text-[13px] text-[#667085]";
+const hospAddBtnClass = cn(org.btnOutline, "h-9 gap-1.5");
+const hospEditBtnClass = cn(
+  "inline-flex h-8 items-center justify-center gap-1.5 rounded-[6px] bg-[#528ff0] px-3 text-[13px] font-semibold text-white hover:bg-[#3d7ae8]",
+);
+const hospFieldClass = cn(org.input, "h-9");
+const hospLabelClass = org.label;
+const hospSelectClass = cn(org.selectTrigger, "h-9");
+
+function HospEmpty({ children }: { children: ReactNode }) {
+  return <div className={hospEmptyClass}>{children}</div>;
+}
+
+function HospCard({
+  title,
+  meta,
+  body,
+  onEdit,
+}: {
+  title: string;
+  meta?: ReactNode;
+  body?: ReactNode;
+  onEdit: () => void;
+}) {
+  return (
+    <article className={hospCardClass} onClick={onEdit}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[14px] font-semibold text-[#1a1a1a]">{title}</h3>
+          {meta ? <div className="mt-0.5 text-[12px] text-[#667085]">{meta}</div> : null}
+          {body ? <div className="mt-1.5 text-[13px] text-[#667085]">{body}</div> : null}
+        </div>
+        <button
+          type="button"
+          className={hospEditBtnClass}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+        >
+          Edit
+          <ArrowRight className="size-3.5 shrink-0" aria-hidden />
+        </button>
+      </div>
+    </article>
+  );
+}
 
 function useContentEditor<T>(items: T[], setItems: (items: T[]) => void) {
   const [editorOpen, setEditorOpen] = useState(false);
@@ -154,52 +206,34 @@ export function HospitalityPackagesPanel({
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {packages.length === 0 ?
-          <Card>
-            <CardContent className="py-10 text-center text-sm text-stone-500">
-              No packages yet.
-            </CardContent>
-          </Card>
-        : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <HospEmpty>No packages yet. Tap Add package to create one.</HospEmpty>
+        : <div className="grid gap-2 sm:grid-cols-2">
             {packages.map((pkg, index) => (
-              <Card
+              <HospCard
                 key={pkg.id || index}
-                className="cursor-pointer transition-shadow hover:shadow-md"
-                onClick={() => editor.openEdit(index, pkg)}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{pkg.name || "Untitled package"}</CardTitle>
-                  {pkg.price ?
-                    <p className="text-sm font-medium text-stone-700">{pkg.price}</p>
-                  : null}
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm text-stone-600">
-                  {pkg.description ?
-                    <p className="line-clamp-2">{pkg.description}</p>
-                  : <p className="text-stone-400">No description</p>}
-                  <p className="text-xs text-stone-500">
-                    {pkg.room_type
-                      ? `Rooms: ${formatRoomTypeLabel(pkg.room_type)}`
-                      : "Rooms: any type"}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      editor.openEdit(index, pkg);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                </CardContent>
-              </Card>
+                title={pkg.name || "Untitled package"}
+                meta={pkg.price || undefined}
+                body={
+                  <>
+                    <p className="line-clamp-2">
+                      {pkg.description || "No description"}
+                    </p>
+                    <p className="mt-1 text-[12px] text-[#98a2b3]">
+                      {pkg.room_type
+                        ? `Rooms: ${formatRoomTypeLabel(pkg.room_type)}`
+                        : "Rooms: any type"}
+                    </p>
+                  </>
+                }
+                onEdit={() => editor.openEdit(index, pkg)}
+              />
             ))}
           </div>
         }
-        <Button type="button" variant="outline" onClick={() => editor.openCreate(newItem())}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button type="button" variant="outline" className={hospAddBtnClass} onClick={() => editor.openCreate(newItem())}>
+          <Plus className="h-3.5 w-3.5" />
           Add package
         </Button>
       </div>
@@ -221,40 +255,43 @@ export function HospitalityPackagesPanel({
           onSave={() => void editor.saveDraft(onPersist)}
           saveLabel="Save package"
         >
-          <div className="space-y-4">
+          <div className="space-y-4 rounded-xl border border-[#e6eaf0] bg-white p-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label>Name</Label>
+              <div className="space-y-1.5">
+                <Label className={hospLabelClass}>Name</Label>
                 <Input
+                  className={hospFieldClass}
                   value={editor.draft.name}
                   onChange={(e) => editor.setDraft({ ...editor.draft!, name: e.target.value })}
                 />
               </div>
-              <div className="space-y-1">
-                <Label>Price</Label>
+              <div className="space-y-1.5">
+                <Label className={hospLabelClass}>Price</Label>
                 <Input
+                  className={hospFieldClass}
                   value={editor.draft.price}
                   onChange={(e) => editor.setDraft({ ...editor.draft!, price: e.target.value })}
                 />
               </div>
             </div>
-            <div className="space-y-1">
-              <Label>Description</Label>
+            <div className="space-y-1.5">
+              <Label className={hospLabelClass}>Description</Label>
               <Textarea
+                className={cn(org.input, "min-h-[5rem]")}
                 value={editor.draft.description}
                 onChange={(e) => editor.setDraft({ ...editor.draft!, description: e.target.value })}
                 rows={4}
               />
             </div>
-            <div className="space-y-1">
-              <Label>Room type for this package</Label>
+            <div className="space-y-1.5">
+              <Label className={hospLabelClass}>Room type for this package</Label>
               <Select
                 value={editor.draft.room_type?.trim() ? editor.draft.room_type : "any"}
                 onValueChange={(value) =>
                   editor.setDraft({ ...editor.draft!, room_type: value === "any" ? "" : value })
                 }
               >
-                <SelectTrigger className="h-11">
+                <SelectTrigger className={hospSelectClass}>
                   <SelectValue placeholder="Pick a room type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -266,26 +303,25 @@ export function HospitalityPackagesPanel({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-stone-500">
-                You do not pick one room number. You pick a type (for example Deluxe). Every room of
-                that type at this location can be used with the package.
+              <p className="text-[12px] text-[#667085]">
+                Pick a type (for example Deluxe). Every room of that type at this place can use the package.
               </p>
               {locationId <= 0 ? (
-                <p className="text-xs text-amber-700">Choose a location in the sidebar first.</p>
+                <p className="text-[12px] text-amber-700">Choose a location in the sidebar first.</p>
               ) : matchingRooms.length > 0 ? (
-                <p className="text-xs text-stone-600">
+                <p className="text-[12px] text-[#667085]">
                   Rooms of this type here:{" "}
                   {matchingRooms
                     .map((room) => room.room_name || room.room_number || `#${room.id}`)
                     .join(", ")}
                 </p>
               ) : (
-                <p className="text-xs text-stone-500">
-                  No rooms of this type yet. Add them under Hospitality → Rooms, using the same type.
+                <p className="text-[12px] text-[#667085]">
+                  No rooms of this type yet. Add them under Hospitality → Rooms.
                 </p>
               )}
               {onAddRooms ? (
-                <Button type="button" variant="outline" className="mt-1 h-10" onClick={onAddRooms}>
+                <Button type="button" variant="outline" className={cn(hospAddBtnClass, "mt-1")} onClick={onAddRooms}>
                   Add rooms
                 </Button>
               ) : null}
@@ -313,40 +349,23 @@ export function HospitalityFoodPanel({ foodMenu, setFoodMenu, onPersist, newItem
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {foodMenu.length === 0 ?
-          <Card>
-            <CardContent className="py-10 text-center text-sm text-stone-500">
-              No menu items yet.
-            </CardContent>
-          </Card>
-        : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <HospEmpty>No food items yet. Tap Add menu item to create one.</HospEmpty>
+        : <div className="grid gap-2 sm:grid-cols-2">
             {foodMenu.map((item, index) => (
-              <Card
+              <HospCard
                 key={index}
-                className="cursor-pointer transition-shadow hover:shadow-md"
-                onClick={() => editor.openEdit(index, item)}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{item.title || item.meal || "Menu item"}</CardTitle>
-                  {item.meal ?
-                    <p className="text-sm text-stone-500">{item.meal}</p>
-                  : null}
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm text-stone-600">
-                  {item.description ?
-                    <p className="line-clamp-2">{item.description}</p>
-                  : null}
-                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); editor.openEdit(index, item); }}>
-                    Edit
-                  </Button>
-                </CardContent>
-              </Card>
+                title={item.title || item.meal || "Menu item"}
+                meta={item.meal || undefined}
+                body={item.description ? <p className="line-clamp-2">{item.description}</p> : null}
+                onEdit={() => editor.openEdit(index, item)}
+              />
             ))}
           </div>
         }
-        <Button type="button" variant="outline" onClick={() => editor.openCreate(newItem())}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button type="button" variant="outline" className={hospAddBtnClass} onClick={() => editor.openCreate(newItem())}>
+          <Plus className="h-3.5 w-3.5" />
           Add menu item
         </Button>
       </div>
@@ -364,27 +383,30 @@ export function HospitalityFoodPanel({ foodMenu, setFoodMenu, onPersist, newItem
           onSave={() => void editor.saveDraft(onPersist)}
           saveLabel="Save item"
         >
-          <div className="space-y-4">
+          <div className="space-y-4 rounded-xl border border-[#e6eaf0] bg-white p-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label>Meal</Label>
+              <div className="space-y-1.5">
+                <Label className={hospLabelClass}>Meal</Label>
                 <Input
+                  className={hospFieldClass}
                   value={editor.draft.meal}
                   placeholder="Breakfast, Lunch…"
                   onChange={(e) => editor.setDraft({ ...editor.draft!, meal: e.target.value })}
                 />
               </div>
-              <div className="space-y-1">
-                <Label>Title</Label>
+              <div className="space-y-1.5">
+                <Label className={hospLabelClass}>Title</Label>
                 <Input
+                  className={hospFieldClass}
                   value={editor.draft.title}
                   onChange={(e) => editor.setDraft({ ...editor.draft!, title: e.target.value })}
                 />
               </div>
             </div>
-            <div className="space-y-1">
-              <Label>Description</Label>
+            <div className="space-y-1.5">
+              <Label className={hospLabelClass}>Description</Label>
               <Textarea
+                className={cn(org.input, "min-h-[5rem]")}
                 value={editor.draft.description}
                 onChange={(e) => editor.setDraft({ ...editor.draft!, description: e.target.value })}
                 rows={4}
@@ -418,40 +440,22 @@ export function HospitalityNearbyPanel({
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {nearbyPlaces.length === 0 ?
-          <Card>
-            <CardContent className="py-10 text-center text-sm text-stone-500">
-              No nearby places yet.
-            </CardContent>
-          </Card>
-        : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <HospEmpty>No nearby places yet. Tap Add nearby place to create one.</HospEmpty>
+        : <div className="grid gap-2 sm:grid-cols-2">
             {nearbyPlaces.map((place, index) => (
-              <Card
+              <HospCard
                 key={index}
-                className="cursor-pointer transition-shadow hover:shadow-md"
-                onClick={() => editor.openEdit(index, place)}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{place.name || "Nearby place"}</CardTitle>
-                  {place.distance ?
-                    <p className="text-sm text-stone-500">{place.distance}</p>
-                  : null}
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm text-stone-600">
-                  {place.travel_time ?
-                    <p>{place.travel_time}</p>
-                  : null}
-                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); editor.openEdit(index, place); }}>
-                    Edit
-                  </Button>
-                </CardContent>
-              </Card>
+                title={place.name || "Nearby place"}
+                meta={[place.distance, place.travel_time].filter(Boolean).join(" · ") || undefined}
+                onEdit={() => editor.openEdit(index, place)}
+              />
             ))}
           </div>
         }
-        <Button type="button" variant="outline" onClick={() => editor.openCreate(newItem())}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button type="button" variant="outline" className={hospAddBtnClass} onClick={() => editor.openCreate(newItem())}>
+          <Plus className="h-3.5 w-3.5" />
           Add nearby place
         </Button>
       </div>
@@ -469,18 +473,20 @@ export function HospitalityNearbyPanel({
           onSave={() => void editor.saveDraft(onPersist)}
           saveLabel="Save place"
         >
-          <div className="space-y-4">
+          <div className="space-y-4 rounded-xl border border-[#e6eaf0] bg-white p-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label>Name</Label>
+              <div className="space-y-1.5">
+                <Label className={hospLabelClass}>Name</Label>
                 <Input
+                  className={hospFieldClass}
                   value={editor.draft.name}
                   onChange={(e) => editor.setDraft({ ...editor.draft!, name: e.target.value })}
                 />
               </div>
-              <div className="space-y-1">
-                <Label>Distance</Label>
+              <div className="space-y-1.5">
+                <Label className={hospLabelClass}>Distance</Label>
                 <Input
+                  className={hospFieldClass}
                   value={editor.draft.distance}
                   placeholder="2 km"
                   onChange={(e) => editor.setDraft({ ...editor.draft!, distance: e.target.value })}
@@ -488,16 +494,18 @@ export function HospitalityNearbyPanel({
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label>Travel time</Label>
+              <div className="space-y-1.5">
+                <Label className={hospLabelClass}>Travel time</Label>
                 <Input
+                  className={hospFieldClass}
                   value={editor.draft.travel_time ?? ""}
                   onChange={(e) => editor.setDraft({ ...editor.draft!, travel_time: e.target.value })}
                 />
               </div>
-              <div className="space-y-1">
-                <Label>Map URL</Label>
+              <div className="space-y-1.5">
+                <Label className={hospLabelClass}>Map URL</Label>
                 <Input
+                  className={hospFieldClass}
                   value={editor.draft.map_url ?? ""}
                   onChange={(e) => editor.setDraft({ ...editor.draft!, map_url: e.target.value })}
                 />
@@ -531,40 +539,23 @@ export function HospitalityGuestServicesPanel({
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {guestServices.length === 0 ?
-          <Card>
-            <CardContent className="py-10 text-center text-sm text-stone-500">
-              No guest services yet.
-            </CardContent>
-          </Card>
-        : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <HospEmpty>No guest services yet. Tap Add guest service to create one.</HospEmpty>
+        : <div className="grid gap-2 sm:grid-cols-2">
             {guestServices.map((service, index) => (
-              <Card
+              <HospCard
                 key={service.id || index}
-                className="cursor-pointer transition-shadow hover:shadow-md"
-                onClick={() => editor.openEdit(index, service)}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{service.name || "Guest service"}</CardTitle>
-                  {service.price ?
-                    <p className="text-sm font-medium text-stone-700">{service.price}</p>
-                  : null}
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm text-stone-600">
-                  {service.description ?
-                    <p className="line-clamp-2">{service.description}</p>
-                  : null}
-                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); editor.openEdit(index, service); }}>
-                    Edit
-                  </Button>
-                </CardContent>
-              </Card>
+                title={service.name || "Guest service"}
+                meta={service.price || undefined}
+                body={service.description ? <p className="line-clamp-2">{service.description}</p> : null}
+                onEdit={() => editor.openEdit(index, service)}
+              />
             ))}
           </div>
         }
-        <Button type="button" variant="outline" onClick={() => editor.openCreate(newItem())}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button type="button" variant="outline" className={hospAddBtnClass} onClick={() => editor.openCreate(newItem())}>
+          <Plus className="h-3.5 w-3.5" />
           Add guest service
         </Button>
       </div>
@@ -582,26 +573,29 @@ export function HospitalityGuestServicesPanel({
           onSave={() => void editor.saveDraft(onPersist)}
           saveLabel="Save service"
         >
-          <div className="space-y-4">
+          <div className="space-y-4 rounded-xl border border-[#e6eaf0] bg-white p-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label>Name</Label>
+              <div className="space-y-1.5">
+                <Label className={hospLabelClass}>Name</Label>
                 <Input
+                  className={hospFieldClass}
                   value={editor.draft.name}
                   onChange={(e) => editor.setDraft({ ...editor.draft!, name: e.target.value })}
                 />
               </div>
-              <div className="space-y-1">
-                <Label>Price</Label>
+              <div className="space-y-1.5">
+                <Label className={hospLabelClass}>Price</Label>
                 <Input
+                  className={hospFieldClass}
                   value={editor.draft.price}
                   onChange={(e) => editor.setDraft({ ...editor.draft!, price: e.target.value })}
                 />
               </div>
             </div>
-            <div className="space-y-1">
-              <Label>Description</Label>
+            <div className="space-y-1.5">
+              <Label className={hospLabelClass}>Description</Label>
               <Textarea
+                className={cn(org.input, "min-h-[5rem]")}
                 value={editor.draft.description}
                 onChange={(e) => editor.setDraft({ ...editor.draft!, description: e.target.value })}
                 rows={4}

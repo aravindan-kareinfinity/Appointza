@@ -689,7 +689,11 @@ WITH appointment_counts AS (
         SUM(CASE WHEN UPPER(COALESCE(statuscode, '')) = 'CONFIRMED' THEN 1 ELSE 0 END) AS confirmed_count,
         SUM(CASE WHEN UPPER(COALESCE(statuscode, '')) = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_count,
         SUM(CASE WHEN UPPER(COALESCE(statuscode, '')) = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled_count,
-        SUM(CASE WHEN UPPER(COALESCE(statuscode, '')) NOT IN ('CONFIRMED', 'COMPLETED', 'CANCELLED') THEN 1 ELSE 0 END) AS pending_count
+        -- Pending = needs action on today or a future date (matches what staff look for on the calendar)
+        SUM(CASE
+            WHEN UPPER(COALESCE(statuscode, '')) NOT IN ('CONFIRMED', 'COMPLETED', 'CANCELLED')
+             AND DATE(appoinmentdate) >= CURRENT_DATE
+            THEN 1 ELSE 0 END) AS pending_count
     FROM appoinment
     WHERE organisationlocationid = @orglocid
 ),

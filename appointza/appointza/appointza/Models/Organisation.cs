@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 namespace appointza.Models
@@ -49,7 +50,18 @@ public string organisation_type { get; set; } = "service";
         
                 public class AttributesData
                 {
+                    /// <summary>Which catalogue lines this org sells: services, events, rooms.</summary>
+                    public List<string> catalog_offerings { get; set; }
 
+                    /// <summary>Organisation-wide concurrent booking counters for services.</summary>
+                    public int? appointment_counter { get; set; }
+
+                    /// <summary>How many days ahead customers may book (0 = no limit).</summary>
+                    public int? appointment_openbefore { get; set; }
+
+                    /// <summary>Preserve unknown attribute keys when round-tripping JSON.</summary>
+                    [JsonExtensionData]
+                    public Dictionary<string, JsonElement> ExtensionData { get; set; }
                 }  
                 
     }
@@ -96,6 +108,8 @@ public string organisation_type { get; set; } = "service";
         public string organisationlocationgooglelocation { get; set; }
         public string organisationlocationpincode { get; set; }
         public string organisationlocationcustomurl { get; set; }
+        /// <summary>Stable public booking GUID (`organisationlocation.orgloctempid`).</summary>
+        public string organisationlocationorgloctempid { get; set; } = "";
     }
 
 

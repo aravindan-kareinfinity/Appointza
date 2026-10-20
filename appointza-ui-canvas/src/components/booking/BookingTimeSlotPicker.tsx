@@ -60,7 +60,8 @@ function BookingTimeSlotPickerInner({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-3 gap-3">
+      {/* Full-width mobile: 2–3 cols. Narrow desktop sidebar: 2 cols, 3 at xl. */}
+      <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-2 xl:grid-cols-3">
         {timeSlots.map((slot, index) => {
           const remaining = Math.max(0, slot.remaining ?? (slot.statuscode === "Booked" ? 0 : 1));
           const capacity = Math.max(0, slot.capacity ?? remaining);
@@ -81,29 +82,36 @@ function BookingTimeSlotPickerInner({
               disabled={disabled}
               onClick={() => onSelect(slot)}
               className={cn(
-                "h-auto min-h-[3.25rem] rounded-2xl py-4 font-medium border-gray-200 shadow-none transition text-center",
-                !disabled && !isSelected && "hover:bg-orange-50 hover:border-orange-500",
+                "h-auto min-h-[3rem] w-full min-w-0 whitespace-normal rounded-2xl border-gray-200 px-2 py-2.5 text-center text-sm font-medium shadow-none transition sm:min-h-[3.25rem] sm:px-3 sm:py-3.5",
+                !disabled && !isSelected && "hover:border-orange-500 hover:bg-orange-50",
                 isSelected &&
-                  "bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:text-white",
-                isBooked && "opacity-50 cursor-not-allowed",
-                isBlocked && "bg-yellow-50 border-yellow-300 text-yellow-900",
-                isBlockedByLeave && "bg-orange-100 border-orange-300 text-orange-900",
-                isPastSlot && "opacity-55 cursor-not-allowed bg-zinc-100 border-zinc-200 text-zinc-500",
+                  "border-orange-500 bg-orange-500 text-white hover:bg-orange-600 hover:text-white",
+                isBooked && "cursor-not-allowed opacity-50",
+                isBlocked && "border-yellow-300 bg-yellow-50 text-yellow-900",
+                isBlockedByLeave && "border-orange-300 bg-orange-100 text-orange-900",
+                isPastSlot &&
+                  "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-500 opacity-55",
               )}
             >
-              <div className="text-center w-full">
-                <div>{formatTime(slot.fromtime)}</div>
-                {isBooked && <div className="text-xs text-red-600">Booked</div>}
+              <div className="mx-auto flex w-full min-w-0 flex-col items-center gap-0.5 text-center">
+                <div className="w-full break-words tabular-nums leading-snug">
+                  {formatTime(slot.fromtime)}
+                </div>
+                {isBooked && <div className="text-xs leading-tight text-red-600">Booked</div>}
                 {!isBooked && !isOutsideWindow && capacity > 0 && (
-                  <div className="text-xs opacity-80">
+                  <div className="text-xs leading-tight opacity-80">
                     {remaining}/{capacity}
                   </div>
                 )}
-                {isOutsideWindow && <div className="text-xs">Outside window</div>}
-                {isBlocked && <div className="text-xs">Holiday</div>}
-                {isBlockedByLeave && <div className="text-xs">Leave</div>}
+                {isOutsideWindow && (
+                  <div className="max-w-full break-words text-[11px] leading-tight sm:text-xs">
+                    Outside window
+                  </div>
+                )}
+                {isBlocked && <div className="text-xs leading-tight">Holiday</div>}
+                {isBlockedByLeave && <div className="text-xs leading-tight">Leave</div>}
                 {isPastSlot && !isBooked && !isBlocked && !isBlockedByLeave && (
-                  <div className="text-xs text-zinc-500">Past</div>
+                  <div className="text-xs leading-tight text-zinc-500">Past</div>
                 )}
               </div>
             </Button>

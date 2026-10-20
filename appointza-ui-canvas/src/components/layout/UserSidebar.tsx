@@ -45,23 +45,26 @@ const SidebarLink = ({
       to={to}
       title={collapsed ? String(children) : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-200",
-        collapsed ? "justify-center px-2" : "px-4",
+        "relative flex items-center gap-2.5 rounded-md py-2 text-[13px] font-medium transition-colors",
+        collapsed ? "justify-center px-2" : "px-3",
         isActive
-          ? "bg-white/10 text-white"
-          : "text-zinc-400 hover:bg-white/5 hover:text-white",
+          ? "bg-[#eef2f7] text-[#1a1a1a]"
+          : "text-[#5b6572] hover:bg-[#f4f6f9] hover:text-[#1a1a1a]",
       )}
       onClick={onClick}
     >
+      {isActive && !collapsed ? (
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-[#2a5af5]" aria-hidden />
+      ) : null}
       <Icon
         className={cn(
-          "size-5 shrink-0",
-          isActive ? "text-white" : "text-zinc-500",
+          "size-[18px] shrink-0",
+          isActive ? "text-[#2a5af5]" : "text-[#7a8494]",
         )}
-        strokeWidth={2}
+        strokeWidth={1.75}
         aria-hidden
       />
-      {!collapsed && <span>{children}</span>}
+      {!collapsed && <span className="truncate">{children}</span>}
     </Link>
   );
 };
@@ -112,22 +115,22 @@ const UserSidebar = () => {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-zinc-800 bg-black shadow-none transition-all duration-200 lg:flex",
+        "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-[#e6eaf0] bg-white shadow-none transition-all duration-200 lg:flex",
         isCollapsed ? "w-16" : "w-64",
       )}
     >
       {user ? (
         <div
           className={cn(
-            "relative shrink-0 border-b border-zinc-800",
-            isCollapsed ? "flex flex-col items-center gap-2 p-4" : "px-5 py-5 pr-12",
+            "relative shrink-0 border-b border-[#e6eaf0]",
+            isCollapsed ? "flex flex-col items-center gap-2 p-3" : "px-3 py-3 pr-11",
           )}
         >
           {isCollapsed ? (
             <>
-              <Avatar className="h-10 w-10 shrink-0 ring-2 ring-white/10">
+              <Avatar className="h-9 w-9 shrink-0 ring-1 ring-[#e6eaf0]">
                 <AvatarImage src={userImageUrl} alt={user.firstname || user.username || "User"} />
-                <AvatarFallback className="bg-zinc-800 text-zinc-200">
+                <AvatarFallback className="bg-[#eef2f7] text-[12px] font-semibold text-[#5b6572]">
                   {(user.firstname || user.username || "U").charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -135,27 +138,27 @@ const UserSidebar = () => {
                 variant="ghost"
                 size="icon"
                 onClick={toggleCollapse}
-                className="h-8 w-8 text-zinc-500 hover:bg-white/10 hover:text-white"
+                className="h-7 w-7 text-[#7a8494] hover:bg-[#f4f6f9] hover:text-[#1a1a1a]"
                 aria-label="Expand sidebar"
               >
-                <ChevronRight className="size-[18px]" />
+                <ChevronRight className="size-4" />
               </Button>
             </>
           ) : (
             <>
-              <div className="flex items-start gap-3">
-                <Avatar className="h-10 w-10 shrink-0 ring-2 ring-white/10">
+              <div className="flex items-start gap-2.5">
+                <Avatar className="h-9 w-9 shrink-0 ring-1 ring-[#e6eaf0]">
                   <AvatarImage src={userImageUrl} alt={user.firstname || user.username || "User"} />
-                  <AvatarFallback className="bg-zinc-800 text-zinc-200">
+                  <AvatarFallback className="bg-[#eef2f7] text-[12px] font-semibold text-[#5b6572]">
                     {(user.firstname || user.username || "U").charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="truncate text-sm font-medium text-white">
+                  <p className="truncate text-[13px] font-semibold text-[#1a1a1a]">
                     {user.firstname || user.username || "User"}
                   </p>
                   {user.email && (
-                    <p className="truncate text-xs text-zinc-400">{user.email}</p>
+                    <p className="truncate text-[12px] text-[#7a8494]">{user.email}</p>
                   )}
                 </div>
               </div>
@@ -163,30 +166,30 @@ const UserSidebar = () => {
                 variant="ghost"
                 size="icon"
                 onClick={toggleCollapse}
-                className="absolute right-3 top-1/2 h-8 w-8 -translate-y-1/2 text-zinc-500 hover:bg-white/10 hover:text-white"
+                className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 text-[#7a8494] hover:bg-[#f4f6f9] hover:text-[#1a1a1a]"
                 aria-label="Collapse sidebar"
               >
-                <ChevronLeft className="size-[18px]" />
+                <ChevronLeft className="size-4" />
               </Button>
             </>
           )}
         </div>
       ) : (
-        <div className="relative flex shrink-0 justify-center border-b border-zinc-800 p-4">
+        <div className="relative flex shrink-0 justify-center border-b border-[#e6eaf0] p-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleCollapse}
-            className="h-8 w-8 text-zinc-500 hover:bg-white/10 hover:text-white"
+            className="h-7 w-7 text-[#7a8494] hover:bg-[#f4f6f9] hover:text-[#1a1a1a]"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? <ChevronRight className="size-[18px]" /> : <ChevronLeft className="size-[18px]" />}
+            {isCollapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
           </Button>
         </div>
       )}
 
       <nav className="flex min-h-0 flex-1 flex-col">
-        <div className={cn("min-h-0 flex-1 space-y-1 overflow-y-auto", isCollapsed ? "px-2 py-4" : "px-3 py-5")}>
+        <div className={cn("min-h-0 flex-1 space-y-0.5 overflow-y-auto", isCollapsed ? "px-2 py-3" : "px-2 py-3")}>
           <SidebarLink to="/explore" icon={Home} collapsed={isCollapsed}>
             Home
           </SidebarLink>
@@ -204,7 +207,7 @@ const UserSidebar = () => {
           </SidebarLink>
         </div>
 
-        <div className="mt-auto shrink-0 border-t border-zinc-800 p-3">
+        <div className="mt-auto shrink-0 border-t border-[#e6eaf0] p-2">
           <SidebarLink to="/user/profile" icon={Settings} collapsed={isCollapsed}>
             Settings
           </SidebarLink>

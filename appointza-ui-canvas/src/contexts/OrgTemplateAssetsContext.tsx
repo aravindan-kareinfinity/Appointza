@@ -35,6 +35,7 @@ type OrgTemplateAssetsContextValue = {
   registerFileIds: (ids: number[], names?: string[]) => Promise<void>;
   uploadFiles: (files: File[]) => Promise<number[]>;
   removeAsset: (id: number) => Promise<void>;
+  renameAsset: (id: number, name: string) => Promise<void>;
 };
 
 const OrgTemplateAssetsContext = createContext<OrgTemplateAssetsContextValue | null>(null);
@@ -164,6 +165,18 @@ export function OrgTemplateAssetsProvider({ children }: { children: ReactNode })
     [assets, persistCatalog],
   );
 
+  const renameAsset = useCallback(
+    async (id: number, name: string) => {
+      const nextName = name.trim();
+      if (!nextName) return;
+      const current = assets.find((a) => a.id === id);
+      if (!current || current.name === nextName) return;
+      const next = assets.map((a) => (a.id === id ? { ...a, name: nextName } : a));
+      await persistCatalog(next);
+    },
+    [assets, persistCatalog],
+  );
+
   const value = useMemo(
     () => ({
       assets,
@@ -176,6 +189,7 @@ export function OrgTemplateAssetsProvider({ children }: { children: ReactNode })
       registerFileIds,
       uploadFiles,
       removeAsset,
+      renameAsset,
     }),
     [
       assets,
@@ -187,6 +201,7 @@ export function OrgTemplateAssetsProvider({ children }: { children: ReactNode })
       refresh,
       registerFileIds,
       removeAsset,
+      renameAsset,
       uploadFiles,
     ],
   );

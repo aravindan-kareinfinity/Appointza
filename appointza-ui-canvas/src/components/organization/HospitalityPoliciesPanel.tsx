@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Loader2, Pencil } from "lucide-react";
+import { ArrowRight, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +18,8 @@ import {
 } from "@/models/hospitality.model";
 import { hospitalityService } from "@/services/hospitality.service";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { org } from "@/lib/orgTheme";
 
 type HospitalityPoliciesPanelProps = {
   organisationId: number;
@@ -81,8 +82,8 @@ export function HospitalityPoliciesPanel({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-12 text-stone-500">
-        <Loader2 className="h-5 w-5 animate-spin" />
+      <div className="flex items-center gap-2 py-12 text-[13px] text-[#667085]">
+        <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
         Loading policies…
       </div>
     );
@@ -90,50 +91,72 @@ export function HospitalityPoliciesPanel({
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
-          <div>
-            <CardTitle className="text-lg">Check-in & policies</CardTitle>
-            <p className="text-sm text-stone-500">
-              Booking type and guest policies stored on your organisation profile.
+      <div className="overflow-hidden rounded-xl border border-[#e6eaf0] bg-white shadow-none">
+        <div className="flex flex-col gap-3 border-b border-[#e6eaf0] px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-5">
+          <div className="min-w-0">
+            <h3 className="text-[15px] font-semibold text-[#1a1a1a]">Check-in & policies</h3>
+            <p className="mt-0.5 text-[13px] text-[#667085]">
+              Booking type and guest rules for your place.
             </p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setEditorOpen(true)}>
-            <Pencil className="mr-2 h-4 w-4" />
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setEditorOpen(true)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-[6px] bg-[#528ff0] px-3 text-[13px] font-semibold text-white hover:bg-[#3d7ae8]"
+          >
+            <Pencil className="h-3.5 w-3.5" />
             Edit
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </Button>
-        </CardHeader>
-        <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
+        </div>
+        <div className="grid gap-4 px-4 py-4 text-[13px] sm:grid-cols-2 sm:px-5">
           <div>
-            <p className="text-xs font-medium uppercase text-stone-400">Booking type</p>
-            <p className="text-stone-800">{bookingTypeLabel(profile?.booking_type || "overnight")}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2]">
+              Booking type
+            </p>
+            <p className="mt-1 font-medium text-[#1a1a1a]">
+              {bookingTypeLabel(profile?.booking_type || "overnight")}
+            </p>
           </div>
           {profile?.booking_type === "hourly" ?
             <div>
-              <p className="text-xs font-medium uppercase text-stone-400">Minimum hours</p>
-              <p className="text-stone-800">{profile.minimum_hours}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2]">
+                Minimum hours
+              </p>
+              <p className="mt-1 font-medium text-[#1a1a1a]">{profile.minimum_hours}</p>
             </div>
           : null}
           <div>
-            <p className="text-xs font-medium uppercase text-stone-400">Check-in</p>
-            <p className="text-stone-800">{profile?.checkin_time || "14:00"}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2]">
+              Check-in
+            </p>
+            <p className="mt-1 font-medium text-[#1a1a1a]">{profile?.checkin_time || "14:00"}</p>
           </div>
           <div>
-            <p className="text-xs font-medium uppercase text-stone-400">Check-out</p>
-            <p className="text-stone-800">{profile?.checkout_time || "11:00"}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2]">
+              Check-out
+            </p>
+            <p className="mt-1 font-medium text-[#1a1a1a]">{profile?.checkout_time || "11:00"}</p>
           </div>
           <div className="sm:col-span-2">
-            <p className="text-xs font-medium uppercase text-stone-400">Cancellation policy</p>
-            <p className="whitespace-pre-wrap text-stone-800">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2]">
+              Cancellation policy
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-[#344054]">
               {profile?.cancellation_policy || "—"}
             </p>
           </div>
           <div className="sm:col-span-2">
-            <p className="text-xs font-medium uppercase text-stone-400">Payment policy</p>
-            <p className="whitespace-pre-wrap text-stone-800">{profile?.payment_policy || "—"}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2]">
+              Payment policy
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-[#344054]">
+              {profile?.payment_policy || "—"}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <ResponsiveEditSheet
         open={editorOpen}
@@ -146,16 +169,20 @@ export function HospitalityPoliciesPanel({
         onSave={() => void savePolicies()}
         saveLabel="Save policies"
       >
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <Label>Booking type</Label>
+        <div className="space-y-4 rounded-xl border border-[#e6eaf0] bg-white p-4">
+          <div className="space-y-1.5">
+            <Label className={org.label}>Booking type</Label>
             <Select
               value={draft.booking_type}
               onValueChange={(value) =>
-                setDraft({ ...draft, booking_type: value, minimum_hours: value === "hourly" ? draft.minimum_hours || 2 : 0 })
+                setDraft({
+                  ...draft,
+                  booking_type: value,
+                  minimum_hours: value === "hourly" ? draft.minimum_hours || 2 : 0,
+                })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className={cn(org.selectTrigger, "h-9")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -165,11 +192,12 @@ export function HospitalityPoliciesPanel({
             </Select>
           </div>
           {draft.booking_type === "hourly" ?
-            <div className="space-y-1">
-              <Label>Minimum hours</Label>
+            <div className="space-y-1.5">
+              <Label className={org.label}>Minimum hours</Label>
               <Input
                 type="number"
                 min={1}
+                className={cn(org.input, "h-9")}
                 value={draft.minimum_hours || ""}
                 onChange={(e) =>
                   setDraft({ ...draft, minimum_hours: Number(e.target.value) || 2 })
@@ -178,31 +206,33 @@ export function HospitalityPoliciesPanel({
             </div>
           : null}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label>Check-in time</Label>
+            <div className="space-y-1.5">
+              <Label className={org.label}>Check-in time</Label>
               <Input
                 type="time"
+                className={cn(org.input, "h-9")}
                 value={draft.checkin_time}
                 onChange={(e) => setDraft({ ...draft, checkin_time: e.target.value })}
               />
             </div>
-            <div className="space-y-1">
-              <Label>Check-out time</Label>
+            <div className="space-y-1.5">
+              <Label className={org.label}>Check-out time</Label>
               <Input
                 type="time"
+                className={cn(org.input, "h-9")}
                 value={draft.checkout_time}
                 onChange={(e) => setDraft({ ...draft, checkout_time: e.target.value })}
               />
             </div>
           </div>
           {draft.booking_type === "overnight" ?
-            <div className="space-y-1">
-              <Label>Overnight times on booking form</Label>
+            <div className="space-y-1.5">
+              <Label className={org.label}>Overnight times on booking form</Label>
               <Select
                 value={draft.overnight_time_mode}
                 onValueChange={(value) => setDraft({ ...draft, overnight_time_mode: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className={cn(org.selectTrigger, "h-9")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -212,17 +242,19 @@ export function HospitalityPoliciesPanel({
               </Select>
             </div>
           : null}
-          <div className="space-y-1">
-            <Label>Cancellation policy</Label>
+          <div className="space-y-1.5">
+            <Label className={org.label}>Cancellation policy</Label>
             <Textarea
+              className={cn(org.input, "min-h-[4.5rem]")}
               value={draft.cancellation_policy}
               onChange={(e) => setDraft({ ...draft, cancellation_policy: e.target.value })}
               rows={3}
             />
           </div>
-          <div className="space-y-1">
-            <Label>Payment policy</Label>
+          <div className="space-y-1.5">
+            <Label className={org.label}>Payment policy</Label>
             <Textarea
+              className={cn(org.input, "min-h-[4.5rem]")}
               value={draft.payment_policy}
               onChange={(e) => setDraft({ ...draft, payment_policy: e.target.value })}
               rows={3}

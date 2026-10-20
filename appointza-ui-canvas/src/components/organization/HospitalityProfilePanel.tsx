@@ -113,7 +113,7 @@ function parseSection(value: string | null): HospitalitySection {
 }
 
 const hospitalitySidebarTriggerClass =
-  "h-auto w-full justify-start gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-stone-600 shadow-none hover:bg-blue-50 hover:text-blue-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-none";
+  "relative h-auto w-full justify-start gap-2.5 rounded-md px-3 py-2 text-left text-[13px] font-medium text-[#5b6572] shadow-none hover:bg-[#f4f6f9] hover:text-[#1a1a1a] data-[state=active]:bg-[#eef2f7] data-[state=active]:text-[#1a1a1a] data-[state=active]:shadow-none data-[state=active]:before:absolute data-[state=active]:before:left-0 data-[state=active]:before:top-1.5 data-[state=active]:before:bottom-1.5 data-[state=active]:before:w-[3px] data-[state=active]:before:rounded-r-full data-[state=active]:before:bg-[#2a5af5]";
 
 const hospitalitySidebarListClass =
   "hidden !h-auto w-full flex-col items-stretch justify-start gap-0.5 rounded-none border-0 bg-transparent p-0 shadow-none lg:flex";
@@ -358,11 +358,11 @@ export function HospitalityProfilePanel({ organisationId }: HospitalityProfilePa
     <Tabs
       value={activeSection}
       onValueChange={(v) => setSection(v as HospitalitySection)}
-      className={cn(org.page, "flex h-full min-h-0 flex-col bg-white lg:flex-row")}
+      className={cn(org.page, "flex h-full min-h-0 flex-col bg-[#f5f7f9] lg:flex-row")}
     >
-      <aside className="shrink-0 border-b border-stone-200 bg-white lg:h-full lg:w-56 lg:overflow-y-auto lg:border-b-0 lg:border-r">
-        <div className="px-4 py-3 md:px-6 lg:px-3 lg:py-5">
-          <p className="mb-3 hidden px-3 text-xs font-semibold uppercase tracking-wide text-stone-400 lg:block">
+      <aside className="shrink-0 border-b border-[#e6eaf0] bg-white lg:h-full lg:w-56 lg:overflow-y-auto lg:border-b-0 lg:border-r">
+        <div className="px-3 py-3 md:px-4 lg:px-2 lg:py-4">
+          <p className="mb-2 hidden px-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2] lg:block">
             Hospitality
           </p>
           <div className="lg:hidden">
@@ -375,7 +375,7 @@ export function HospitalityProfilePanel({ organisationId }: HospitalityProfilePa
             >
               <SelectTrigger
                 id="hospitality-settings-nav"
-                className="h-11 min-h-11 border-stone-200 shadow-none"
+                className="h-9 min-h-9 border-[#e6eaf0] text-[13px] shadow-none"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -383,7 +383,7 @@ export function HospitalityProfilePanel({ organisationId }: HospitalityProfilePa
                 {SECTIONS.map((section) => {
                   const Icon = section.icon;
                   return (
-                    <SelectItem key={section.id} value={section.id} className="min-h-11">
+                    <SelectItem key={section.id} value={section.id} className="min-h-9 text-[13px]">
                       <span className="flex items-center gap-2">
                         <Icon className="h-4 w-4 shrink-0" aria-hidden />
                         {section.label}
@@ -403,7 +403,7 @@ export function HospitalityProfilePanel({ organisationId }: HospitalityProfilePa
                   value={section.id}
                   className={hospitalitySidebarTriggerClass}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                   {section.label}
                 </TabsTrigger>
               );
@@ -412,7 +412,7 @@ export function HospitalityProfilePanel({ organisationId }: HospitalityProfilePa
         </div>
       </aside>
 
-      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white">
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-[#f5f7f9]">
         {SECTIONS.map((section) => (
           <TabsContent key={section.id} value={section.id} className={hospitalityTabPanelClass}>
             <SettingsEmbeddedHeader
@@ -460,8 +460,8 @@ export function HospitalityProfilePanel({ organisationId }: HospitalityProfilePa
               : null}
 
               {CONTENT_SECTIONS.has(section.id) && section.id !== "policies" && contentLoading ?
-                <div className="flex items-center gap-2 py-12 text-stone-500">
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                <div className="flex items-center gap-2 py-12 text-[13px] text-[#667085]">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
                   Loading…
                 </div>
               : null}

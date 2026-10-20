@@ -40,7 +40,7 @@ import {
   Trash,
   Loader2,
   Package,
-  Clock,
+  ArrowRight,
   Layers,
   Calendar,
   Users,
@@ -52,7 +52,25 @@ import {
   Ticket,
   ClipboardList,
   Save,
+  LayoutGrid,
+  List,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useOrganizationServices } from "@/hooks/useOrganizationServices";
 import { OrganisationServices } from "@/models/organisationservices.model";
 import { useAuth } from "@/contexts/AuthContext";
@@ -75,7 +93,7 @@ import { ReferenceValue } from "@/models/referencevalue.model";
 import { Event } from "@/models/event.model";
 import { FilesService } from "@/services/files.service";
 import { useOrganisationLocations } from "@/hooks/useOrganisationLocations";
-import { getServicePriceSummary } from "@/utils/servicePricing.util";
+import { getServicePriceSummary, getServiceStartingPrice } from "@/utils/servicePricing.util";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useOrganisationCatalogOfferings } from "@/hooks/useOrganisationCatalogOfferings";
 import { normalizeCatalogTab } from "@/utils/organisationCatalogOfferings.util";
@@ -250,6 +268,24 @@ const OrganizationServices = () => {
   const [eventSearchTerm, setEventSearchTerm] = useState("");
   const [eventDateFilter, setEventDateFilter] = useState<"all" | "past" | "today" | "future">("all");
   const [eventPublicFilter, setEventPublicFilter] = useState<"all" | "public" | "private">("all");
+  /** Card is default; table matches Razorpay Customers-style list. */
+  const [catalogListView, setCatalogListView] = useState<"card" | "table">(() => {
+    try {
+      const saved = sessionStorage.getItem("org_catalog_list_view");
+      return saved === "table" ? "table" : "card";
+    } catch {
+      return "card";
+    }
+  });
+
+  const setCatalogView = (view: "card" | "table") => {
+    setCatalogListView(view);
+    try {
+      sessionStorage.setItem("org_catalog_list_view", view);
+    } catch {
+      /* ignore */
+    }
+  };
   const [deleteConfirm, setDeleteConfirm] = useState<
     | { kind: "service"; id: number; name: string }
     | { kind: "event"; id: number; name: string }
@@ -979,43 +1015,75 @@ const OrganizationServices = () => {
                 </p>
               )}
 
-              {/* Action button changes by tab */}
-              {activeTab === "services" ? (
-                <div className="flex flex-wrap items-center justify-end gap-3">
-                  {services.length >= 2 && !showAddForm && !showEditForm && !showComboForm && (
-                    <Button
-                      variant="outline"
-                      onClick={() => openServiceForm(undefined, true)}
-                      className="h-11 rounded-xl border-stone-200 bg-white px-5 font-medium text-appointza-navy shadow-none hover:bg-stone-50"
-                    >
-                      <Layers className="mr-2 h-4 w-4" />
-                      Create Combo
-                    </Button>
-                  )}
-                  {!showAddForm && !showEditForm && !showComboForm && (
-                    <Button
-                      onClick={() => {
-                        setShowAddForm(true);
-                        setShowEditForm(false);
-                        setShowComboForm(false);
-                        setService(new OrganisationServices());
-                      }}
-                      className="h-11 rounded-xl bg-blue-600 px-6 font-medium text-white shadow-none hover:bg-blue-700"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      New Service
-                    </Button>
-                  )}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="inline-flex h-8 overflow-hidden rounded-md border border-[#e6eaf0] bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setCatalogView("card")}
+                    className={cn(
+                      "inline-flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium",
+                      catalogListView === "card"
+                        ? "bg-[#f2f4f7] text-[#1a1a1a]"
+                        : "text-[#667085] hover:bg-[#f8fafc]",
+                    )}
+                    aria-pressed={catalogListView === "card"}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    Card
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCatalogView("table")}
+                    className={cn(
+                      "inline-flex h-8 items-center gap-1.5 border-l border-[#e6eaf0] px-2.5 text-[12px] font-medium",
+                      catalogListView === "table"
+                        ? "bg-[#f2f4f7] text-[#1a1a1a]"
+                        : "text-[#667085] hover:bg-[#f8fafc]",
+                    )}
+                    aria-pressed={catalogListView === "table"}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                    Table
+                  </button>
                 </div>
-              ) : activeTab === "events" && !showAddEventForm && !showEditEventForm && !showEventBookingPanel ? (
-                <Button
-                  onClick={() => openEventForm()}
-                  className="h-11 rounded-xl bg-blue-600 px-6 font-medium text-white shadow-none hover:bg-blue-700"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Event
-                </Button>
-              ) : null}
+
+                {activeTab === "services" ? (
+                  <>
+                    {services.length >= 2 && !showAddForm && !showEditForm && !showComboForm && (
+                      <Button
+                        variant="outline"
+                        onClick={() => openServiceForm(undefined, true)}
+                        className={cn(org.btnOutline, "h-8")}
+                      >
+                        <Layers className="mr-1.5 h-3.5 w-3.5" />
+                        Create Combo
+                      </Button>
+                    )}
+                    {!showAddForm && !showEditForm && !showComboForm && (
+                      <Button
+                        onClick={() => {
+                          setShowAddForm(true);
+                          setShowEditForm(false);
+                          setShowComboForm(false);
+                          setService(new OrganisationServices());
+                        }}
+                        className={cn(org.btnPrimary, "h-8")}
+                      >
+                        <Plus className="mr-1.5 h-3.5 w-3.5" />
+                        Add Service
+                      </Button>
+                    )}
+                  </>
+                ) : activeTab === "events" &&
+                  !showAddEventForm &&
+                  !showEditEventForm &&
+                  !showEventBookingPanel ? (
+                  <Button onClick={() => openEventForm()} className={cn(org.btnPrimary, "h-8")}>
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    Add Event
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -1049,123 +1117,189 @@ const OrganizationServices = () => {
                       Add Service
                     </Button>
                   </div>
+                ) : catalogListView === "table" ? (
+                  <div className="overflow-hidden rounded-lg border border-[#e6eaf0] bg-white">
+                    <p className="border-b border-[#eef1f5] px-4 py-2.5 text-[12px] text-[#667085]">
+                      Showing {filteredServices.length} of {filteredServices.length} services
+                    </p>
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-[720px]">
+                        <TableHeader>
+                          <TableRow className="border-[#eef1f5] bg-[#f8fafc] hover:bg-[#f8fafc]">
+                            <TableHead className="h-9 px-4 text-[12px] font-medium text-[#667085]">
+                              Service
+                            </TableHead>
+                            <TableHead className="h-9 px-4 text-[12px] font-medium text-[#667085]">
+                              Type
+                            </TableHead>
+                            <TableHead className="h-9 px-4 text-[12px] font-medium text-[#667085]">
+                              Duration
+                            </TableHead>
+                            <TableHead className="h-9 px-4 text-[12px] font-medium text-[#667085]">
+                              Price
+                            </TableHead>
+                            <TableHead className="h-9 w-12 px-2" />
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredServices.map((serviceItem) => {
+                            const s = getServicePriceSummary(serviceItem);
+                            const priceLabel =
+                              serviceItem.show_price === false
+                                ? "Hidden"
+                                : s.offer > 0 && s.offer < Math.min(s.weekday || s.offer, s.weekend || s.offer)
+                                  ? `₹${s.offer.toLocaleString("en-IN")}`
+                                  : s.different
+                                    ? `₹${s.weekday.toLocaleString("en-IN")} · ₹${s.weekend.toLocaleString("en-IN")}`
+                                    : `₹${s.weekday.toLocaleString("en-IN")}`;
+                            return (
+                              <TableRow
+                                key={serviceItem.id}
+                                className="border-[#eef1f5] hover:bg-[#fafbfc]"
+                              >
+                                <TableCell className="px-4 py-3">
+                                  <p className="text-[13px] font-medium text-[#1a1a1a]">
+                                    {serviceItem.Servicename || "—"}
+                                  </p>
+                                  {serviceItem.notes?.trim() ? (
+                                    <p className="mt-0.5 line-clamp-1 text-[12px] text-[#667085]">
+                                      {serviceItem.notes}
+                                    </p>
+                                  ) : null}
+                                </TableCell>
+                                <TableCell className="px-4 py-3 text-[13px] text-[#344054]">
+                                  {serviceItem.Iscombo ? "Combo" : "Service"}
+                                </TableCell>
+                                <TableCell className="px-4 py-3 text-[13px] text-[#344054]">
+                                  {serviceItem.timetaken ? `${serviceItem.timetaken} min` : "—"}
+                                </TableCell>
+                                <TableCell className="px-4 py-3 text-[13px] tabular-nums text-[#1a1a1a]">
+                                  {priceLabel}
+                                </TableCell>
+                                <TableCell className="px-2 py-2">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className="flex h-7 w-7 items-center justify-center rounded-md text-[#667085] hover:bg-[#f2f4f7]"
+                                        aria-label="More actions"
+                                      >
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-44">
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          openServiceForm(serviceItem, serviceItem.Iscombo)
+                                        }
+                                      >
+                                        <Edit className="mr-2 h-3.5 w-3.5" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        className="text-[#b42318] focus:text-[#b42318]"
+                                        onClick={() => requestDeleteService(serviceItem)}
+                                      >
+                                        <Trash className="mr-2 h-3.5 w-3.5" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 ) : (
                   <>
-                    <p className="text-sm text-stone-500">
-                      {filteredServices.length} service{filteredServices.length === 1 ? "" : "s"}
+                    <p className="text-[12px] text-[#667085]">
+                      Showing {filteredServices.length} of {filteredServices.length} services
                     </p>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {filteredServices.map((serviceItem) => {
-                        const sub =
+                        const notes =
                           serviceItem.notes?.trim() ||
                           (serviceItem.Iscombo && serviceItem.servicesids?.combolist?.length
                             ? `Includes: ${serviceItem.servicesids.combolist
                                 .map((c) => c.servicename)
                                 .join(", ")}`
                             : "");
-                        const s = getServicePriceSummary(serviceItem);
-                        const baseRef = s.different ? Math.min(s.weekday, s.weekend) : s.weekday;
-                        const hasOffer =
-                          serviceItem.show_price !== false &&
-                          s.offer > 0 &&
-                          s.offer <
-                            (s.different ? Math.min(s.weekday, s.weekend) : s.weekday);
-
                         const coverUrl = organizationServiceCardImageUrls[serviceItem.id];
+                        const starting = getServiceStartingPrice(serviceItem);
+                        const durationLabel = serviceItem.timetaken
+                          ? `${serviceItem.timetaken} min`
+                          : null;
+                        const priceLine =
+                          serviceItem.show_price === false
+                            ? durationLabel || "Price hidden"
+                            : starting > 0
+                              ? `₹${starting.toLocaleString("en-IN")}${durationLabel ? ` · ${durationLabel}` : ""}`
+                              : durationLabel || "Set price";
 
                         return (
                           <article
                             key={serviceItem.id}
-                            className="flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-none transition-colors hover:border-blue-300"
+                            className="flex items-center gap-3 overflow-hidden rounded-xl border border-[#e2e8f0] bg-white p-2.5 text-left shadow-none"
                           >
-                            {/* Hero image with a solid fallback */}
-                            <div className="relative h-44 w-full overflow-hidden bg-blue-600">
+                            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#f8fafc]">
                               {coverUrl ? (
                                 <img
                                   src={coverUrl}
-                                  alt={serviceItem.Servicename}
-                                  className="absolute inset-0 h-full w-full object-cover"
+                                  alt=""
+                                  className="block h-full w-full object-cover"
                                   loading="lazy"
                                   onError={(e) => {
-                                    // Hide the image if it fails; solid fallback remains.
                                     (e.target as HTMLImageElement).style.display = "none";
                                   }}
                                 />
                               ) : (
-                                <div className="absolute inset-0 flex items-center justify-center text-white/80" aria-hidden>
-                                  <Package className="h-10 w-10" />
+                                <div className="flex h-full w-full items-center justify-center text-[#98a2b3]">
+                                  <Package className="size-5" aria-hidden />
                                 </div>
                               )}
-                              <div className="absolute inset-0 bg-black/5" aria-hidden />
                             </div>
-
-                            <div className="flex flex-1 flex-col p-6">
-                              <div className="mb-3 flex items-center justify-between gap-3">
-                                <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-600">
-                                  {serviceItem.Iscombo ? "Combo" : "Service"}
-                                </span>
-
-                                {serviceItem.show_price !== false && (
-                                  <span className="text-sm font-semibold tabular-nums text-appointza-navy">
-                                    {hasOffer ? (
-                                      <>
-                                        <span className="mr-1 font-normal text-stone-400 line-through">
-                                          ₹{baseRef.toLocaleString("en-IN")}
-                                        </span>
-                                        ₹{s.offer.toLocaleString("en-IN")}
-                                      </>
-                                    ) : !s.different ? (
-                                      <>From ₹{s.weekday.toLocaleString("en-IN")}</>
-                                    ) : (
-                                      <>
-                                        ₹{s.weekday.toLocaleString("en-IN")}
-                                        <span className="mx-1 font-normal text-stone-400">·</span>
-                                        ₹{s.weekend.toLocaleString("en-IN")}
-                                      </>
-                                    )}
-                                  </span>
-                                )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline gap-2">
+                                <h3 className="m-0 truncate text-[14px] font-semibold text-[#1a1a1a]">
+                                  {serviceItem.Servicename || "Untitled"}
+                                  {serviceItem.Iscombo ? (
+                                    <span className="ml-1.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-[#2a5af5]">
+                                      Combo
+                                    </span>
+                                  ) : null}
+                                </h3>
+                                <p className="m-0 shrink-0 text-[12px] text-[#667085]">{priceLine}</p>
                               </div>
-
-                              <h3 className="text-xl font-semibold leading-snug text-appointza-navy">
-                                {serviceItem.Servicename}
-                              </h3>
-
-                              {sub ? (
-                                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-stone-600">
-                                  {sub}
-                                </p>
+                              {notes ? (
+                                <p className="mt-0.5 line-clamp-1 text-[12px] text-[#667085]">{notes}</p>
                               ) : null}
-
-                              <div className="mt-4 flex items-center gap-2 text-sm text-stone-600">
-                                <Clock className="h-4 w-4 text-stone-400" aria-hidden />
-                                <span>
-                                  {serviceItem.timetaken ? `${serviceItem.timetaken} min` : "Set duration"}
-                                </span>
-                              </div>
-
-                              <div className="mt-6 flex w-full gap-2">
-                                <button
-                                  type="button"
-                                  className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-white py-3 font-medium text-appointza-navy transition-colors hover:border-blue-300 hover:bg-blue-50"
-                                  onClick={() => openServiceForm(serviceItem, serviceItem.Iscombo)}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  className="shrink-0 rounded-xl border border-stone-200 bg-white px-4 py-3 font-medium text-stone-500 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                                  aria-label="Delete service"
-                                  onClick={() => requestDeleteService(serviceItem)}
-                                  disabled={isDeleting}
-                                >
-                                  {isDeleting ? (
-                                    <Loader2 className="size-5 animate-spin mx-0.5" aria-hidden />
-                                  ) : (
-                                    <Trash className="size-5" aria-hidden />
-                                  )}
-                                </button>
-                              </div>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 rounded-[6px] bg-[#528ff0] px-3 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#3d7ae8]"
+                                onClick={() => openServiceForm(serviceItem, serviceItem.Iscombo)}
+                              >
+                                Edit
+                                <ArrowRight className="size-3.5 shrink-0" aria-hidden />
+                              </button>
+                              <button
+                                type="button"
+                                className="inline-flex items-center justify-center rounded-[6px] border border-[#e2e8f0] bg-white p-2 text-[#667085] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                                aria-label="Delete service"
+                                onClick={() => requestDeleteService(serviceItem)}
+                                disabled={isDeleting}
+                              >
+                                {isDeleting ? (
+                                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                                ) : (
+                                  <Trash className="size-3.5" aria-hidden />
+                                )}
+                              </button>
                             </div>
                           </article>
                         );
@@ -1249,12 +1383,138 @@ const OrganizationServices = () => {
                       </Button>
                     </CardContent>
                   </Card>
+                ) : catalogListView === "table" ? (
+                  <div className="overflow-hidden rounded-lg border border-[#e6eaf0] bg-white">
+                    <p className="border-b border-[#eef1f5] px-4 py-2.5 text-[12px] text-[#667085]">
+                      Showing {filteredEvents.length} of {filteredEvents.length} events
+                    </p>
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-[860px]">
+                        <TableHeader>
+                          <TableRow className="border-[#eef1f5] bg-[#f8fafc] hover:bg-[#f8fafc]">
+                            <TableHead className="h-9 px-4 text-[12px] font-medium text-[#667085]">
+                              Event
+                            </TableHead>
+                            <TableHead className="h-9 px-4 text-[12px] font-medium text-[#667085]">
+                              When
+                            </TableHead>
+                            <TableHead className="h-9 px-4 text-[12px] font-medium text-[#667085]">
+                              Status
+                            </TableHead>
+                            <TableHead className="h-9 px-4 text-[12px] font-medium text-[#667085]">
+                              Entry
+                            </TableHead>
+                            <TableHead className="h-9 px-4 text-[12px] font-medium text-[#667085]">
+                              Slots
+                            </TableHead>
+                            <TableHead className="h-9 w-12 px-2" />
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredEvents.map((eventItem) => {
+                            const whenBucket = getEventDateBucket(eventItem);
+                            const whenBadge = eventWhenBadge(whenBucket);
+                            const metaLine = formatOrganizationEventMetaLine(eventItem);
+                            const soldOut =
+                              eventItem.slot_limit > 0 &&
+                              (eventItem.remainingslot ?? 0) <= 0;
+                            return (
+                              <TableRow
+                                key={eventItem.id}
+                                className="border-[#eef1f5] hover:bg-[#fafbfc]"
+                              >
+                                <TableCell className="px-4 py-3">
+                                  <p className="text-[13px] font-medium text-[#1a1a1a]">
+                                    {eventItem.event_name || "—"}
+                                  </p>
+                                  <p className="mt-0.5 text-[12px] text-[#667085]">
+                                    {eventItem.is_public ? "Public" : "Private"}
+                                    {eventItem.event_type ? ` · ${eventItem.event_type}` : ""}
+                                  </p>
+                                </TableCell>
+                                <TableCell className="px-4 py-3">
+                                  <p className="text-[13px] text-[#1a1a1a]">{whenBadge.label}</p>
+                                  {metaLine ? (
+                                    <p className="mt-0.5 line-clamp-1 text-[12px] text-[#667085]">
+                                      {metaLine}
+                                    </p>
+                                  ) : null}
+                                </TableCell>
+                                <TableCell className="px-4 py-3">
+                                  <span
+                                    className={cn(
+                                      "inline-flex rounded px-2 py-0.5 text-[12px] font-medium capitalize",
+                                      eventItem.status === "active"
+                                        ? "bg-[#ecfdf3] text-[#067647]"
+                                        : eventItem.status === "completed"
+                                          ? "bg-[#eef4ff] text-[#3538cd]"
+                                          : "bg-[#fef3f2] text-[#b42318]",
+                                    )}
+                                  >
+                                    {eventItem.status || "—"}
+                                  </span>
+                                  {soldOut ? (
+                                    <span className="ml-1.5 inline-flex rounded px-2 py-0.5 text-[11px] font-medium bg-[#fff4e5] text-[#b54708]">
+                                      Full
+                                    </span>
+                                  ) : null}
+                                </TableCell>
+                                <TableCell className="px-4 py-3 text-[13px] tabular-nums text-[#1a1a1a]">
+                                  {eventItem.entry_amount > 0
+                                    ? `₹${eventItem.entry_amount.toLocaleString("en-IN")}`
+                                    : "—"}
+                                </TableCell>
+                                <TableCell className="px-4 py-3 text-[13px] text-[#344054]">
+                                  {eventItem.slot_limit > 0
+                                    ? `${eventItem.remainingslot ?? 0} / ${eventItem.slot_limit}`
+                                    : "—"}
+                                </TableCell>
+                                <TableCell className="px-2 py-2">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className="flex h-7 w-7 items-center justify-center rounded-md text-[#667085] hover:bg-[#f2f4f7]"
+                                        aria-label="More actions"
+                                      >
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuItem onClick={() => openEventForm(eventItem)}>
+                                        <Ticket className="mr-2 h-3.5 w-3.5" />
+                                        Manage event
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => openEventBookingForm(eventItem)}
+                                      >
+                                        <ClipboardList className="mr-2 h-3.5 w-3.5" />
+                                        Booking form
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        className="text-[#b42318] focus:text-[#b42318]"
+                                        onClick={() => requestDeleteEvent(eventItem)}
+                                      >
+                                        <Trash className="mr-2 h-3.5 w-3.5" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 ) : (
                   <>
-                    <p className="text-sm text-stone-500">
-                      {filteredEvents.length} event{filteredEvents.length === 1 ? "" : "s"}
+                    <p className="text-[12px] text-[#667085]">
+                      Showing {filteredEvents.length} of {filteredEvents.length} events
                     </p>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {filteredEvents.map((eventItem) => {
                         const img = organizationEventCardImageUrls[eventItem.id];
                         const soldOut =
@@ -1267,7 +1527,7 @@ const OrganizationServices = () => {
                         return (
                           <article
                             key={eventItem.id}
-                            className="flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-none transition-colors hover:border-blue-300"
+                            className="flex flex-col overflow-hidden rounded-lg border border-[#e6eaf0] bg-white shadow-none transition-colors hover:border-[#cfd8f0]"
                           >
                             <div className="relative h-44 w-full shrink-0 overflow-hidden bg-blue-600">
                               {img ? (

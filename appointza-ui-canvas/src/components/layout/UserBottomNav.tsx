@@ -53,8 +53,8 @@ const UserBottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-blue-50 bg-white shadow-[0_-8px_30px_-18px_rgba(36,76,170,0.28)] md:bg-white/95 md:backdrop-blur-xl" style={{ paddingBottom: 'max(var(--safe-area-inset-bottom), env(safe-area-inset-bottom, 0px))' }}>
-      <div className="flex items-center justify-around h-16">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#e6eaf0] bg-white shadow-none" style={{ paddingBottom: 'max(var(--safe-area-inset-bottom), env(safe-area-inset-bottom, 0px))' }}>
+      <div className="flex h-16 items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.to || 
@@ -67,16 +67,19 @@ const UserBottomNav = () => {
               className={cn(
                 "flex h-full flex-1 flex-col items-center justify-center transition-colors",
                 isActive 
-                  ? "text-blue-600" 
-                  : "text-slate-400 hover:text-blue-600"
+                  ? "text-[#2a5af5]" 
+                  : "text-[#7a8494] hover:text-[#2a5af5]"
               )}
             >
-              <span className={cn("mb-0.5 flex h-8 w-8 items-center justify-center rounded-xl", isActive && "bg-gradient-appointza text-white shadow-md shadow-blue-500/20")}>
-                <Icon size={19} />
+              <span className={cn(
+                "mb-0.5 flex h-8 w-8 items-center justify-center rounded-md",
+                isActive && "bg-[#eef2f7] text-[#2a5af5]",
+              )}>
+                <Icon size={19} strokeWidth={1.75} />
               </span>
               <span className={cn(
-                "text-xs font-medium",
-                isActive ? "text-blue-600" : "text-slate-400"
+                "text-[11px] font-medium",
+                isActive ? "text-[#2a5af5]" : "text-[#7a8494]"
               )}>
                 {item.label}
               </span>

@@ -22,14 +22,16 @@ type AppConfig = {
 };
 
 const stripSlash = (url: string) => url.replace(/\/+$/, "");
-const isLoopback = (url: string) => /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(url);
 
-/** Dev: "" (relative /api through the Vite proxy). Prod: appointza-urls.json, else page origin. */
+/**
+ * API origin from appointza-urls.json (`frontendApiBaseUrl`), set in main.tsx.
+ * Empty = same-origin (Vite /api proxy in local, or API-hosted wwwroot in prod).
+ */
 function resolveApiBaseUrl(): string {
-  if (import.meta.env.DEV || typeof window === "undefined") return "";
+  if (typeof window === "undefined") return "";
   const configured = stripSlash(String(window.__APPOINTZA_API_URL__ ?? "").trim());
-  if (configured && !isLoopback(configured)) return configured;
-  return window.location?.origin ?? "";
+  if (configured) return configured;
+  return "";
 }
 
 const getConfig = () => ({

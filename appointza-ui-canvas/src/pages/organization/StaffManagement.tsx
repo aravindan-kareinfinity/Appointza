@@ -488,22 +488,19 @@ const StaffManagement = ({ embedded = false }: { embedded?: boolean }) => {
         />
       ) : null}
       <div className={cn(embedded ? settingsEmbedded.sectionBody : "space-y-6")}>
-        {!embedded && (
-        <div className="flex items-center space-x-4">
+        {!embedded ? (
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => window.history.back()}
               className="p-2"
+              aria-label="Go back"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Staff Management</h1>
-            <p className="text-gray-600">Manage your staff members and their permissions</p>
           </div>
-        </div>
-        )}
+        ) : null}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList

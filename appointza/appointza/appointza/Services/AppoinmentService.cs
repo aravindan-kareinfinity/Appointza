@@ -1364,31 +1364,40 @@ namespace appointza.Services
                 eventWhere += " AND (u.mobile ILIKE @mobilenumber OR u.name ILIKE @mobilenumber)";
             }
 
+            // DISTINCT ON (userid) prevents the same customer appearing twice when
+            // appointment rows carry a city and event rows use an empty city (UNION).
             string query = $@"
                 SELECT userid, username, mobile, city FROM (
-                    SELECT 
-                        u.id AS userid,
-                        u.name AS username,
-                        u.mobile,
-                        ol.city
-                    FROM Appoinment a
-                    LEFT JOIN users u ON u.id = a.userid
-                    LEFT JOIN organisationlocation ol ON ol.id = a.organisationlocationid
-                    WHERE {appointmentWhere}
-                    GROUP BY u.id, u.name, u.mobile, ol.city
+                    SELECT DISTINCT ON (userid)
+                        userid,
+                        username,
+                        mobile,
+                        city
+                    FROM (
+                        SELECT 
+                            u.id AS userid,
+                            u.name AS username,
+                            u.mobile,
+                            COALESCE(ol.city, '') AS city
+                        FROM Appoinment a
+                        LEFT JOIN users u ON u.id = a.userid
+                        LEFT JOIN organisationlocation ol ON ol.id = a.organisationlocationid
+                        WHERE {appointmentWhere}
 
-                    UNION
+                        UNION ALL
 
-                    SELECT
-                        u.id AS userid,
-                        u.name AS username,
-                        u.mobile,
-                        '' AS city
-                    FROM event_bookings eb
-                    INNER JOIN events e ON e.id = eb.event_id
-                    LEFT JOIN users u ON u.id = eb.user_id
-                    WHERE {eventWhere}
-                    GROUP BY u.id, u.name, u.mobile
+                        SELECT
+                            u.id AS userid,
+                            u.name AS username,
+                            u.mobile,
+                            '' AS city
+                        FROM event_bookings eb
+                        INNER JOIN events e ON e.id = eb.event_id
+                        LEFT JOIN users u ON u.id = eb.user_id
+                        WHERE {eventWhere}
+                    ) raw
+                    WHERE userid IS NOT NULL
+                    ORDER BY userid, CASE WHEN city <> '' THEN 0 ELSE 1 END, username
                 ) clients
                 ORDER BY username ASC
             ";
@@ -1434,12 +1443,67 @@ namespace appointza.Services
                 }
             }
 
+            // Collapse duplicate user rows that share the same phone (e.g. re-registered accounts).
+            result = DedupeClientsByUserOrPhone(result);
+
             if (req.include_room_customers)
             {
                 await AppendRoomCustomersTransaction(db, req, result);
             }
 
             return result;
+        }
+
+        static List<ClientInfoRes> DedupeClientsByUserOrPhone(List<ClientInfoRes> clients)
+        {
+            var byUserId = new Dictionary<long, ClientInfoRes>();
+            var byPhone = new Dictionary<string, long>();
+
+            foreach (var client in clients)
+            {
+                if (client.userid > 0 && byUserId.ContainsKey(client.userid))
+                {
+                    MergeClientInfo(byUserId[client.userid], client);
+                    continue;
+                }
+
+                var phoneKey = NormalizeClientPhone(client.mobile);
+                if (!string.IsNullOrEmpty(phoneKey) && byPhone.TryGetValue(phoneKey, out var existingUserId)
+                    && byUserId.TryGetValue(existingUserId, out var existingByPhone))
+                {
+                    MergeClientInfo(existingByPhone, client);
+                    continue;
+                }
+
+                if (client.userid > 0)
+                {
+                    byUserId[client.userid] = client;
+                    if (!string.IsNullOrEmpty(phoneKey))
+                        byPhone[phoneKey] = client.userid;
+                }
+            }
+
+            return byUserId.Values
+                .OrderBy(c => c.username, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        static void MergeClientInfo(ClientInfoRes target, ClientInfoRes source)
+        {
+            if (string.IsNullOrWhiteSpace(target.username) && !string.IsNullOrWhiteSpace(source.username))
+                target.username = source.username;
+            if (string.IsNullOrWhiteSpace(target.mobile) && !string.IsNullOrWhiteSpace(source.mobile))
+                target.mobile = source.mobile;
+            if (string.IsNullOrWhiteSpace(target.city) && !string.IsNullOrWhiteSpace(source.city))
+                target.city = source.city;
+            if (!target.is_room_customer && source.is_room_customer)
+            {
+                target.is_room_customer = true;
+                if (target.room_id <= 0) target.room_id = source.room_id;
+                if (string.IsNullOrWhiteSpace(target.room_number)) target.room_number = source.room_number;
+                if (string.IsNullOrWhiteSpace(target.booking_reference)) target.booking_reference = source.booking_reference;
+                if (string.IsNullOrWhiteSpace(target.guest_email)) target.guest_email = source.guest_email;
+            }
         }
 
         static string NormalizeClientPhone(string? value) =>

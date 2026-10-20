@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BedDouble, Check, Loader2, Minus, Plus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { org } from "@/lib/orgTheme";
 import {
   GuestHospitalityBookingService,
   type HospitalityBookingQuote,
@@ -85,8 +85,18 @@ type PublicRoom = {
   pricing?: { price_per_night?: number; price_per_hour?: number };
 };
 
-const nativeSelectClass =
-  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+const nativeSelectClass = cn(
+  org.selectTrigger,
+  "flex h-9 w-full appearance-none px-3 py-2",
+);
+
+const selectRowClass = (selected: boolean) =>
+  cn(
+    "flex w-full cursor-pointer items-center gap-2.5 rounded-md border px-2.5 py-2 text-left transition-colors",
+    selected
+      ? "border-[#2a5af5] bg-[#eef2ff]"
+      : "border-[#e6eaf0] bg-white hover:border-[#cfd6e0] hover:bg-[#f8fafc]",
+  );
 
 type ClientHospitalityBookingPanelProps = {
   organisationId: number;
@@ -321,101 +331,86 @@ export function ClientHospitalityBookingPanel({
 
   if (!scopeReady) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">
-          Select an organization location to book rooms or packages.
-        </CardContent>
-      </Card>
+      <p className="py-8 text-center text-[13px] text-[#5b6572]">
+        Select an organization location to book rooms or packages.
+      </p>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center gap-2 py-8 text-[13px] text-[#5b6572]">
+        <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
+        Loading rooms…
       </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center text-destructive">
-          Could not load rooms and packages. Check hospitality settings.
-        </CardContent>
-      </Card>
+      <p className="py-8 text-center text-[13px] text-destructive">
+        Could not load rooms and packages. Check hospitality settings.
+      </p>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {packages.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Package (optional)</CardTitle>
-            <CardDescription>Add a stay package, or leave unselected for room-only booking</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_min(18rem,36%)] lg:gap-0">
+      <div className="space-y-4 lg:border-r lg:border-[#e6eaf0] lg:pr-4">
+        {packages.length > 0 ? (
+          <section>
+            <p className={cn(org.label, "mb-1.5")}>Package</p>
+            <div className="grid gap-1.5">
+              <button
+                type="button"
                 onClick={() => setSelectedPackageId("")}
-                className={cn(
-                  "flex items-center justify-between gap-3 p-4 border rounded-lg cursor-pointer transition-colors",
-                  !selectedPackageId
-                    ? "border-primary bg-primary/5"
-                    : "border-gray-200 hover:border-gray-300",
-                )}
+                className={selectRowClass(!selectedPackageId)}
               >
-                <div>
-                  <p className="font-medium">Room only</p>
-                  <p className="text-sm text-muted-foreground">Book the room without a package</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium text-[#1a1a1a]">Room only</p>
+                  <p className="text-[12px] text-[#5b6572]">No package</p>
                 </div>
-                {!selectedPackageId ? <Check className="h-5 w-5 text-primary shrink-0" /> : null}
-              </div>
+                {!selectedPackageId ? (
+                  <Check className="h-4 w-4 shrink-0 text-[#2a5af5]" aria-hidden />
+                ) : null}
+              </button>
               {packages.map((pkg) => {
                 const isSelected = selectedPackageId === pkg.id;
                 return (
-                  <div
+                  <button
                     key={pkg.id || pkg.name}
+                    type="button"
                     onClick={() => setSelectedPackageId(pkg.id)}
-                    className={cn(
-                      "flex items-start justify-between gap-3 p-4 border rounded-lg cursor-pointer transition-colors",
-                      isSelected
-                        ? "border-primary bg-primary/5"
-                        : "border-gray-200 hover:border-gray-300",
-                    )}
+                    className={selectRowClass(isSelected)}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium">{pkg.name}</p>
-                      {pkg.description ? (
-                        <p className="text-sm text-muted-foreground line-clamp-2">{pkg.description}</p>
-                      ) : null}
-                      <p className="text-sm font-medium mt-1">
+                      <p className="truncate text-[13px] font-medium text-[#1a1a1a]">{pkg.name}</p>
+                      <p className="text-[12px] text-[#5b6572]">
                         {pkg.price}
                         {pkg.minimum_nights > 1 ? ` · min ${pkg.minimum_nights} nights` : ""}
                       </p>
                     </div>
-                    {isSelected ? <Check className="h-5 w-5 text-primary shrink-0" /> : null}
-                  </div>
+                    {isSelected ? (
+                      <Check className="h-4 w-4 shrink-0 text-[#2a5af5]" aria-hidden />
+                    ) : null}
+                  </button>
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
-      ) : null}
+          </section>
+        ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Room</CardTitle>
-          <CardDescription>
-            {selectedPackage?.room_type
-              ? `Package applies to ${formatRoomTypeLabel(selectedPackage.room_type)} rooms`
-              : "Choose an available room"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        <section className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <p className={org.label}>Room</p>
+            {selectedPackage?.room_type ? (
+              <span className="truncate text-[11px] text-[#5b6572]">
+                {formatRoomTypeLabel(selectedPackage.room_type)}
+              </span>
+            ) : null}
+          </div>
           {rooms.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">No rooms available for these dates</p>
+            <p className="py-3 text-center text-[12px] text-[#5b6572]">No rooms for these dates</p>
           ) : (
             <>
               <select
@@ -427,201 +422,190 @@ export function ClientHospitalityBookingPanel({
                 {rooms.map((room) => (
                   <option key={room.id} value={room.id}>
                     Room {room.room_number}
-                    {room.room_name ? ` — ${room.room_name}` : ""} ({formatRoomTypeLabel(room.room_type)})
+                    {room.room_name ? ` — ${room.room_name}` : ""} (
+                    {formatRoomTypeLabel(room.room_type)})
                   </option>
                 ))}
               </select>
-
               {selectedRoom ? (
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm">
-                  <p className="font-medium">
-                    Room {selectedRoom.room_number}
-                    {selectedRoom.room_name ? ` · ${selectedRoom.room_name}` : ""}
-                  </p>
-                  <p className="text-muted-foreground">
-                    Up to {selectedRoom.capacity?.total_guests ?? 2} guests
-                    {selectedRoom.pricing?.price_per_night
-                      ? ` · ${formatInr(selectedRoom.pricing.price_per_night)}/night`
-                      : null}
-                  </p>
-                </div>
+                <p className="text-[12px] text-[#5b6572]">
+                  Up to {selectedRoom.capacity?.total_guests ?? 2} guests
+                  {selectedRoom.pricing?.price_per_night
+                    ? ` · ${formatInr(selectedRoom.pricing.price_per_night)}/night`
+                    : null}
+                </p>
               ) : null}
             </>
           )}
-        </CardContent>
-      </Card>
+        </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{isHourlyBooking ? "Date & time" : "Stay dates"}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>{isHourlyBooking ? "Start date" : "Check-in"}</Label>
+        <section className="space-y-2">
+          <p className={org.label}>{isHourlyBooking ? "Date & time" : "Stay dates"}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className={org.label}>{isHourlyBooking ? "Start" : "Check-in"}</Label>
               <Input
                 type="date"
                 min={minBookingDate}
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
+                className={cn(org.input, "h-9")}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>{isHourlyBooking ? "End date" : "Check-out"}</Label>
+            <div className="space-y-1">
+              <Label className={org.label}>{isHourlyBooking ? "End" : "Check-out"}</Label>
               <Input
                 type="date"
                 min={minCheckOutDate}
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
+                className={cn(org.input, "h-9")}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className={org.label}>In time</Label>
+              <Input
+                type="time"
+                value={checkInTime}
+                onChange={(e) => setCheckInTime(e.target.value)}
+                className={cn(org.input, "h-9")}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className={org.label}>Out time</Label>
+              <Input
+                type="time"
+                value={checkOutTime}
+                onChange={(e) => setCheckOutTime(e.target.value)}
+                className={cn(org.input, "h-9")}
               />
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Check-in time</Label>
-              <Input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Check-out time</Label>
-              <Input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Guests</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">Guests</span>
-            </div>
-            <div className="flex items-center gap-2">
+        <section className="space-y-1.5">
+          <p className={org.label}>Guests</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex items-center gap-2 rounded-md border border-[#e6eaf0] px-2.5 py-1.5">
+              <Users className="h-3.5 w-3.5 text-[#5b6572]" aria-hidden />
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => setPersons(Math.max(1, persons - 1))}
               >
-                <Minus className="h-4 w-4" />
+                <Minus className="h-3.5 w-3.5" />
               </Button>
-              <span className="w-8 text-center text-sm font-medium">{persons}</span>
+              <span className="w-6 text-center text-[13px] font-medium tabular-nums">{persons}</span>
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => setPersons(persons + 1)}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
               </Button>
             </div>
-          </div>
-
-          {(selectedRoom?.capacity?.extra_beds_allowed ?? 0) > 0 ? (
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm">Extra beds</span>
-              <div className="flex items-center gap-2">
+            {(selectedRoom?.capacity?.extra_beds_allowed ?? 0) > 0 ? (
+              <div className="inline-flex items-center gap-2 rounded-md border border-[#e6eaf0] px-2.5 py-1.5">
+                <span className="text-[12px] text-[#5b6572]">Extra beds</span>
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-7 w-7"
                   onClick={() => setExtraBeds(Math.max(0, extraBeds - 1))}
                 >
-                  <Minus className="h-4 w-4" />
+                  <Minus className="h-3.5 w-3.5" />
                 </Button>
-                <span className="w-8 text-center text-sm font-medium">{extraBeds}</span>
+                <span className="w-6 text-center text-[13px] font-medium tabular-nums">{extraBeds}</span>
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-7 w-7"
                   onClick={() =>
                     setExtraBeds(
                       Math.min(selectedRoom?.capacity?.extra_beds_allowed ?? 0, extraBeds + 1),
                     )
                   }
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+            ) : null}
+          </div>
+        </section>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Price summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+      <div className="flex flex-col gap-3 lg:pl-4">
+        <p className={org.label}>Summary</p>
+        <div className="rounded-md border border-[#e6eaf0] bg-[#f8fafc] p-3 text-[13px]">
           {quoteLoading ? (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Calculating…
+            <div className="flex items-center gap-2 text-[#5b6572]">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-[#2a5af5]" /> Calculating…
             </div>
           ) : quoteError ? (
             <p className="text-destructive">{quoteError}</p>
           ) : quote ? (
-            <>
+            <div className="space-y-1.5">
               {quote.duration_label ? (
-                <p className="text-muted-foreground">Duration: {quote.duration_label}</p>
+                <p className="text-[12px] text-[#5b6572]">{quote.duration_label}</p>
               ) : null}
               {(quote.room_total ?? 0) > 0 ? (
-                <div className="flex justify-between">
-                  <span>Room</span>
-                  <span>{formatInr(quote.room_total ?? 0)}</span>
+                <div className="flex justify-between gap-2">
+                  <span className="text-[#5b6572]">Room</span>
+                  <span className="tabular-nums">{formatInr(quote.room_total ?? 0)}</span>
                 </div>
               ) : null}
               {(quote.extra_bed_total ?? 0) > 0 ? (
-                <div className="flex justify-between">
-                  <span>Extra beds</span>
-                  <span>{formatInr(quote.extra_bed_total ?? 0)}</span>
+                <div className="flex justify-between gap-2">
+                  <span className="text-[#5b6572]">Extra beds</span>
+                  <span className="tabular-nums">{formatInr(quote.extra_bed_total ?? 0)}</span>
                 </div>
               ) : null}
               {(quote.packages_total ?? 0) > 0 ? (
-                <div className="flex justify-between">
-                  <span>Package</span>
-                  <span>{formatInr(quote.packages_total ?? 0)}</span>
+                <div className="flex justify-between gap-2">
+                  <span className="text-[#5b6572]">Package</span>
+                  <span className="tabular-nums">{formatInr(quote.packages_total ?? 0)}</span>
                 </div>
               ) : null}
               {(quote.extra_guest_total ?? 0) > 0 ? (
-                <div className="flex justify-between">
-                  <span>Extra guests</span>
-                  <span>{formatInr(quote.extra_guest_total ?? 0)}</span>
+                <div className="flex justify-between gap-2">
+                  <span className="text-[#5b6572]">Extra guests</span>
+                  <span className="tabular-nums">{formatInr(quote.extra_guest_total ?? 0)}</span>
                 </div>
               ) : null}
-              <div className="flex justify-between border-t pt-3 text-base font-semibold">
+              <div className="flex justify-between gap-2 border-t border-[#e6eaf0] pt-2 font-semibold text-[#1a1a1a]">
                 <span>Total</span>
-                <span>{formatInr(quote.total ?? 0)}</span>
+                <span className="tabular-nums">{formatInr(quote.total ?? 0)}</span>
               </div>
+            </div>
+          ) : (
+            <p className="text-[12px] text-[#5b6572]">Select a room and dates for pricing.</p>
+          )}
+        </div>
+
+        <Button
+          type="button"
+          onClick={() => void handleSubmit()}
+          disabled={submitting || quoteLoading || !quote || !roomId || rooms.length === 0}
+          className={cn(org.btnPrimary, "mt-auto h-9 w-full")}
+        >
+          {submitting ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Booking…
             </>
           ) : (
-            <p className="text-muted-foreground">Select a room and dates to see pricing.</p>
+            <>
+              <BedDouble className="h-3.5 w-3.5" />
+              Confirm booking
+            </>
           )}
-        </CardContent>
-      </Card>
-
-      <Button
-        onClick={() => void handleSubmit()}
-        disabled={submitting || quoteLoading || !quote || !roomId || rooms.length === 0}
-        className="w-full"
-      >
-        {submitting ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Booking…
-          </>
-        ) : (
-          <>
-            <BedDouble className="mr-2 h-4 w-4" />
-            Confirm booking
-          </>
-        )}
-      </Button>
+        </Button>
+      </div>
     </div>
   );
 }

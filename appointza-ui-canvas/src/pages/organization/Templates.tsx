@@ -805,12 +805,6 @@ const OrganizationTemplates = ({ embedded = false }: { embedded?: boolean }) => 
           </div>
         )}
 
-        {!embedded && (
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl sm:text-2xl font-bold">Templates & Booking Page</h1>
-          </div>
-        )}
-
         <div className="w-full space-y-6">
           <Card className={cn(org.card, "w-full overflow-hidden rounded-2xl border-stone-200 bg-white shadow-none")}>
             <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-6">
@@ -849,104 +843,97 @@ const OrganizationTemplates = ({ embedded = false }: { embedded?: boolean }) => 
             </CardContent>
           </Card>
 
-          <Card className={cn(org.card, "rounded-2xl border-stone-200 bg-white shadow-none")}>
-            <CardHeader className="space-y-1.5">
-              <CardTitle className="flex items-center gap-2 text-lg text-appointza-navy">
-                <span className={templatesSectionIconWrap}>
-                  <MapPin className="h-5 w-5" />
-                </span>
-                Select business location
-              </CardTitle>
-              <CardDescription className="text-stone-500">
-                One location for both your public website template and booking link.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLocationsFetching ? (
-                <div className={cn(org.loading, "flex-col gap-2 py-8")}>
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                  <span className="text-sm text-stone-600">Loading locations…</span>
-                </div>
-              ) : locations.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-                    {locations.map((location) => (
-                      <Card
-                        key={location.id}
+          <div className="overflow-hidden rounded-xl border border-[#e6eaf0] bg-white shadow-none">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6eaf0] px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold text-[#1a1a1a]">Business location</p>
+                <p className="text-[12px] text-[#667085]">
+                  Website template and booking link use this place.
+                </p>
+              </div>
+              {isCreatingTemplate ? (
+                <p className="inline-flex items-center gap-1.5 text-[12px] text-[#667085]">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#2a5af5]" />
+                  Updating…
+                </p>
+              ) : selectedLocationId ? (
+                <p className="truncate text-[12px] text-[#667085]">
+                  {(() => {
+                    const loc = locations.find((item) => item.id === selectedLocationId);
+                    const assigned = availableTemplates.find(
+                      (t) => t.id === String(loc?.templateid ?? ""),
+                    );
+                    return assigned
+                      ? `Uses ${assigned.name}`
+                      : "No template yet — pick one below";
+                  })()}
+                </p>
+              ) : null}
+            </div>
+
+            {isLocationsFetching ? (
+              <div className="flex items-center gap-2 px-4 py-6 text-[13px] text-[#667085]">
+                <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
+                Loading locations…
+              </div>
+            ) : locations.length > 0 ? (
+              <div className="divide-y divide-[#eef1f5]">
+                {locations.map((location) => {
+                  const selected = selectedLocationId === location.id;
+                  return (
+                    <button
+                      key={location.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedLocationId(location.id);
+                        if (location.templateid) {
+                          setSelectedTemplate(String(location.templateid) as TemplateType);
+                        }
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors",
+                        selected ? "bg-[#eef4ff]" : "bg-white hover:bg-[#f8fafc]",
+                      )}
+                    >
+                      <MapPin
                         className={cn(
-                          org.card,
-                          "cursor-pointer rounded-2xl border-stone-200 bg-white shadow-none transition-colors hover:border-blue-300 hover:shadow-none",
-                          selectedLocationId === location.id &&
-                            "border-blue-500 bg-blue-50 ring-2 ring-blue-500",
+                          "h-4 w-4 shrink-0",
+                          selected ? "text-[#2a5af5]" : "text-[#98a2b3]",
                         )}
-                        onClick={() => {
-                          setSelectedLocationId(location.id);
-                          if (location.templateid) {
-                            setSelectedTemplate(String(location.templateid) as TemplateType);
-                          }
-                        }}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
-                              <MapPin className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <h3 className="truncate text-sm font-semibold text-appointza-navy sm:text-base">
-                                {location.name}
-                              </h3>
-                              <p className="truncate text-xs text-stone-500 sm:text-sm">
-                                {location.city}, {location.country}
-                              </p>
-                              {location.templateid ? (
-                                <p className="mt-1 text-xs text-emerald-600">Template assigned</p>
-                              ) : null}
-                            </div>
-                            {selectedLocationId === location.id && (
-                              <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600" />
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                  {isCreatingTemplate ? (
-                    <p className="flex items-center gap-2 text-sm text-stone-600">
-                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                      Updating this location’s template…
-                    </p>
-                  ) : selectedLocationId ? (
-                    <p className="text-sm text-stone-600">
-                      {(() => {
-                        const loc = locations.find((item) => item.id === selectedLocationId);
-                        const assigned = availableTemplates.find(
-                          (t) => t.id === String(loc?.templateid ?? ""),
-                        );
-                        return assigned
-                          ? `This location uses ${assigned.name}.`
-                          : "No template on this location yet — select one below.";
-                      })()}
-                    </p>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="px-4 py-8 text-center">
-                  <AlertCircle className="mx-auto mb-4 h-12 w-12 text-stone-300" />
-                  <h3 className="mb-2 text-base font-medium text-appointza-navy">No locations found</h3>
-                  <p className="mb-4 text-sm text-stone-500">
-                    Add a business location first to use templates and booking links.
-                  </p>
-                  <Button
-                    onClick={() => navigate("/organization/profile?tab=location")}
-                    className={cn(org.btnPrimary, "min-h-10 rounded-xl bg-blue-600 text-white shadow-none hover:bg-blue-700")}
-                  >
-                    <MapPin className="mr-2 h-4 w-4" />
-                    Add location
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                        aria-hidden
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-semibold text-[#1a1a1a]">
+                          {location.name}
+                        </p>
+                        <p className="truncate text-[12px] text-[#667085]">
+                          {[location.city, location.country].filter(Boolean).join(", ")}
+                          {location.templateid ? " · Template assigned" : ""}
+                        </p>
+                      </div>
+                      {selected ? (
+                        <CheckCircle className="h-4 w-4 shrink-0 text-[#2a5af5]" aria-hidden />
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="px-4 py-6 text-center">
+                <p className="text-[13px] font-medium text-[#1a1a1a]">No locations yet</p>
+                <p className="mt-1 text-[12px] text-[#667085]">
+                  Add a place first to assign a template.
+                </p>
+                <Button
+                  onClick={() => navigate("/organization/profile?tab=location")}
+                  className={cn(org.btnPrimary, "mt-3 h-8")}
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  Add location
+                </Button>
+              </div>
+            )}
+          </div>
 
           <div>
             <h2 className="mb-1 text-lg font-semibold text-appointza-navy">Choose a template</h2>

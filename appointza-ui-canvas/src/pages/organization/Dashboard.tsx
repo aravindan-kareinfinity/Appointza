@@ -78,9 +78,9 @@ function DashboardStatCard({
   sparkValues: number[];
 }) {
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-none">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">{label}</p>
-      <div className="mt-2 text-2xl font-bold tracking-tight text-appointza-navy tabular-nums sm:text-3xl">
+    <div className="rounded-lg border border-[#e6eaf0] bg-white p-4 shadow-none sm:p-5">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2]">{label}</p>
+      <div className="mt-1.5 text-[24px] font-semibold tracking-tight text-[#1a1a1a] tabular-nums sm:text-[28px]">
         {children}
       </div>
       <MiniSparkline values={sparkValues} variant={variant} />
@@ -691,7 +691,7 @@ const OrganizationDashboard = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
               <DashboardStatCard
                 label="Total appointments"
                 variant="coral"
@@ -720,6 +720,20 @@ const OrganizationDashboard = () => {
               >
                 {dashboardStats.completedcount ?? 0}
               </DashboardStatCard>
+              <Link
+                to="/organization/appointments"
+                className="rounded-2xl border border-stone-200 bg-white p-5 shadow-none transition-colors hover:border-amber-300 hover:bg-amber-50/40"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                  Pending (upcoming)
+                </p>
+                <div className="mt-2 text-2xl font-bold tracking-tight text-appointza-navy tabular-nums sm:text-3xl">
+                  {dashboardStats.pendingcount ?? 0}
+                </div>
+                <p className="mt-3 text-xs text-stone-500">
+                  Today &amp; future · open calendar to find them
+                </p>
+              </Link>
             </div>
 
             {chartsReady ? (

@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, MapPin, Clock, Phone, Mail, Calendar, Users, RefreshCw, Loader2, AlertCircle, ExternalLink, Building2 } from "lucide-react";
+import { Search, MapPin, Clock, Phone, Mail, Calendar, Users, RefreshCw, Loader2, AlertCircle, ExternalLink, Building2, ArrowRight, Package } from "lucide-react";
+import { getServiceStartingPrice } from "@/utils/servicePricing.util";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { OrganisationService } from "@/services/organisation.service";
@@ -36,27 +37,28 @@ import {
   toDateOnlyString,
 } from "@/utils/eventDate.util";
 
-/** Explore page — matches user/org dashboard theme (orange accents, rounded cards). */
+/** Explore page — Razorpay-style shell (blue accents, light borders). */
 const exploreTabTriggerClass =
-  "relative flex min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-2 py-3 text-sm font-medium text-gray-500 shadow-none transition-colors hover:text-gray-800 focus-visible:ring-2 focus-visible:ring-orange-500/30 focus-visible:ring-offset-0 data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-600 data-[state=active]:shadow-none sm:px-3 sm:py-4";
+  "relative flex min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-2 py-3 text-sm font-medium text-[#667085] shadow-none transition-colors hover:text-[#1a1a1a] focus-visible:ring-2 focus-visible:ring-[#528ff0]/30 focus-visible:ring-offset-0 data-[state=active]:border-[#528ff0] data-[state=active]:bg-transparent data-[state=active]:text-[#2a5af5] data-[state=active]:shadow-none sm:px-3 sm:py-4";
 
 const exploreCardClass =
-  "rounded-3xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg";
+  "rounded-2xl border border-[#e2e8f0] bg-white shadow-none";
 
 const exploreInputClass =
-  "rounded-2xl border-gray-200 bg-white focus-visible:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/25 focus-visible:ring-offset-0";
+  "rounded-md border-[#e6eaf0] bg-white focus-visible:border-[#528ff0] focus-visible:ring-2 focus-visible:ring-[#528ff0]/20 focus-visible:ring-offset-0";
 
 const exploreOutlineBtnClass =
-  "rounded-2xl border-gray-200 hover:bg-gray-50";
+  "rounded-[6px] border-[#e6eaf0] text-[#344054] hover:bg-[#f8fafc]";
 
-const explorePrimaryBtnClass = "bg-orange-600 text-white hover:bg-orange-700";
+const explorePrimaryBtnClass =
+  "rounded-[6px] bg-[#528ff0] text-white hover:bg-[#3d7ae8]";
 
 function exploreFilterChipClass(active: boolean) {
   return cn(
-    "rounded-xl border text-xs",
+    "rounded-md border text-xs shadow-none",
     active
-      ? "border-orange-600 bg-orange-600 text-white hover:bg-orange-700 hover:text-white"
-      : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50",
+      ? "border-[#528ff0] bg-[#528ff0] text-white hover:bg-[#3d7ae8] hover:text-white"
+      : "border-[#e6eaf0] bg-white text-[#344054] hover:bg-[#f8fafc]",
   );
 }
 
@@ -77,27 +79,27 @@ const ExploreServices = () => {
   const eventService = useMemo(() => new EventService(), []);
   const organisationServicesService = useMemo(() => new OrganisationServicesService(), []);
 
-  // Tab state — URL `?tab=` and marketing home `Link state={{ tab: 'event' }}`
-  const tabFromSearch = new URLSearchParams(location.search).get("tab");
-  const stateTab = (location.state as { tab?: string } | null)?.tab;
-  const initialTab =
-    tabFromSearch === "event" || stateTab === "event" ? "event" : "organisation";
-  const [activeTab, setActiveTab] = useState(initialTab);
+  // Tab state — default Services so finding help is one tap away
+  const resolveExploreTab = (search: string, state: unknown) => {
+    const tabFromSearch = new URLSearchParams(search).get("tab");
+    const stateTab = (state as { tab?: string } | null)?.tab;
+    const raw = tabFromSearch || stateTab || "service";
+    if (raw === "event" || raw === "organisation") return raw;
+    return "service";
+  };
+  const [activeTab, setActiveTab] = useState(() =>
+    resolveExploreTab(location.search, location.state),
+  );
 
   useEffect(() => {
-    const next =
-      new URLSearchParams(location.search).get("tab") === "event" ||
-      (location.state as { tab?: string } | null)?.tab === "event"
-        ? "event"
-        : "organisation";
-    setActiveTab(next);
+    setActiveTab(resolveExploreTab(location.search, location.state));
   }, [location.search, location.state]);
 
   const handleExploreTabChange = (value: string) => {
     setActiveTab(value);
     const params = new URLSearchParams(location.search);
-    if (value === "event") {
-      params.set("tab", "event");
+    if (value === "event" || value === "organisation") {
+      params.set("tab", value);
     } else {
       params.delete("tab");
     }
@@ -634,7 +636,8 @@ const ExploreServices = () => {
   const clearServiceFilters = () => {
     setSelectedServicePrimaryType(null);
     setSelectedServiceSecondaryType(null);
-    setServiceSearchTerm('');
+    setServiceSearchTerm("");
+    setSearchTerm("");
     setFilteredServices(allServices);
   };
 
@@ -720,22 +723,21 @@ const ExploreServices = () => {
     setFilteredEvents(events);
   };
 
-  // Track which tabs have loaded their data
-  const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set(['organisation'])); // Organisation tab loads on mount
+  // Track which tabs have loaded their data (services load on mount — default tab)
+  const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set(["organisation", "service"]));
 
-  // Load data on component mount - only organisations and reference types
-  // Allow browsing without authentication (public page)
+  // Load data on mount — organisations + services + types (browse without auth)
   useEffect(() => {
     loadInitialData();
     loadReferenceTypes();
-  }, [loadInitialData, loadReferenceTypes]);
+    loadAllServices();
+  }, [loadInitialData, loadReferenceTypes, loadAllServices]);
 
-  // Load events only when event tab is clicked
+  // Load events only when Events tab is opened
   useEffect(() => {
-    if (activeTab === 'event' && !loadedTabs.has('event')) {
-      console.log('🔍 Event tab clicked, loading events...');
+    if (activeTab === "event" && !loadedTabs.has("event")) {
       loadEvents();
-      setLoadedTabs(prev => new Set([...prev, 'event']));
+      setLoadedTabs((prev) => new Set([...prev, "event"]));
     }
   }, [activeTab, loadedTabs, loadEvents]);
 
@@ -772,18 +774,20 @@ const ExploreServices = () => {
   return (
     <UserLayout>
       <div className="space-y-6">
-     
-
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleExploreTabChange} className="space-y-6">
           <TabsList className="inline-flex h-auto w-full min-w-0 justify-stretch gap-0 overflow-x-auto rounded-none bg-transparent p-0 text-left shadow-none [scrollbar-width:thin]">
+            <TabsTrigger value="service" className={cn(exploreTabTriggerClass)}>
+              <Package className="h-4 w-4 shrink-0" />
+              <span className="truncate">Services</span>
+            </TabsTrigger>
             <TabsTrigger value="organisation" className={cn(exploreTabTriggerClass)}>
               <Building2 className="h-4 w-4 shrink-0" />
-              <span className="truncate">Organisation</span>
+              <span className="truncate">Places</span>
             </TabsTrigger>
             <TabsTrigger value="event" className={cn(exploreTabTriggerClass)}>
               <Calendar className="h-4 w-4 shrink-0" />
-              <span className="truncate">Event</span>
+              <span className="truncate">Events</span>
             </TabsTrigger>
           </TabsList>
 
@@ -873,7 +877,7 @@ const ExploreServices = () => {
             {/* Results */}
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin mr-3 text-orange-600" />
+                <Loader2 className="h-8 w-8 animate-spin mr-3 text-[#528ff0]" />
                 <span className="text-gray-600">Loading organisations...</span>
               </div>
             ) : filteredOrganisations.length === 0 ? (
@@ -898,13 +902,13 @@ const ExploreServices = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredOrganisations.map((org) => {
               const urls = organisationPublicUrls(org);
               return (
                 <article
                   key={org.organisationlocationid}
-                  className="flex gap-5 rounded-3xl border border-zinc-200 bg-white p-6 shadow-lg shadow-zinc-200/50 transition-colors hover:border-zinc-300"
+                  className="flex gap-4 rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-none transition-colors hover:border-[#cfd8f0]"
                 >
                   <OrgBrowseCardAvatar
                     key={`${org.organisationlocationid}-${org.organisationimageid}`}
@@ -913,37 +917,44 @@ const ExploreServices = () => {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex flex-wrap items-center gap-2">
-                      <h3 className="truncate text-lg font-semibold text-zinc-900">{org.organisationname}</h3>
-                      <span className="shrink-0 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs text-sky-600">
+                      <h3 className="truncate text-base font-semibold text-slate-900">{org.organisationname}</h3>
+                      <span className="shrink-0 rounded-md border border-[#eef4ff] bg-[#eef4ff] px-2 py-0.5 text-[11px] font-semibold text-[#3538cd]">
                         Listed
                       </span>
                     </div>
-                    <p className="mb-1 text-sm font-medium text-orange-600">
+                    <p className="mb-1 text-sm font-medium text-[#2a5af5]">
                       {org.organisationprimarytypecode || "Business"}
                     </p>
-                    <p className="mb-3 flex items-start gap-1 text-sm text-zinc-500">
-                      <MapPin className="mt-0.5 size-3.5 shrink-0 text-zinc-400" aria-hidden />
+                    <p className="mb-3 flex items-start gap-1 text-sm text-slate-500">
+                      <MapPin className="mt-0.5 size-3.5 shrink-0 text-slate-400" aria-hidden />
                       <span>
                         {org.organisationlocationname || org.organisationlocationcity}, {org.organisationlocationcity}
                         {org.organisationlocationstate ? ` • ${org.organisationlocationstate}` : ""}
                       </span>
                     </p>
-                    <a
-                      href={urls.fullUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mb-3 block truncate text-xs text-zinc-500 hover:text-orange-600"
-                    >
-                      {urls.displayUrl}
-                    </a>
-                    <a
-                      href={urls.fullUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm font-semibold text-orange-600 hover:text-orange-700"
-                    >
-                      View profile &amp; book →
-                    </a>
+                    {urls.fullUrl ? (
+                      <>
+                        <a
+                          href={urls.fullUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mb-3 block truncate text-xs text-slate-500 hover:text-[#2a5af5]"
+                        >
+                          {urls.displayUrl}
+                        </a>
+                        <a
+                          href={urls.fullUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 rounded-[6px] bg-[#528ff0] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3d7ae8]"
+                        >
+                          View profile &amp; book
+                          <ArrowRight className="size-4 shrink-0" aria-hidden />
+                        </a>
+                      </>
+                    ) : (
+                      <p className="text-sm text-slate-400">{urls.displayUrl}</p>
+                    )}
                   </div>
                 </article>
               );
@@ -967,175 +978,158 @@ const ExploreServices = () => {
 
           {/* Service Tab */}
           <TabsContent value="service" className="space-y-6">
-            {/* Filters and search */}
-            <div className="mb-6 space-y-4">
-              {/* Filters */}
-                <Card className={exploreCardClass}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Filter by Business Type</CardTitle>
-                    <CardDescription>
-                      Select primary and secondary business types to narrow down your search
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Primary Types */}
-                      <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">
-                          Primary Business Type
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                          {primaryBusinessTypes.map((type) => (
-                            <Button
-                              key={type.id}
-                              variant={selectedServicePrimaryType === type.id ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => handleServicePrimaryTypeSelect(type.id)}
-                              className={exploreFilterChipClass(selectedServicePrimaryType === type.id)}
-                            >
-                              {type.displaytext}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Secondary Types */}
-                      {selectedServicePrimaryType && secondaryBusinessTypes.length > 0 && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            Secondary Business Type
-                          </label>
-                          <div className="flex flex-wrap gap-2">
-                            {secondaryBusinessTypes.map((type) => (
-                              <Button
-                                key={type.id}
-                                variant={selectedServiceSecondaryType === type.id ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => handleServiceSecondaryTypeSelect(type.id)}
-                                className={exploreFilterChipClass(selectedServiceSecondaryType === type.id)}
-                              >
-                                {type.displaytext}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Clear Filters */}
-                      {(selectedServicePrimaryType || selectedServiceSecondaryType || serviceSearchTerm) && (
-                        <Button
-                          onClick={clearServiceFilters}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          Clear All Filters
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-              {/* Search Bar */}
+            <div className="space-y-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#98a2b3]" aria-hidden />
                 <Input
-                  className={cn("pl-10", exploreInputClass)}
-                  placeholder="Search services by name, organisation, or location..."
                   value={serviceSearchTerm}
                   onChange={(e) => setServiceSearchTerm(e.target.value)}
+                  placeholder="Search services…"
+                  className={cn("pl-10", exploreInputClass)}
+                  aria-label="Search services"
                 />
               </div>
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-[#1a1a1a]">Pick a category</p>
+                  <p className="text-xs text-[#667085]">Tap one to narrow the list</p>
+                </div>
+                {(selectedServicePrimaryType || selectedServiceSecondaryType || serviceSearchTerm) && (
+                  <Button
+                    onClick={clearServiceFilters}
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-[#2a5af5] hover:bg-[#eef4ff] hover:text-[#2a5af5]"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {primaryBusinessTypes.map((type) => (
+                  <Button
+                    key={type.id}
+                    variant={selectedServicePrimaryType === type.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleServicePrimaryTypeSelect(type.id)}
+                    className={exploreFilterChipClass(selectedServicePrimaryType === type.id)}
+                  >
+                    {type.displaytext}
+                  </Button>
+                ))}
+              </div>
+              {selectedServicePrimaryType && secondaryBusinessTypes.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {secondaryBusinessTypes.map((type) => (
+                    <Button
+                      key={type.id}
+                      variant={selectedServiceSecondaryType === type.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleServiceSecondaryTypeSelect(type.id)}
+                      className={exploreFilterChipClass(selectedServiceSecondaryType === type.id)}
+                    >
+                      {type.displaytext}
+                    </Button>
+                  ))}
+                </div>
+              ) : null}
+              {!isLoadingServices && filteredServices.length > 0 ? (
+                <p className="text-xs text-[#667085]">
+                  Showing {filteredServices.length} service{filteredServices.length === 1 ? "" : "s"}
+                </p>
+              ) : null}
             </div>
 
             {/* Results */}
             {isLoadingServices ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin mr-3 text-orange-600" />
-                <span className="text-gray-600">Loading services...</span>
+                <Loader2 className="mr-3 h-8 w-8 animate-spin text-[#528ff0]" />
+                <span className="text-[#667085]">Finding services…</span>
               </div>
             ) : filteredServices.length === 0 ? (
               <Card className={exploreCardClass}>
-                <CardContent className="text-center py-12">
-                  <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {serviceSearchTerm || selectedServicePrimaryType || selectedServiceSecondaryType
-                      ? 'No services match your filters'
-                      : 'No services available'}
+                <CardContent className="py-12 text-center">
+                  <AlertCircle className="mx-auto mb-4 h-12 w-12 text-[#98a2b3]" />
+                  <h3 className="mb-2 text-lg font-medium text-[#1a1a1a]">
+                    {serviceSearchTerm || selectedServicePrimaryType
+                      ? "Nothing matched that search"
+                      : "No services yet"}
                   </h3>
-                  <p className="text-gray-600 mb-4">
-                    {serviceSearchTerm || selectedServicePrimaryType || selectedServiceSecondaryType
-                      ? 'Try adjusting your search criteria or filters'
-                      : 'Check back later for available services'}
+                  <p className="mb-4 text-[#667085]">
+                    {serviceSearchTerm || selectedServicePrimaryType
+                      ? "Try a shorter word, or tap Clear and browse."
+                      : "Check back soon."}
                   </p>
                   {(serviceSearchTerm || selectedServicePrimaryType || selectedServiceSecondaryType) && (
                     <Button onClick={clearServiceFilters} variant="outline" className={exploreOutlineBtnClass}>
-                      Clear Filters
+                      Clear
                     </Button>
                   )}
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {filteredServices.map((service) => {
-                  const sub =
-                    service.notes?.trim() ||
-                    [service.organisationLocationCity, service.organisationLocationState].filter(Boolean).join(", ");
+                  const place = [service.organisationLocationCity, service.organisationLocationState]
+                    .filter(Boolean)
+                    .join(", ");
                   const coverUrl = exploreServiceCardImageUrls[`${service.organisationid}-${service.id}`];
+                  const starting = getServiceStartingPrice(service);
+                  const durationLabel = service.timetaken ? `${service.timetaken} min` : null;
+                  const priceLine =
+                    service.show_price === false
+                      ? durationLabel || null
+                      : starting > 0
+                        ? `₹${starting.toLocaleString("en-IN")}${durationLabel ? ` · ${durationLabel}` : ""}`
+                        : durationLabel;
                   return (
                     <article
                       key={`${service.organisationid}-${service.id}`}
-                      className="flex flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-50/80 shadow-sm transition-all hover:border-zinc-300 hover:shadow-md"
+                      className="flex items-center gap-3 overflow-hidden rounded-xl border border-[#e2e8f0] bg-white p-2.5 text-left shadow-none"
                     >
-                      {coverUrl ? (
-                        <img
-                          src={coverUrl}
-                          alt={service.Servicename}
-                          className="h-40 w-full border-b border-zinc-200 object-cover"
-                          loading="lazy"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <div className="h-24 w-full border-b border-zinc-200 bg-gradient-to-br from-orange-50 to-zinc-100" />
-                      )}
-                      <div className="flex flex-col p-6">
-                      <span className="mb-1 line-clamp-1 text-sm font-medium text-orange-600">
-                        {service.organisationName}
-                      </span>
-                      <h3 className="mb-1 line-clamp-2 text-xl font-semibold text-zinc-900">{service.Servicename}</h3>
-                      {sub ? (
-                        <p className="mb-4 line-clamp-3 flex-grow text-sm text-zinc-600">{sub}</p>
-                      ) : (
-                        <div className="mb-4 flex-grow" />
-                      )}
-                      <div className="mb-5 flex flex-wrap items-center gap-4 text-sm text-zinc-500">
-                        <span className="inline-flex items-center gap-1.5">
-                          <Clock className="size-3.5 text-zinc-400" aria-hidden />
-                          {service.timetaken ? `${service.timetaken} min` : "Duration at booking"}
-                        </span>
-                        {service.show_price ? (
-                          <span className="font-semibold text-zinc-900">
-                            {service.offerprize > 0 ? (
-                              <>
-                                <span className="mr-1 font-normal text-zinc-400 line-through">₹{service.prize}</span>₹
-                                {service.offerprize}
-                              </>
-                            ) : (
-                              <>from ₹{service.prize}</>
-                            )}
-                          </span>
+                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#f8fafc]">
+                        {coverUrl ? (
+                          <img
+                            src={coverUrl}
+                            alt=""
+                            className="block h-full w-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[#98a2b3]">
+                            <Package className="size-5" aria-hidden />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        {service.organisationName ? (
+                          <p className="truncate text-[11px] font-medium text-[#98a2b3]">
+                            {service.organisationName}
+                          </p>
+                        ) : null}
+                        <div className="flex items-baseline gap-2">
+                          <h3 className="m-0 truncate text-[14px] font-semibold text-[#1a1a1a]">
+                            {service.Servicename || "Untitled"}
+                          </h3>
+                          {priceLine ? (
+                            <p className="m-0 shrink-0 text-[12px] text-[#667085]">{priceLine}</p>
+                          ) : null}
+                        </div>
+                        {place ? (
+                          <p className="mt-0.5 truncate text-[12px] text-[#667085]">{place}</p>
                         ) : null}
                       </div>
                       <button
                         type="button"
-                        className="mt-auto w-full rounded-2xl border border-zinc-300 bg-white py-3.5 font-medium text-zinc-900 transition-colors hover:border-orange-400 hover:bg-orange-50/50"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-[6px] bg-[#528ff0] px-3 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#3d7ae8]"
                         onClick={() => handleBookSlot(service.organisationid, service.organisationLocationId)}
                       >
-                        Book slot
+                        Book
+                        <ArrowRight className="size-3.5 shrink-0" aria-hidden />
                       </button>
-                      </div>
                     </article>
                   );
                 })}
@@ -1357,7 +1351,7 @@ const ExploreServices = () => {
             {/* Results */}
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin mr-3 text-orange-600" />
+                <Loader2 className="h-8 w-8 animate-spin mr-3 text-[#528ff0]" />
                 <span className="text-gray-600">Loading events...</span>
               </div>
             ) : filteredEvents.length === 0 ? (
@@ -1382,7 +1376,7 @@ const ExploreServices = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {filteredEvents.map((event) => {
                   const img = eventImageUrls[event.id]?.[0];
                   const soldOut =
@@ -1390,7 +1384,7 @@ const ExploreServices = () => {
                   return (
                     <article
                       key={event.id}
-                      className="flex flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-lg shadow-zinc-200/50 transition-all hover:border-zinc-300 hover:shadow-xl"
+                      className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-none transition-colors hover:border-[#cfd8f0]"
                     >
                       <div className="relative h-48 w-full shrink-0 bg-gradient-to-br from-zinc-100 to-zinc-200">
                         <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center text-zinc-400">
@@ -1412,9 +1406,11 @@ const ExploreServices = () => {
                           </Badge>
                         </div>
                       </div>
-                      <div className="flex flex-1 flex-col p-6">
-                        <div className="mb-2 flex items-start justify-between gap-2">
-                          <h3 className="line-clamp-2 text-xl font-semibold text-zinc-900">{event.event_name}</h3>
+                      <div className="flex min-w-0 flex-1 flex-col p-6">
+                        <div className="mb-2 flex items-start justify-between gap-3">
+                          <h3 className="min-w-0 flex-1 break-words text-xl font-semibold leading-snug text-zinc-900">
+                            {event.event_name}
+                          </h3>
                           {event.entry_amount > 0 ? (
                             <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-800">
                               ₹{event.entry_amount.toLocaleString("en-IN")}
@@ -1470,10 +1466,11 @@ const ExploreServices = () => {
                         <button
                           type="button"
                           disabled={soldOut}
-                          className="mt-auto w-full rounded-2xl border border-zinc-300 bg-white py-3.5 font-medium text-zinc-900 transition-colors hover:border-orange-400 hover:bg-orange-50/50 disabled:pointer-events-none disabled:opacity-50"
+                          className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-[6px] bg-[#528ff0] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#3d7ae8] disabled:pointer-events-none disabled:opacity-50"
                           onClick={() => handleBookEvent(event.id)}
                         >
                           {soldOut ? "Fully booked" : "Book Event"}
+                          {!soldOut ? <ArrowRight className="size-4 shrink-0" aria-hidden /> : null}
                         </button>
                       </div>
                     </article>
@@ -1503,7 +1500,7 @@ const ExploreServices = () => {
 
       {/* Business Details Modal */}
       <Dialog open={showBusinessDetails} onOpenChange={setShowBusinessDetails}>
-        <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto rounded-3xl border border-gray-100 shadow-lg">
+        <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto rounded-2xl border border-[#e2e8f0] shadow-none">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               {selectedBusiness?.BusinessName || 'Business Details'}
@@ -1521,7 +1518,7 @@ const ExploreServices = () => {
                   <MapPin className="h-4 w-4 mr-2" />
                   Address
                 </h4>
-                <div className="rounded-2xl border border-orange-100/80 bg-orange-50/50 p-3">
+                <div className="rounded-2xl border border-[#eef4ff] bg-[#eef4ff] p-3">
                   <p className="text-sm text-gray-700">
                     {selectedBusiness.StreetName && `${selectedBusiness.StreetName}, `}
                     {selectedBusiness.Area}

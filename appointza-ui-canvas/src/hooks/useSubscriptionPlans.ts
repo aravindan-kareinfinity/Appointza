@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import type { SubscriptionPlan } from "@/models/subscription.model";
 import { SubscriptionService } from "@/services/subscription.service";
+import { ensurePlansForDisplay } from "@/utils/subscriptionPlanPresentation";
 
 /**
  * Loads active subscription plans from PostgreSQL via /Subscription/SelectPlans.
- * No frontend fallback — empty list means DB/API has no active plans.
+ * Falls back to canonical marketing plans if the API is down or returns no rows
+ * so the homepage pricing section still renders.
  */
 export function useSubscriptionPlans(projectName = "appointza") {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -21,15 +23,17 @@ export function useSubscriptionPlans(projectName = "appointza") {
       try {
         const list = await service.selectPlans(projectName);
         if (cancelled) return;
-        setPlans(
-          [...list]
-            .filter((p) => p.isactive !== false)
-            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
-        );
-      } catch (e) {
+        const active = [...list]
+          .filter((p) => p.isactive !== false)
+          .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        const { plans: displayPlans } = ensurePlansForDisplay(active);
+        setPlans(displayPlans);
+      } catch {
         if (cancelled) return;
-        setPlans([]);
-        setError(e instanceof Error ? e.message : "Could not load pricing plans.");
+        // API/proxy down (often Vite → wrong port) — still show fallback pricing cards.
+        const { plans: displayPlans } = ensurePlansForDisplay([]);
+        setPlans(displayPlans);
+        setError(null);
       } finally {
         if (!cancelled) setLoading(false);
       }

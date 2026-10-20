@@ -2,11 +2,11 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   CalendarDays,
   Home,
-  Users,
   Briefcase,
   Settings,
-  Target,
+  ContactRound,
   ConciergeBell,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -93,28 +93,28 @@ const OrganizationBottomNav = () => {
       hasAccess: showCatalogNav,
     },
     {
+      id: 'customers',
+      to: '/organization/clients',
+      icon: Users,
+      label: 'Customers',
+      shortLabel: 'Clients',
+      hasAccess: hasClientsAccess,
+    },
+    {
+      id: 'crm',
+      to: '/organization/crm',
+      icon: ContactRound,
+      label: 'CRM',
+      shortLabel: 'CRM',
+      hasAccess: hasClientsAccess,
+    },
+    {
       id: 'hospitality',
       to: '/organization/hospitality?section=room-status',
       icon: ConciergeBell,
       label: 'Hospitality',
       shortLabel: 'Stay',
       hasAccess: !isStaff && offersRooms,
-    },
-    {
-      id: 'leads',
-      to: '/organization/leads',
-      icon: Target,
-      label: 'Leads',
-      shortLabel: 'Leads',
-      hasAccess: hasClientsAccess,
-    },
-    {
-      id: 'clients',
-      to: '/organization/clients',
-      icon: Users,
-      label: 'Customers',
-      shortLabel: 'Clients',
-      hasAccess: hasClientsAccess,
     },
     {
       id: 'settings',
@@ -138,9 +138,11 @@ const OrganizationBottomNav = () => {
           const Icon = item.icon;
           const pathOnly = item.to.split('?')[0];
           const isActive =
-            location.pathname === pathOnly ||
-            (pathOnly !== '/organization/dashboard' &&
-              location.pathname.startsWith(pathOnly));
+            item.id === 'crm'
+              ? location.pathname.startsWith('/organization/crm')
+              : location.pathname === pathOnly ||
+                (pathOnly !== '/organization/dashboard' &&
+                  location.pathname.startsWith(pathOnly));
 
           return (
             <Link

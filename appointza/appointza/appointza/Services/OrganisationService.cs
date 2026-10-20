@@ -428,7 +428,8 @@ db.AddParameter(command, "organisation_type", DbTypes.Types.String).Value = Norm
         OrganisationLocation.longitude AS organisationlocationlongitude,
         OrganisationLocation.googlelocation AS organisationlocationgooglelocation,
         OrganisationLocation.pincode AS organisationlocationpincode,
-        OrganisationLocation.customurl AS organisationlocationcustomurl
+        OrganisationLocation.customurl AS organisationlocationcustomurl,
+        OrganisationLocation.orgloctempid::text AS organisationlocationorgloctempid
 
     FROM Organisation
     LEFT JOIN OrganisationLocation 
@@ -495,6 +496,7 @@ db.AddParameter(command, "organisation_type", DbTypes.Types.String).Value = Norm
                     temp.organisationlocationgooglelocation = reader["organisationlocationgooglelocation"] == DBNull.Value ? "" : reader["organisationlocationgooglelocation"].ToString();
                     temp.organisationlocationpincode = reader["organisationlocationpincode"] == DBNull.Value ? "" : reader["organisationlocationpincode"].ToString();
                     temp.organisationlocationcustomurl = reader["organisationlocationcustomurl"] == DBNull.Value ? "" : reader["organisationlocationcustomurl"].ToString();
+                    temp.organisationlocationorgloctempid = reader["organisationlocationorgloctempid"] == DBNull.Value ? "" : reader["organisationlocationorgloctempid"].ToString();
 
                     result.Add(temp);
                 }

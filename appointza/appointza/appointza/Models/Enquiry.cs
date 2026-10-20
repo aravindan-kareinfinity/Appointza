@@ -16,6 +16,20 @@ namespace appointza.Models
         public string ip_address { get; set; }
         public DateTime created_at { get; set; }
         public DateTime updated_at { get; set; }
+
+        // CRM lead fields
+        public string business_name { get; set; }
+        public string owner_name { get; set; }
+        public string category { get; set; }
+        public string website { get; set; }
+        public string google_maps_link { get; set; }
+        public string address { get; set; }
+        public string pin_code { get; set; }
+        public string area { get; set; }
+        public string city { get; set; }
+        public string state { get; set; }
+        public string lead_type { get; set; }
+        public string tags { get; set; }
     }
 
     public class EnquirySelectReq
@@ -32,4 +46,3 @@ namespace appointza.Models
         public long id { get; set; }
     }
 }
-

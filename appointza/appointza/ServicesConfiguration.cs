@@ -86,6 +86,9 @@ namespace appointza
             services.AddScoped<EventBookingService>();
             services.AddScoped<ReviewService>();
             services.AddScoped<PaymentGatewayCredentialsService>();
+            services.AddScoped<SecretProtector>();
+            services.AddScoped<OrganisationCommunicationIntegrationService>();
+            services.AddScoped<OrganisationCrmCatalogueService>();
             services.AddScoped<ApplicationSettingsService>();
             services.AddScoped<WebsiteService>();
             services.AddScoped<EnquiryService>();

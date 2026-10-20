@@ -17,8 +17,15 @@ export async function fetchOrganisation(
   req.id = organisationId;
   const response = await service.select(req);
   const org = response?.[0] ?? null;
-  if (org && !org.attributes_json) {
-    org.attributes_json = '{}';
+  if (org) {
+    // API often returns `attributes` object; keep attributes_json in sync for offering parsers.
+    if (!org.attributes_json || org.attributes_json === "null" || org.attributes_json === "{}") {
+      if (org.attributes && typeof org.attributes === "object") {
+        org.attributes_json = JSON.stringify(org.attributes);
+      } else {
+        org.attributes_json = "{}";
+      }
+    }
   }
   return org;
 }

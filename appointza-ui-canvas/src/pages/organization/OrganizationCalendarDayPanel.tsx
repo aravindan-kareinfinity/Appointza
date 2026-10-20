@@ -140,9 +140,13 @@ export function OrganizationCalendarDayPanel({
               Loading bookings…
             </div>
           ) : sortedBookings.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-stone-200 px-4 py-6 text-center text-sm text-stone-500">
-              No customer bookings on this date.
-            </p>
+            <div className="rounded-2xl border border-dashed border-stone-200 px-4 py-6 text-center text-sm text-stone-500">
+              <p>No customer bookings on this date.</p>
+              <p className="mt-2 text-xs text-stone-400">
+                Days with bookings show a coral dot on the calendar. Dashboard
+                “Pending” counts today and future dates that still need action.
+              </p>
+            </div>
           ) : (
             <ul className="space-y-3">
               {sortedBookings.map((apt) => (

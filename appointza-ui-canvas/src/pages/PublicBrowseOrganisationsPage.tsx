@@ -632,37 +632,28 @@ const PublicBrowseOrganisationsPage: React.FC = () => {
 
                           </p>
 
-                          <a
-
-                            href={urls.fullUrl}
-
-                            target="_blank"
-
-                            rel="noreferrer"
-
-                            className="text-xs text-zinc-500 hover:text-orange-600 truncate block mb-3"
-
-                          >
-
-                            {urls.displayUrl}
-
-                          </a>
-
-                          <a
-
-                            href={urls.fullUrl}
-
-                            target="_blank"
-
-                            rel="noreferrer"
-
-                            className="text-sm font-semibold text-orange-600 hover:text-orange-700"
-
-                          >
-
-                            View profile &amp; book →
-
-                          </a>
+                          {urls.fullUrl ? (
+                            <>
+                              <a
+                                href={urls.fullUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs text-zinc-500 hover:text-orange-600 truncate block mb-3"
+                              >
+                                {urls.displayUrl}
+                              </a>
+                              <a
+                                href={urls.fullUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm font-semibold text-orange-600 hover:text-orange-700"
+                              >
+                                View profile &amp; book →
+                              </a>
+                            </>
+                          ) : (
+                            <p className="text-sm text-zinc-400">{urls.displayUrl}</p>
+                          )}
 
                         </div>
 

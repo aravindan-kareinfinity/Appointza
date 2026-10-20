@@ -337,12 +337,6 @@ const MarketingHomePage = () => {
               >
                 Explore Businesses
               </Link>
-              <Link
-                to="/turf"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-medium text-base border border-emerald-400/40 text-emerald-100 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
-              >
-                Turf directory (TN)
-              </Link>
             </div>
 
             {/* trust bar */}

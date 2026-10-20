@@ -5,14 +5,15 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   CalendarDays,
   LayoutGrid, 
-  Users, 
   Package,
   ConciergeBell,
   Settings,
   ChevronLeft,
   ChevronRight,
   Images,
-  Target,
+  ContactRound,
+  Users,
+  Ticket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ const SidebarLink = ({
   icon: Icon, 
   children,
   onClick,
-  collapsed
+  collapsed,
 }: { 
   to: string; 
   icon: React.ElementType; 
@@ -43,34 +44,50 @@ const SidebarLink = ({
   const location = useLocation();
   const pathOnly = to.split("?")[0];
   const isActive =
-    location.pathname === pathOnly ||
-    (pathOnly !== '/organization/dashboard' && location.pathname.startsWith(`${pathOnly}/`));
+    pathOnly === '/organization/crm'
+      ? location.pathname === '/organization/crm' ||
+        location.pathname.startsWith('/organization/crm/')
+      : location.pathname === pathOnly ||
+        (pathOnly !== '/organization/dashboard' &&
+          location.pathname.startsWith(`${pathOnly}/`));
 
   return (
     <Link
       to={to}
       title={collapsed ? String(children) : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-200",
-        collapsed ? "justify-center px-2" : "px-4",
+        "relative flex items-center gap-2.5 rounded-md py-2 text-[13px] font-medium transition-colors",
+        collapsed ? "justify-center px-2" : "px-3",
         isActive
-          ? "bg-white/10 text-white"
-          : "text-zinc-400 hover:bg-white/5 hover:text-white"
+          ? "bg-[#eef2f7] text-[#1a1a1a]"
+          : "text-[#5b6572] hover:bg-[#f4f6f9] hover:text-[#1a1a1a]",
       )}
       onClick={onClick}
     >
+      {isActive && !collapsed ? (
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-[#2a5af5]" aria-hidden />
+      ) : null}
       <Icon
         className={cn(
-          "size-5 shrink-0",
-          isActive ? "text-white" : "text-zinc-500"
+          "size-[18px] shrink-0",
+          isActive ? "text-[#2a5af5]" : "text-[#7a8494]"
         )}
-        strokeWidth={2}
+        strokeWidth={1.75}
         aria-hidden
       />
-      {!collapsed && <span>{children}</span>}
+      {!collapsed && <span className="truncate">{children}</span>}
     </Link>
   );
 };
+
+function NavSectionLabel({ children, collapsed }: { children: React.ReactNode; collapsed?: boolean }) {
+  if (collapsed) return <div className="my-2 border-t border-[#e8ecf1]" />;
+  return (
+    <p className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9aa3b2] first:mt-0">
+      {children}
+    </p>
+  );
+}
 
 interface OrganizationSidebarProps {
   collapsed: boolean;
@@ -129,49 +146,41 @@ const OrganizationSidebar = ({ collapsed, onCollapsedChange }: OrganizationSideb
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-zinc-800 bg-black shadow-none lg:flex transition-all duration-200",
+        "org-workspace-curve fixed left-0 top-12 z-40 hidden h-[calc(100dvh-3rem)] flex-col overflow-hidden border-r border-[#e6eaf0] bg-white shadow-none lg:flex transition-all duration-200",
         isCollapsed ? ORG_SIDEBAR_WIDTH_CLASS.collapsed : ORG_SIDEBAR_WIDTH_CLASS.expanded
       )}
     >
       <div
         className={cn(
-          "relative flex shrink-0 items-center border-b border-zinc-800",
-          isCollapsed ? "justify-center p-4" : "gap-3 p-5 pr-12"
+          "relative flex shrink-0 items-center border-b border-[#e6eaf0]",
+          isCollapsed ? "justify-center p-3" : "justify-between gap-2 px-3 py-3"
         )}
       >
-        <div className={cn("flex items-center gap-3", isCollapsed && "justify-center")}>
-          <img
-            src="/lovable-uploads/6205c671-a6b9-4927-8268-bd1fa436cd0b.png"
-            alt="Appointza Logo"
-            className="h-9 w-9 shrink-0 object-contain"
-          />
-          {!isCollapsed && (
-            <span className="text-xl font-extrabold tracking-tight text-white">
-              Appointza
-            </span>
-          )}
-        </div>
+        {!isCollapsed ? (
+          <p className="text-[13px] font-semibold text-[#1a1a1a]">Workspace</p>
+        ) : null}
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleCollapse}
           className={cn(
-            "absolute h-8 w-8 text-zinc-500 hover:bg-white/10 hover:text-white",
-            isCollapsed ? "right-1 top-4" : "right-3 top-1/2 -translate-y-1/2"
+            "h-7 w-7 text-[#7a8494] hover:bg-[#f4f6f9] hover:text-[#1a1a1a]",
+            isCollapsed && "mx-auto",
           )}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {isCollapsed ? <ChevronRight className="size-[18px]" /> : <ChevronLeft className="size-[18px]" />}
+          {isCollapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
         </Button>
       </div>
 
       <OrganizationSidebarLocation collapsed={isCollapsed} />
 
-      <nav className="flex flex-1 flex-col min-h-0">
-        <div className={cn("flex-1 overflow-y-auto space-y-1", isCollapsed ? "px-2 py-4" : "px-3 py-5")}>
+      <nav className="flex min-h-0 flex-1 flex-col">
+        <div className={cn("flex-1 overflow-y-auto", isCollapsed ? "px-2 py-3" : "px-2 py-3")}>
+          <NavSectionLabel collapsed={isCollapsed}>Main</NavSectionLabel>
           {hasDashboardAccess && (
             <SidebarLink to="/organization/dashboard" icon={LayoutGrid} collapsed={isCollapsed}>
-              Dashboard
+              Home
             </SidebarLink>
           )}
           {showBookingsNav && (
@@ -179,19 +188,16 @@ const OrganizationSidebar = ({ collapsed, onCollapsedChange }: OrganizationSideb
               Bookings
             </SidebarLink>
           )}
+          {hasEventsAccess && offersEvents && (
+            <SidebarLink to="/organization/event-bookings" icon={Ticket} collapsed={isCollapsed}>
+              Event Participants
+            </SidebarLink>
+          )}
+
+          <NavSectionLabel collapsed={isCollapsed}>Catalogue</NavSectionLabel>
           {showCatalogNav && (
             <SidebarLink to={catalogLinkTo} icon={Package} collapsed={isCollapsed}>
               {catalogLinkLabel}
-            </SidebarLink>
-          )}
-          {hasClientsAccess && (
-            <SidebarLink to="/organization/leads" icon={Target} collapsed={isCollapsed}>
-              Leads
-            </SidebarLink>
-          )}
-          {hasClientsAccess && (
-            <SidebarLink to="/organization/clients" icon={Users} collapsed={isCollapsed}>
-              Customers
             </SidebarLink>
           )}
           {!isStaff && offersRooms && (
@@ -204,11 +210,23 @@ const OrganizationSidebar = ({ collapsed, onCollapsedChange }: OrganizationSideb
               Assets
             </SidebarLink>
           )}
+
+          <NavSectionLabel collapsed={isCollapsed}>Customers</NavSectionLabel>
+          {hasClientsAccess && (
+            <SidebarLink to="/organization/clients" icon={Users} collapsed={isCollapsed}>
+              Customers
+            </SidebarLink>
+          )}
+          {hasClientsAccess && (
+            <SidebarLink to="/organization/crm" icon={ContactRound} collapsed={isCollapsed}>
+              CRM
+            </SidebarLink>
+          )}
         </div>
 
-        <div className={cn("mt-auto shrink-0 border-t border-zinc-800 p-3")}>
+        <div className={cn("mt-auto shrink-0 border-t border-[#e6eaf0] p-2")}>
           <SidebarLink to="/organization/profile" icon={Settings} collapsed={isCollapsed}>
-            Settings
+            Account & Settings
           </SidebarLink>
         </div>
       </nav>

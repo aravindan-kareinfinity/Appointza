@@ -1,5 +1,9 @@
 import type { OrganisationDetail } from "@/models/organisation.model";
-import { buildOrganisationPublicSiteUrl } from "@/utils/orgPublicSiteUrl.util";
+import { getUiBaseUrl } from "@/utils/environment";
+import {
+  buildOrganisationPublicSiteUrl,
+  buildOrganisationTemplateBookingUrl,
+} from "@/utils/orgPublicSiteUrl.util";
 
 export function organisationInitials(name: string): string {
   const parts = (name || "").trim().split(/\s+/).filter(Boolean);
@@ -8,11 +12,27 @@ export function organisationInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-/** Subdomain visitor URL + display label for marketing / public browse cards. */
+/**
+ * Public profile / book URL for marketing browse cards.
+ * Prefer custom subdomain → published template GUID → direct book-appointment path.
+ */
 export function organisationPublicUrls(org: OrganisationDetail) {
-  const fullUrl = buildOrganisationPublicSiteUrl({
+  const subdomainUrl = buildOrganisationPublicSiteUrl({
     customUrl: org.organisationlocationcustomurl,
   });
+  const templateUrl = buildOrganisationTemplateBookingUrl(
+    org.organisationlocationorgloctempid,
+  );
+  const bookUrl =
+    org.organisationid > 0 && org.organisationlocationid > 0
+      ? `${getUiBaseUrl()}/book-appointment/${org.organisationid}/${org.organisationlocationid}`
+      : "";
+
+  const fullUrl = subdomainUrl || templateUrl || bookUrl || "";
+
+  if (!fullUrl) {
+    return { fullUrl: "", displayUrl: "Booking page not set up yet" };
+  }
 
   try {
     const parsed = new URL(fullUrl);

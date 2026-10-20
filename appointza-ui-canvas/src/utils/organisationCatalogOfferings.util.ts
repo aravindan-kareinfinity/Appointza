@@ -60,14 +60,17 @@ export function defaultOfferingsForOrganisationType(
   return ["services"];
 }
 
-/** Initial checkboxes when opening organisation edit. */
+/** Initial checkboxes when opening organisation edit / nav gates. */
 export function resolveInitialCatalogOfferings(
   attributesJson?: string | null,
   organisationType?: OrganisationType | string,
 ): CatalogOfferingKind[] {
   const fromAttributes = parseCatalogOfferings(attributesJson ?? undefined);
-  if (fromAttributes.length > 0) return fromAttributes;
-  return defaultOfferingsForOrganisationType(organisationType);
+  const fromType = defaultOfferingsForOrganisationType(organisationType);
+  if (fromAttributes.length === 0) return fromType;
+  // Union with type defaults so stale/partial attributes never hide Rooms & stays.
+  const merged = new Set<CatalogOfferingKind>([...fromAttributes, ...fromType]);
+  return OFFERING_ORDER.filter((kind) => merged.has(kind));
 }
 
 export function resolveSelectedCatalogOfferings(

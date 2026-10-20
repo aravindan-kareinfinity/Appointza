@@ -130,7 +130,17 @@ export default {
 				'fade-out': 'fade-out 0.3s ease-out'
 			},
 			fontFamily: {
-				sans: ['Inter', 'sans-serif'],
+				sans: [
+					'Inter',
+					'ui-sans-serif',
+					'system-ui',
+					'-apple-system',
+					'Segoe UI',
+					'Roboto',
+					'Helvetica Neue',
+					'Arial',
+					'sans-serif',
+				],
 			},
 			backgroundImage: {
 				'gradient-appointza': 'linear-gradient(135deg, #2F80ED 0%, #4F6FF7 52%, #7B4DFF 100%)',

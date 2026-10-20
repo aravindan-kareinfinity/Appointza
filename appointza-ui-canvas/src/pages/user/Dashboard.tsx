@@ -27,6 +27,12 @@ import { ReviewService } from "@/services/review.service";
 import { Review, ReviewSelectReq } from "@/models/review.model";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  countAppointmentsByStatus,
+  isUpcomingAppointmentStatus,
+  normalizeAppointmentStatusCode,
+  toAppointmentStatusBucket,
+} from "@/utils/appointmentStatus.util";
 
 const UserDashboard = () => {
   const { isAuthenticated, user } = useAuth();
@@ -59,12 +65,12 @@ const UserDashboard = () => {
   const [totalSpent, setTotalSpent] = useState(0);
   const [upcomingAppointments, setUpcomingAppointments] = useState<BookedAppoinmentRes[]>([]);
 
-  // Status colors
+  // Status colors (keyed by normalized bucket)
   const statusColors: Record<string, string> = {
-    'CONFIRMED': 'bg-gray-100 text-gray-800',
-    'PENDING': 'bg-gray-100 text-gray-800',
-    'CANCELLED': 'bg-gray-100 text-gray-800',
-    'COMPLETED': 'bg-gray-100 text-gray-800',
+    CONFIRMED: "bg-gray-100 text-gray-800",
+    PENDING: "bg-gray-100 text-gray-800",
+    CANCELLED: "bg-gray-100 text-gray-800",
+    COMPLETED: "bg-gray-100 text-gray-800",
   };
 
   // Load appointments
@@ -119,19 +125,13 @@ const UserDashboard = () => {
 
   // Calculate dashboard statistics
   const calculateDashboardStats = useCallback((appointments: BookedAppoinmentRes[]) => {
-    // Calculate counts
-    setTotalAppointments(appointments.length);
-    
-    const confirmed = appointments.filter(a => a.statuscode === 'CONFIRMED').length;
-    const pending = appointments.filter(a => a.statuscode === 'PENDING').length;
-    const cancelled = appointments.filter(a => a.statuscode === 'CANCELLED').length;
-    const completed = appointments.filter(a => a.statuscode === 'COMPLETED').length;
-    
-    setConfirmedCount(confirmed);
-    setPendingCount(pending);
-    setCancelledCount(cancelled);
-    setCompletedCount(completed);
-    
+    const counts = countAppointmentsByStatus(appointments);
+    setTotalAppointments(counts.total);
+    setConfirmedCount(counts.confirmed);
+    setPendingCount(counts.pending);
+    setCancelledCount(counts.cancelled);
+    setCompletedCount(counts.completed);
+
     // Calculate total spent
     const spent = appointments.reduce((total, appointment) => {
       if (appointment.attributes?.servicelist) {
@@ -142,18 +142,29 @@ const UserDashboard = () => {
       return total;
     }, 0);
     setTotalSpent(spent);
-    
+
     // Get upcoming appointments (next 7 days)
     const today = new Date();
-    const nextWeek = new Date();
+    today.setHours(0, 0, 0, 0);
+    const nextWeek = new Date(today);
     nextWeek.setDate(today.getDate() + 7);
-    
-    const upcoming = appointments.filter(appointment => {
-      const appDate = new Date(appointment.appoinmentdate);
-      return appDate >= today && appDate <= nextWeek && 
-             ['CONFIRMED', 'PENDING'].includes(appointment.statuscode);
-    }).sort((a, b) => new Date(a.appoinmentdate).getTime() - new Date(b.appoinmentdate).getTime());
-    
+
+    const upcoming = appointments
+      .filter((appointment) => {
+        const appDate = new Date(appointment.appoinmentdate);
+        if (Number.isNaN(appDate.getTime())) return false;
+        appDate.setHours(0, 0, 0, 0);
+        return (
+          appDate >= today &&
+          appDate <= nextWeek &&
+          isUpcomingAppointmentStatus(appointment.statuscode)
+        );
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.appoinmentdate).getTime() - new Date(b.appoinmentdate).getTime(),
+      );
+
     setUpcomingAppointments(upcoming.slice(0, 3)); // Show only next 3 upcoming
   }, []);
 
@@ -306,77 +317,31 @@ const UserDashboard = () => {
           </Button>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-gray-100 rounded-full">
-                  <Activity className="h-6 w-6 text-gray-600" />
+        {/* Stats Overview — 2 cols until xl so sidebar width does not clip labels */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5 sm:gap-4">
+          {(
+            [
+              { label: "Total Appointments", value: totalAppointments, icon: Activity },
+              { label: "Confirmed", value: confirmedCount, icon: CheckCircle },
+              { label: "Pending", value: pendingCount, icon: Clock },
+              { label: "Cancelled", value: cancelledCount, icon: XCircle },
+              { label: "Completed", value: completedCount, icon: TrendingUp },
+            ] as const
+          ).map(({ label, value, icon: Icon }) => (
+            <Card key={label} className="min-w-0 shadow-sm">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="shrink-0 rounded-full bg-gray-100 p-2">
+                    <Icon className="h-5 w-5 text-gray-600 sm:h-6 sm:w-6" aria-hidden />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-2xl font-bold tabular-nums text-gray-900">{value}</p>
+                    <p className="break-words text-sm leading-snug text-gray-600">{label}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{totalAppointments}</p>
-                  <p className="text-gray-600">Total Appointments</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-gray-100 rounded-full">
-                  <CheckCircle className="h-6 w-6 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{confirmedCount}</p>
-                  <p className="text-gray-600">Confirmed</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-gray-100 rounded-full">
-                  <Clock className="h-6 w-6 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{pendingCount}</p>
-                  <p className="text-gray-600">Pending</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-gray-100 rounded-full">
-                  <XCircle className="h-6 w-6 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{cancelledCount}</p>
-                  <p className="text-gray-600">Cancelled</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-gray-100 rounded-full">
-                  <TrendingUp className="h-6 w-6 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{completedCount}</p>
-                  <p className="text-gray-600">Completed</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
 
@@ -416,8 +381,8 @@ const UserDashboard = () => {
                         </p>
                       </div>
                     </div>
-                    <Badge className={`${statusColors[appointment.statuscode] || 'bg-gray-100 text-gray-800'} text-xs sm:text-sm px-2 sm:px-3 py-1 w-fit`}>
-                      {appointment.statuscode}
+                    <Badge className={`${statusColors[toAppointmentStatusBucket(appointment.statuscode)] || 'bg-gray-100 text-gray-800'} text-xs sm:text-sm px-2 sm:px-3 py-1 w-fit`}>
+                      {normalizeAppointmentStatusCode(appointment.statuscode) || "PENDING"}
                     </Badge>
                   </div>
                 ))}
@@ -451,15 +416,19 @@ const UserDashboard = () => {
                       {/* Icon and Main Content */}
                       <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
                         <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          {appointment.statuscode === 'COMPLETED' ? (
-                            <CheckCircle className="h-5 w-5 text-blue-600" />
-                          ) : appointment.statuscode === 'CANCELLED' ? (
-                            <XCircle className="h-5 w-5 text-red-600" />
-                          ) : appointment.statuscode === 'CONFIRMED' ? (
-                            <CheckCircle className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <Clock className="h-5 w-5 text-yellow-600" />
-                          )}
+                          {(() => {
+                            const bucket = toAppointmentStatusBucket(appointment.statuscode);
+                            if (bucket === "COMPLETED") {
+                              return <CheckCircle className="h-5 w-5 text-blue-600" />;
+                            }
+                            if (bucket === "CANCELLED") {
+                              return <XCircle className="h-5 w-5 text-red-600" />;
+                            }
+                            if (bucket === "CONFIRMED") {
+                              return <CheckCircle className="h-5 w-5 text-green-600" />;
+                            }
+                            return <Clock className="h-5 w-5 text-yellow-600" />;
+                          })()}
                         </div>
                         
                         <div className="flex-1 min-w-0">
@@ -476,7 +445,7 @@ const UserDashboard = () => {
                               </p>
                             </div>
                           )}
-                          {appointment.statuscode === 'COMPLETED' && appointment.attributes?.servicelist && (
+                          {toAppointmentStatusBucket(appointment.statuscode) === "COMPLETED" && appointment.attributes?.servicelist && (
                             <div className="mt-3 flex flex-wrap gap-2">
                               {appointment.attributes.servicelist.map((service) => (
                                 <Button
@@ -508,8 +477,8 @@ const UserDashboard = () => {
                       {/* Right Side: Badge, Price, Button */}
                       <div className="flex flex-col sm:flex-col items-start sm:items-end gap-2 sm:gap-2 sm:text-right w-full sm:w-auto">
                         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                          <Badge className={`${statusColors[appointment.statuscode] || 'bg-gray-100 text-gray-800'} text-xs sm:text-sm px-2 sm:px-3 py-1`}>
-                            {appointment.statuscode}
+                          <Badge className={`${statusColors[toAppointmentStatusBucket(appointment.statuscode)] || 'bg-gray-100 text-gray-800'} text-xs sm:text-sm px-2 sm:px-3 py-1`}>
+                            {normalizeAppointmentStatusCode(appointment.statuscode) || "PENDING"}
                           </Badge>
                           {appointment.attributes?.servicelist && appointment.attributes.servicelist.length > 0 && (
                             <p className="text-sm sm:text-base font-medium text-gray-900">

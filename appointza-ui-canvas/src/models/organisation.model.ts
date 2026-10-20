@@ -52,7 +52,10 @@ export class Organisation {
 export namespace Organisation {
 
   export class AttributesData {
-
+    catalog_offerings?: Array<"services" | "events" | "rooms">;
+    appointment_counter?: number;
+    appointment_openbefore?: number;
+    [key: string]: unknown;
   }
 
 }
@@ -92,4 +95,6 @@ export class OrganisationDetail {
   organisationlocationgooglelocation: string = ""
   organisationlocationpincode: string = ""
   organisationlocationcustomurl: string = ""
+  /** Stable public booking GUID (`organisationlocation.orgloctempid`). */
+  organisationlocationorgloctempid: string = ""
 }

@@ -23,6 +23,7 @@ import { useGlobalId } from "@/contexts/GlobalIdContext";
 import { useMountWhenOpened } from "@/hooks/useMountWhenOpened";
 import {
   bookedAppointmentsQueryKey,
+  fetchBookedAppointments,
   useBookedAppointments,
 } from "@/hooks/useBookedAppointments";
 import { useOrganisationLocations } from "@/hooks/useOrganisationLocations";
@@ -279,15 +280,47 @@ const OrganizationBookings = () => {
     setBookingCountByDay(new Map());
   }, [organisationLocationId]);
 
-  // Update booking count for the selected date when appointments data changes
+  // Load month-wide booking dots so pending/total from the dashboard can be found on the calendar
   useEffect(() => {
-    if (calendarKind !== "services") return;
-    setBookingCountByDay((prev) => {
-      const next = new Map(prev);
-      next.set(toDateKey(selectedDate), appointments.length);
-      return next;
-    });
-  }, [appointments, selectedDate, calendarKind]);
+    if (calendarKind !== "services" || !organizationId || !organisationLocationId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const monthAppointments = await fetchBookedAppointments({
+          organisationId: organizationId,
+          organisationLocationId,
+        });
+        if (cancelled) return;
+        const monthStart = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+        const monthEnd = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
+        const next = new Map<string, number>();
+        for (const appt of monthAppointments) {
+          const raw = appt.appoinmentdate;
+          if (!raw) continue;
+          const d = new Date(raw);
+          if (Number.isNaN(d.getTime())) continue;
+          if (d < monthStart || d > monthEnd) continue;
+          const key = toDateKey(d);
+          next.set(key, (next.get(key) ?? 0) + 1);
+        }
+        // Keep today's selected-day count accurate if the day query already returned
+        next.set(toDateKey(selectedDate), appointments.length);
+        setBookingCountByDay(next);
+      } catch (error) {
+        console.error("Error loading month booking markers:", error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    calendarKind,
+    organizationId,
+    organisationLocationId,
+    calendarMonth,
+    selectedDate,
+    appointments.length,
+  ]);
 
   useEffect(() => {
     if (calendarKind !== "services" || !organizationId) return;
@@ -583,8 +616,10 @@ const OrganizationBookings = () => {
               }}
             />
             <p className="mt-3 text-xs text-stone-500">
-              Dot = day has bookings
-              {showRoomsCalendar ? " or room occupancy" : ""}. Select a date to view that day.
+              Coral dot = day has service bookings
+              {showRoomsCalendar ? "; orange = room occupancy" : ""}. Select a
+              dotted day to see those appointments (dashboard pending can be on
+              other dates).
             </p>
           </>
         )}

@@ -24,6 +24,13 @@
     <meta name="author" content="Appointza" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <link rel="canonical" href="https://appointza.com/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- UI font: Inter (matches product / category-list style) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
       (function () {
         function isPublicOrgTemplateSurface() {
@@ -37,20 +44,6 @@
           return false;
         }
         window.__APPOINTZA_PUBLIC_TEMPLATE__ = isPublicOrgTemplateSurface();
-        if (window.__APPOINTZA_PUBLIC_TEMPLATE__) return;
-        var pre = document.createElement("link");
-        pre.rel = "preconnect";
-        pre.href = "https://fonts.googleapis.com";
-        document.head.appendChild(pre);
-        var pre2 = document.createElement("link");
-        pre2.rel = "preconnect";
-        pre2.href = "https://fonts.gstatic.com";
-        pre2.crossOrigin = "anonymous";
-        document.head.appendChild(pre2);
-        var font = document.createElement("link");
-        font.rel = "stylesheet";
-        font.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap";
-        document.head.appendChild(font);
       })();
     </script>
 

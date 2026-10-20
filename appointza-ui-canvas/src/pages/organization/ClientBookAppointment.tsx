@@ -1,10 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -389,370 +386,376 @@ const ClientBookAppointment = () => {
     }
   };
 
+  const bookingTabs: { id: BookingType; label: string; icon: typeof CalendarIcon }[] = [
+    { id: "service", label: "Service", icon: CalendarIcon },
+    { id: "event", label: "Event", icon: CalendarDays },
+    ...(showHospitalityBooking
+      ? [{ id: "stay" as const, label: "Stay", icon: BedDouble }]
+      : []),
+  ];
+
+  const selectRowClass = (selected: boolean) =>
+    cn(
+      "flex w-full cursor-pointer items-center gap-2.5 rounded-md border px-2.5 py-2 text-left transition-colors",
+      selected
+        ? "border-[#2a5af5] bg-[#eef2ff]"
+        : "border-[#e6eaf0] bg-white hover:border-[#cfd6e0] hover:bg-[#f8fafc]",
+    );
+
   return (
     <div
       className={cn(
         org.pageSection,
-        "w-full max-w-none space-y-6 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-6 md:pb-8 md:pt-5",
+        "mx-auto w-full max-w-5xl space-y-3 px-3 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-3 sm:space-y-4 sm:px-4 sm:pt-4 md:px-6",
       )}
     >
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/organization/clients")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Book for Client</h1>
-            <p className="text-muted-foreground">
-              Book a service, event, or stay for this client
-            </p>
-          </div>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <User className="h-5 w-5 text-muted-foreground" />
-              <span className="font-semibold">{clientName}</span>
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{clientMobile}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Tabs
-          value={bookingType}
-          onValueChange={(v) => setBookingType(v as BookingType)}
+      <header className="flex items-center gap-2.5">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 text-[#5b6572] hover:text-[#1a1a1a]"
+          onClick={() => navigate("/organization/clients")}
+          aria-label="Back to clients"
         >
-          <TabsList
-            className={cn(
-              "grid w-full h-auto",
-              showHospitalityBooking ? "grid-cols-3" : "grid-cols-2",
-            )}
-          >
-            <TabsTrigger value="service" className="flex items-center gap-1.5 text-xs sm:text-sm">
-              <CalendarIcon className="h-4 w-4 shrink-0" />
-              Service
-            </TabsTrigger>
-            <TabsTrigger value="event" className="flex items-center gap-1.5 text-xs sm:text-sm">
-              <CalendarDays className="h-4 w-4 shrink-0" />
-              Event
-            </TabsTrigger>
-            {showHospitalityBooking ? (
-              <TabsTrigger value="stay" className="flex items-center gap-1.5 text-xs sm:text-sm">
-                <BedDouble className="h-4 w-4 shrink-0" />
-                Room / Package
-              </TabsTrigger>
-            ) : null}
-          </TabsList>
-
-          <TabsContent value="service" className="space-y-6 mt-6">
-            {isLoadingServices ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : services.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  No services available
-                </CardContent>
-              </Card>
-            ) : (
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[15px] font-semibold tracking-tight text-[#1a1a1a]">Book</h1>
+          <p className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] text-[#5b6572]">
+            <User className="h-3 w-3 shrink-0" aria-hidden />
+            <span className="truncate font-medium text-[#1a1a1a]">{clientName}</span>
+            {clientMobile ? (
               <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Select Services</CardTitle>
-                    <CardDescription>Choose one or more services</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-2">
-                      {services.map((s) => {
-                        const isSelected = selectedServices.some((x) => x.id === s.id);
-                        const imageId = s.attributes?.ImageIds?.find((id) => (id ?? 0) > 0) ?? 0;
-                        const imageUrl = imageId ? filesService.getImageUrl(imageId) : "";
+                <span className="text-[#cfd6e0]" aria-hidden>
+                  ·
+                </span>
+                <Phone className="h-3 w-3 shrink-0" aria-hidden />
+                <span className="tabular-nums">{clientMobile}</span>
+              </>
+            ) : null}
+          </p>
+        </div>
+      </header>
+
+      <div
+        className={cn(
+          org.segmentGroup,
+          "grid w-full",
+          showHospitalityBooking ? "grid-cols-3" : "grid-cols-2",
+        )}
+        role="tablist"
+        aria-label="Booking type"
+      >
+        {bookingTabs.map((tab) => {
+          const Icon = tab.icon;
+          const active = bookingType === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setBookingType(tab.id)}
+              className={cn(
+                "inline-flex h-9 items-center justify-center gap-1.5 px-2 text-[12px] font-medium transition-colors sm:text-[13px]",
+                active ? org.segmentActive : org.segmentInactive,
+              )}
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-[#e6eaf0] bg-white">
+        {bookingType === "service" ? (
+          isLoadingServices ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-[#5b6572]">
+              <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
+              Loading services…
+            </div>
+          ) : services.length === 0 ? (
+            <p className="px-4 py-10 text-center text-[13px] text-[#5b6572]">No services available</p>
+          ) : (
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_min(20rem,38%)]">
+              <section className="border-b border-[#e6eaf0] p-3 sm:p-4 lg:border-b-0 lg:border-r">
+                <p className={cn(org.label, "mb-2")}>Services</p>
+                <div className="grid max-h-[min(22rem,45vh)] gap-1.5 overflow-y-auto overscroll-contain sm:max-h-none lg:max-h-[min(28rem,60vh)]">
+                  {services.map((s) => {
+                    const isSelected = selectedServices.some((x) => x.id === s.id);
+                    const imageId = s.attributes?.ImageIds?.find((id) => (id ?? 0) > 0) ?? 0;
+                    const imageUrl = imageId ? filesService.getImageUrl(imageId) : "";
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => handleServiceToggle(s)}
+                        className={selectRowClass(isSelected)}
+                      >
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt=""
+                            className="h-9 w-9 shrink-0 rounded-md border border-[#e6eaf0] object-cover"
+                            loading="lazy"
+                          />
+                        ) : null}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13px] font-medium text-[#1a1a1a]">
+                            {s.Servicename || s.servicename}
+                          </p>
+                          <p className="text-[12px] text-[#5b6572]">
+                            {s.timetaken} min · ₹{s.offerprize > 0 ? s.offerprize : s.prize}
+                          </p>
+                        </div>
+                        {isSelected ? (
+                          <Check className="h-4 w-4 shrink-0 text-[#2a5af5]" aria-hidden />
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className="flex flex-col gap-3 p-3 sm:p-4">
+                <div>
+                  <p className={cn(org.label, "mb-1.5")}>Date</p>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(org.btnOutline, "h-9 w-full justify-start font-normal")}
+                      >
+                        <CalendarIcon className="mr-2 h-3.5 w-3.5 text-[#5b6572]" />
+                        {format(selectedDate, "EEE, MMM d")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(d) => d && setSelectedDate(d)}
+                        disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="min-h-0 flex-1">
+                  <p className={cn(org.label, "mb-1.5")}>Time</p>
+                  {isLoadingSlots ? (
+                    <div className="flex items-center justify-center gap-2 py-6 text-[13px] text-[#5b6572]">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
+                      Loading slots…
+                    </div>
+                  ) : timeSlots.length === 0 ? (
+                    <p className="py-4 text-center text-[12px] text-[#5b6572]">
+                      No slots for this date
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 lg:grid-cols-3">
+                      {timeSlots.map((slot) => {
+                        const isSelected = selectedTimeSlot?.fromtime === slot.fromtime;
                         return (
-                          <div
-                            key={s.id}
-                            onClick={() => handleServiceToggle(s)}
+                          <button
+                            key={slot.fromtime}
+                            type="button"
+                            onClick={() => setSelectedTimeSlot(slot)}
                             className={cn(
-                              "flex items-center justify-between gap-3 p-4 border rounded-lg cursor-pointer transition-colors",
+                              "inline-flex h-8 items-center justify-center gap-1 rounded-md border text-[12px] font-medium tabular-nums transition-colors",
                               isSelected
-                                ? "border-primary bg-primary/5"
-                                : "border-gray-200 hover:border-gray-300"
+                                ? "border-[#2a5af5] bg-[#2a5af5] text-white"
+                                : "border-[#e6eaf0] bg-white text-[#1a1a1a] hover:border-[#cfd6e0]",
                             )}
                           >
-                            {imageUrl ? (
-                              <img
-                                src={imageUrl}
-                                alt={s.Servicename || s.servicename}
-                                className="h-14 w-14 rounded-lg object-cover border shrink-0"
-                                loading="lazy"
-                              />
-                            ) : null}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium">{s.Servicename || s.servicename}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {s.timetaken} min · ₹{s.offerprize > 0 ? s.offerprize : s.prize}
-                              </p>
-                            </div>
-                            {isSelected && <Check className="h-5 w-5 text-primary shrink-0" />}
-                          </div>
+                            <Clock className="h-3 w-3 opacity-70" aria-hidden />
+                            {slot.fromtime?.slice(0, 5)}
+                          </button>
                         );
                       })}
                     </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Select Date</CardTitle>
-                    <CardDescription>Choose appointment date</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {format(selectedDate, "PPP")}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={(d) => d && setSelectedDate(d)}
-                          disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Select Time</CardTitle>
-                    <CardDescription>Choose available time slot</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingSlots ? (
-                      <div className="flex justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                      </div>
-                    ) : timeSlots.length === 0 ? (
-                      <p className="text-center py-8 text-muted-foreground">
-                        No slots available for this date
-                      </p>
-                    ) : (
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {timeSlots.map((slot) => {
-                          const isSelected =
-                            selectedTimeSlot?.fromtime === slot.fromtime;
-                          return (
-                            <Button
-                              key={slot.fromtime}
-                              variant={isSelected ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setSelectedTimeSlot(slot)}
-                            >
-                              <Clock className="h-4 w-4 mr-1" />
-                              {slot.fromtime?.slice(0, 5)}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                  )}
+                </div>
 
                 <Button
-                  onClick={handleBookService}
+                  type="button"
+                  onClick={() => void handleBookService()}
                   disabled={
-                    selectedServices.length === 0 ||
-                    !selectedTimeSlot ||
-                    isBookingService
+                    selectedServices.length === 0 || !selectedTimeSlot || isBookingService
                   }
-                  className="w-full"
+                  className={cn(org.btnPrimary, "mt-auto h-9 w-full")}
                 >
                   {isBookingService ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Booking...
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Booking…
                     </>
                   ) : (
                     <>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      Create Appointment
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      Create appointment
+                      {selectedServices.length > 0 ? ` (${selectedServices.length})` : ""}
                     </>
                   )}
                 </Button>
-              </>
-            )}
-          </TabsContent>
+              </section>
+            </div>
+          )
+        ) : null}
 
-          <TabsContent value="event" className="space-y-6 mt-6">
-            {isLoadingEvents ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : events.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  No events available
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Select Event</CardTitle>
-                    <CardDescription>Choose an event to book</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {events.map((e) => {
-                        const isSelected = selectedEvent?.id === e.id;
-                        return (
-                          <div
-                            key={e.id}
-                            onClick={() => setSelectedEvent(e)}
-                            className={cn(
-                              "flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors",
-                              isSelected
-                                ? "border-primary bg-primary/5"
-                                : "border-gray-200 hover:border-gray-300"
-                            )}
-                          >
-                            <div>
-                              <p className="font-medium">{e.event_name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {e.remainingslot} slots ·{" "}
-                                {e.entry_amount > 0 ? `₹${e.entry_amount}/person` : "Free"}
-                              </p>
-                            </div>
-                            {isSelected && <Check className="h-5 w-5 text-primary" />}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {selectedEvent && (
-                  <>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Number of People</CardTitle>
-                        <CardDescription>
-                          Max {selectedEvent.remainingslot} slots available
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center gap-4">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() =>
-                              handleNumberOfPeopleChange(Math.max(1, numberOfPeople - 1))
-                            }
-                            disabled={numberOfPeople <= 1}
-                          >
-                            -
-                          </Button>
-                          <span className="text-xl font-semibold w-8 text-center">
-                            {numberOfPeople}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() =>
-                              handleNumberOfPeopleChange(
-                                Math.min(selectedEvent.remainingslot, numberOfPeople + 1)
-                              )
-                            }
-                            disabled={numberOfPeople >= selectedEvent.remainingslot}
-                          >
-                            +
-                          </Button>
+        {bookingType === "event" ? (
+          isLoadingEvents ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-[#5b6572]">
+              <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
+              Loading events…
+            </div>
+          ) : events.length === 0 ? (
+            <p className="px-4 py-10 text-center text-[13px] text-[#5b6572]">No events available</p>
+          ) : (
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_min(20rem,38%)]">
+              <section className="border-b border-[#e6eaf0] p-3 sm:p-4 lg:border-b-0 lg:border-r">
+                <p className={cn(org.label, "mb-2")}>Events</p>
+                <div className="grid gap-1.5">
+                  {events.map((e) => {
+                    const isSelected = selectedEvent?.id === e.id;
+                    return (
+                      <button
+                        key={e.id}
+                        type="button"
+                        onClick={() => setSelectedEvent(e)}
+                        className={selectRowClass(isSelected)}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13px] font-medium text-[#1a1a1a]">
+                            {e.event_name}
+                          </p>
+                          <p className="text-[12px] text-[#5b6572]">
+                            {e.remainingslot} slots ·{" "}
+                            {e.entry_amount > 0 ? `₹${e.entry_amount}/person` : "Free"}
+                          </p>
                         </div>
-                      </CardContent>
-                    </Card>
+                        {isSelected ? (
+                          <Check className="h-4 w-4 shrink-0 text-[#2a5af5]" aria-hidden />
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
 
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Attendee Names</CardTitle>
-                        <CardDescription>
-                          Please enter names for all {numberOfPeople} attendee(s)
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {attendeeNames.map((name, index) => (
-                          <div key={index} className="space-y-2">
-                            <Label htmlFor={`attendee-${index}`}>
-                              Person {index + 1} Name *
-                            </Label>
-                            <Input
-                              id={`attendee-${index}`}
-                              type="text"
-                              placeholder={`Enter name for person ${index + 1}`}
-                              value={name}
-                              onChange={(e) =>
-                                handleAttendeeNameChange(index, e.target.value)
-                              }
-                              disabled={isBookingEvent}
-                            />
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
+              <section className="flex flex-col gap-3 p-3 sm:p-4">
+                {selectedEvent ? (
+                  <>
+                    <div>
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <p className={org.label}>People</p>
+                        <span className="text-[11px] text-[#5b6572]">
+                          Max {selectedEvent.remainingslot}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() =>
+                            handleNumberOfPeopleChange(Math.max(1, numberOfPeople - 1))
+                          }
+                          disabled={numberOfPeople <= 1}
+                        >
+                          −
+                        </Button>
+                        <span className="w-8 text-center text-[15px] font-semibold tabular-nums text-[#1a1a1a]">
+                          {numberOfPeople}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() =>
+                            handleNumberOfPeopleChange(
+                              Math.min(selectedEvent.remainingslot, numberOfPeople + 1),
+                            )
+                          }
+                          disabled={numberOfPeople >= selectedEvent.remainingslot}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className={org.label}>Attendee names</p>
+                      {attendeeNames.map((name, index) => (
+                        <Input
+                          key={index}
+                          id={`attendee-${index}`}
+                          type="text"
+                          placeholder={`Person ${index + 1}`}
+                          value={name}
+                          onChange={(e) => handleAttendeeNameChange(index, e.target.value)}
+                          disabled={isBookingEvent}
+                          className={cn(org.input, "h-9")}
+                          aria-label={`Person ${index + 1} name`}
+                        />
+                      ))}
+                    </div>
                   </>
+                ) : (
+                  <p className="py-6 text-center text-[12px] text-[#5b6572]">
+                    Select an event to continue
+                  </p>
                 )}
 
                 <Button
-                  onClick={handleBookEvent}
+                  type="button"
+                  onClick={() => void handleBookEvent()}
                   disabled={
                     !selectedEvent ||
                     isBookingEvent ||
                     (numberOfPeople >= 1 &&
-                      attendeeNames.filter((n) => n.trim().length > 0).length !==
-                        numberOfPeople)
+                      attendeeNames.filter((n) => n.trim().length > 0).length !== numberOfPeople)
                   }
-                  className="w-full"
+                  className={cn(org.btnPrimary, "mt-auto h-9 w-full")}
                 >
                   {isBookingEvent ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Booking...
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Booking…
                     </>
                   ) : (
                     <>
-                      <CalendarDays className="mr-2 h-4 w-4" />
-                      Book Event
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      Book event
                     </>
                   )}
                 </Button>
-              </>
-            )}
-          </TabsContent>
+              </section>
+            </div>
+          )
+        ) : null}
 
-          {showHospitalityBooking ? (
-            <TabsContent value="stay" className="space-y-6 mt-6">
-              <ClientHospitalityBookingPanel
-                organisationId={organisationId}
-                organisationLocationId={organisationLocationId}
-                clientName={clientName}
-                clientMobile={clientMobile}
-                onSuccess={() =>
-                  navigate("/organization/clients", {
-                    state: { selectedClientId: clientUserId },
-                  })
-                }
-              />
-            </TabsContent>
-          ) : null}
-        </Tabs>
+        {bookingType === "stay" && showHospitalityBooking ? (
+          <div className="p-3 sm:p-4">
+            <ClientHospitalityBookingPanel
+              organisationId={organisationId}
+              organisationLocationId={organisationLocationId}
+              clientName={clientName}
+              clientMobile={clientMobile}
+              onSuccess={() =>
+                navigate("/organization/clients", {
+                  state: { selectedClientId: clientUserId },
+                })
+              }
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };

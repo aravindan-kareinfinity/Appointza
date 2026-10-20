@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { BedDouble, Loader2, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +12,8 @@ import { organisationRoomsQueryKey, useOrganisationRooms } from "@/hooks/useOrga
 import { RoomEditorForm } from "@/components/organization/RoomEditorForm";
 import { ResponsiveEditSheet } from "@/components/organization/ResponsiveEditSheet";
 import { cloneRoom, defaultRoomCode } from "@/utils/roomAmenities.util";
+import { cn } from "@/lib/utils";
+import { org } from "@/lib/orgTheme";
 
 type RoomDefinitionsPanelProps = {
   locationId: number;
@@ -226,17 +227,17 @@ export function RoomDefinitionsPanel({
     : "Add room";
 
   if (organisationId <= 0) {
-    return <p className="text-sm text-stone-500">Sign in with an organisation account.</p>;
+    return <p className="text-[13px] text-[#667085]">Sign in with an organisation account.</p>;
   }
 
   if (locationId <= 0) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center text-stone-500">
-          <MapPin className="mx-auto mb-3 h-10 w-10 text-stone-300" />
+      <div className="rounded-lg border border-[#e6eaf0] bg-white px-4 py-12 text-center">
+        <MapPin className="mx-auto mb-3 h-9 w-9 text-[#d0d5dd]" />
+        <p className="text-[13px] text-[#667085]">
           Select a business location above to manage rooms for that property.
-        </CardContent>
-      </Card>
+        </p>
+      </div>
     );
   }
 
@@ -244,70 +245,64 @@ export function RoomDefinitionsPanel({
     <>
       <div className="space-y-4">
         {locationName ?
-          <p className="flex items-center gap-1.5 text-sm text-stone-600">
-            <MapPin className="h-4 w-4 shrink-0 text-[#E85D4C]" />
-            Rooms for <span className="font-medium text-stone-800">{locationName}</span>
+          <p className="flex items-center gap-1.5 text-[13px] text-[#667085]">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-[#2a5af5]" />
+            Rooms for <span className="font-medium text-[#1a1a1a]">{locationName}</span>
           </p>
         : null}
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <Input
             placeholder="Search rooms…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className={cn(org.input, "h-8 max-w-sm")}
           />
-          <Button onClick={openCreate} className="shrink-0 self-start sm:self-auto">
-            <Plus className="mr-2 h-4 w-4" />
+          <Button onClick={openCreate} className={cn(org.btnPrimary, "shrink-0 self-start sm:self-auto")}>
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
             Add room
           </Button>
         </div>
 
         {loading ?
-          <div className="flex items-center gap-2 py-12 text-stone-500">
-            <Loader2 className="h-5 w-5 animate-spin" />
+          <div className="flex items-center gap-2 py-12 text-[13px] text-[#667085]">
+            <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
             Loading rooms…
           </div>
         : filteredRooms.length === 0 ?
-          <Card>
-            <CardContent className="py-12 text-center text-stone-500">
-              <BedDouble className="mx-auto mb-3 h-10 w-10 text-stone-300" />
+          <div className="rounded-lg border border-[#e6eaf0] bg-white px-4 py-12 text-center">
+            <BedDouble className="mx-auto mb-3 h-9 w-9 text-[#d0d5dd]" />
+            <p className="text-[13px] text-[#667085]">
               No rooms at this location yet. Add your first room to get started.
-            </CardContent>
-          </Card>
-        : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            </p>
+          </div>
+        : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filteredRooms.map((room) => (
-              <Card
+              <div
                 key={room.id}
-                className="cursor-pointer overflow-hidden transition-shadow hover:shadow-md"
+                role="button"
+                tabIndex={0}
+                className="cursor-pointer rounded-lg border border-[#e6eaf0] bg-white p-4 text-left shadow-none transition-colors hover:border-[#cfd8f0] hover:bg-[#fafbff]"
                 onClick={() => openEdit(room)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") openEdit(room);
+                }}
               >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Room {room.room_number}</CardTitle>
-                  <p className="text-sm capitalize text-stone-500">
-                    {room.room_name || room.room_type} · Floor {room.floor_number}
+                <p className="text-[14px] font-semibold text-[#1a1a1a]">Room {room.room_number}</p>
+                <p className="mt-0.5 text-[12px] capitalize text-[#667085]">
+                  {room.room_name || room.room_type} · Floor {room.floor_number}
+                </p>
+                {room.guest?.name ?
+                  <p className="mt-2 text-[12px] text-[#667085]">
+                    Guest: <span className="font-medium text-[#344054]">{room.guest.name}</span>
                   </p>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-stone-600">
-                  {room.guest?.name ?
-                    <p>Guest: {room.guest.name}</p>
-                  : null}
-                  <p>
-                    ₹{room.pricing.price_per_night.toLocaleString("en-IN")}/night · up to{" "}
-                    {room.capacity.total_guests} guests
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEdit(room);
-                    }}
-                  >
-                    Edit room
-                  </Button>
-                </CardContent>
-              </Card>
+                : null}
+                <p className="mt-2 text-[13px] text-[#344054]">
+                  ₹{room.pricing.price_per_night.toLocaleString("en-IN")}/night · up to{" "}
+                  {room.capacity.total_guests} guests
+                </p>
+                <span className={cn(org.btnOutline, "mt-3 pointer-events-none")}>Edit room</span>
+              </div>
             ))}
           </div>
         }

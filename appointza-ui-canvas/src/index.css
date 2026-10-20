@@ -33,19 +33,19 @@
     --input: 220 38% 89%;
     --ring: 221 83% 57%;
 
-    --radius: 1rem;
+    --radius: 0.5rem;
 
-    /* App-wide layout theme (dashboard-style) */
-    --app-surface: 225 100% 98%;
+    /* App-wide layout theme (Razorpay-like dashboard) */
+    --app-surface: 210 20% 97%;
     --app-sidebar: 0 0% 100%;
-    --app-sidebar-border: 220 38% 92%;
-    --app-sidebar-active-bg: 223 100% 96%;
-    --app-sidebar-active-accent: 221 83% 57%;
+    --app-sidebar-border: 214 18% 90%;
+    --app-sidebar-active-bg: 214 20% 95%;
+    --app-sidebar-active-accent: 226 90% 56%;
 
-    --app-gradient: linear-gradient(135deg, #2f80ed 0%, #4f6ff7 52%, #7b4dff 100%);
-    --app-gradient-soft: linear-gradient(145deg, #eef6ff 0%, #f5f1ff 100%);
-    --app-shadow: 0 10px 30px -18px rgba(39, 72, 154, 0.28);
-    --app-shadow-hover: 0 18px 42px -20px rgba(56, 80, 170, 0.36);
+    --app-gradient: linear-gradient(135deg, #2a5af5 0%, #2f80ed 100%);
+    --app-gradient-soft: linear-gradient(145deg, #eef2ff 0%, #f5f7f9 100%);
+    --app-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    --app-shadow-hover: 0 4px 12px rgba(16, 24, 40, 0.08);
   }
 
   .dark {
@@ -105,6 +105,10 @@
     height: 100%;
     /* Don't apply padding to html - let individual components handle safe areas */
     /* This prevents double padding and layout issues */
+    @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   body {
@@ -122,10 +126,11 @@
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
-    background-image:
-      radial-gradient(circle at 0% 0%, rgba(47, 128, 237, 0.08), transparent 28rem),
-      radial-gradient(circle at 100% 100%, rgba(123, 77, 255, 0.08), transparent 32rem);
-    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-image: none;
+    background-attachment: scroll;
   }
 
   /* Fixed backgrounds + large gradients are expensive on mobile GPUs / touch scroll. */
@@ -228,27 +233,27 @@
   }
 
   .org-page-header {
-    @apply px-4 pb-2 pt-6 sm:px-6 lg:px-8 lg:pt-8;
+    @apply px-4 pb-2 pt-4 sm:px-6 lg:px-6 lg:pt-5;
   }
 
   .org-page-section {
-    @apply px-4 py-6 sm:px-6 lg:px-8;
+    @apply px-4 py-4 sm:px-6 lg:px-6;
   }
 
   .org-panel-section {
-    @apply border-b border-stone-100 px-4 py-5 sm:px-6 sm:py-6 lg:px-8;
+    @apply border-b border-[#eef1f5] px-4 py-4 sm:px-5 sm:py-5 lg:px-6;
   }
 
   .org-title {
-    @apply text-2xl font-bold tracking-tight text-appointza-navy sm:text-3xl;
+    @apply text-[18px] font-semibold tracking-tight text-[#1a1a1a] sm:text-[20px];
   }
 
   .org-description {
-    @apply mt-1.5 text-sm leading-relaxed text-stone-500 sm:text-base;
+    @apply mt-1 text-[13px] leading-relaxed text-[#6b7280];
   }
 
   .org-card {
-    @apply rounded-xl border border-stone-200 bg-white shadow-none;
+    @apply rounded-lg border border-[#e6eaf0] bg-white shadow-none;
   }
 
   .org-panel {
@@ -274,23 +279,36 @@
   }
 
   .app-shell {
-    background-color: hsl(var(--app-surface));
-    background-image:
-      radial-gradient(circle at 0% 0%, rgba(47, 128, 237, 0.07), transparent 24rem),
-      radial-gradient(circle at 100% 100%, rgba(123, 77, 255, 0.07), transparent 28rem);
-  }
-
-  .org-flat-shell {
-    background-color: #f8fafc;
+    background-color: #f5f7f9;
     background-image: none;
   }
 
+  .org-flat-shell {
+    background-color: #f5f7f9;
+    background-image: none;
+  }
+
+  /* Dark chrome under top bar so the light workspace scoop is visible */
+  .org-razorpay-shell {
+    background-color: #0d1117;
+    background-image: none;
+  }
+
+  /* Razorpay-style scoop where light workspace meets dark header */
+  .org-workspace-curve {
+    border-top-left-radius: 24px;
+  }
+
+  .org-workspace-curve-right {
+    border-top-right-radius: 24px;
+  }
+
   .app-surface-card {
-    @apply rounded-2xl border border-white/80 bg-white;
+    @apply rounded-lg border border-[#e6eaf0] bg-white;
     box-shadow: var(--app-shadow);
   }
 
   .app-icon-tile {
-    @apply flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600;
+    @apply flex h-9 w-9 items-center justify-center rounded-md bg-[#eef2ff] text-[#2a5af5];
   }
 }

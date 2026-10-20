@@ -15,14 +15,18 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { org } from "@/lib/orgTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 /** Desktop side panel: 40% viewport width, shared by all hospitality edit sheets. */
 const DESKTOP_PANEL_CLASS =
-  "z-[100] flex h-full w-[40%] min-w-[480px] max-w-none flex-col gap-0 overflow-hidden border-l p-0 shadow-2xl sm:max-w-none [&>button]:hidden";
+  "z-[100] flex h-full w-[40%] min-w-[480px] max-w-none flex-col gap-0 overflow-hidden border-l border-[#e6eaf0] bg-white p-0 shadow-none sm:max-w-none [&>button]:hidden";
 
 const MOBILE_SHEET_CLASS =
-  "z-[100] flex h-[92vh] max-h-[92vh] w-full flex-col gap-0 overflow-hidden rounded-t-2xl border-t p-0 [&>button]:hidden";
+  "z-[100] flex h-[92vh] max-h-[92vh] w-full flex-col gap-0 overflow-hidden rounded-t-2xl border-t border-[#e6eaf0] bg-white p-0 [&>button]:hidden";
+
+const saveBtnClass =
+  "inline-flex h-8 items-center justify-center gap-2 rounded-[6px] bg-[#528ff0] px-4 text-[13px] font-semibold text-white hover:bg-[#3d7ae8] disabled:opacity-50";
 
 type ResponsiveEditSheetProps = {
   open: boolean;
@@ -54,16 +58,16 @@ function EditSheetHeader({
   const busy = saving || deleting;
 
   return (
-    <div className="shrink-0 border-b border-stone-100 bg-white px-4 py-4 sm:px-6">
+    <div className="shrink-0 border-b border-[#e6eaf0] bg-white px-4 py-4 sm:px-5">
       <div className="flex flex-col gap-3">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold leading-snug text-stone-900">{title}</h2>
+          <h2 className="text-[16px] font-semibold leading-snug text-[#1a1a1a]">{title}</h2>
           {subtitle ?
-            <p className="mt-1 text-sm leading-relaxed text-stone-500">{subtitle}</p>
+            <p className="mt-1 text-[13px] leading-relaxed text-[#667085]">{subtitle}</p>
           : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={busy}>
+          <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={busy} className={org.btnOutline}>
             Cancel
           </Button>
           {isEdit && onDelete ?
@@ -71,19 +75,19 @@ function EditSheetHeader({
               type="button"
               variant="outline"
               size="sm"
-              className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+              className={cn(org.btnOutline, "border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700")}
               onClick={onDelete}
               disabled={busy}
             >
               {deleting ?
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
               : null}
               Delete
             </Button>
           : null}
-          <Button type="button" size="sm" onClick={onSave} disabled={busy} className="ml-auto sm:ml-0">
+          <Button type="button" size="sm" onClick={onSave} disabled={busy} className={cn(saveBtnClass, "ml-auto sm:ml-0")}>
             {saving ?
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             : null}
             {saveLabel ?? "Save"}
           </Button>
@@ -107,13 +111,13 @@ function EditSheetBody({
       <EditSheetHeader {...headerProps} />
       {errorMessage ? (
         <div
-          className="mx-4 mt-3 shrink-0 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:mx-6"
+          className="mx-4 mt-3 shrink-0 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-800 sm:mx-5"
           role="alert"
         >
           {errorMessage}
         </div>
       ) : null}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#fafbfc] px-4 py-4 sm:px-5">{children}</div>
     </div>
   );
 }

@@ -37,9 +37,11 @@ export class EnquiryService {
   }
 
   async insert(req: Enquiry) {
-    let postdata: ActionReq<Enquiry> = new ActionReq<Enquiry>();
-    postdata.item = req;
-    let resp = await this.http.post<ActionRes<Enquiry>>(
+    const postdata: ActionReq<Enquiry> = new ActionReq<Enquiry>();
+    // Server sets created_at/updated_at; never send "" (breaks DateTime JSON binding).
+    const { created_at: _c, updated_at: _u, ...item } = req;
+    postdata.item = item as Enquiry;
+    const resp = await this.http.post<ActionRes<Enquiry>>(
       this.baseurl + '/Insert',
       postdata,
       true, // skipAuthorization for public contact form
@@ -58,9 +60,10 @@ export class EnquiryService {
   }
 
   async save(req: Enquiry) {
-    let postdata: ActionReq<Enquiry> = new ActionReq<Enquiry>();
-    postdata.item = req;
-    let resp = await this.http.post<ActionRes<Enquiry>>(
+    const postdata: ActionReq<Enquiry> = new ActionReq<Enquiry>();
+    const { created_at: _c, updated_at: _u, ...item } = req;
+    postdata.item = item as Enquiry;
+    const resp = await this.http.post<ActionRes<Enquiry>>(
       this.baseurl + '/Save',
       postdata,
       true, // skipAuthorization for public contact form

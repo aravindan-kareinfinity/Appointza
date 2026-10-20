@@ -8,13 +8,13 @@ export const profileSettingsX = "px-4 md:px-6 lg:px-8";
 export const settingsEmbedded = {
   shell: cn(org.card, "w-full overflow-hidden rounded-xl shadow-none"),
   /** Tab content title — no bottom border; tabs row already divides the page. */
-  sectionHeader: cn(profileSettingsX, "w-full space-y-1.5 bg-white pb-4 pt-5 md:pb-5 md:pt-6"),
-  sectionHeaderPlain: cn(profileSettingsX, "w-full space-y-1.5 bg-white pb-4 pt-5 md:pb-5 md:pt-6"),
-  sectionBody: cn(profileSettingsX, "w-full min-w-0 pb-5 pt-0 md:pb-6"),
-  title: "flex w-full items-center gap-3 text-lg font-semibold leading-snug text-appointza-navy md:text-xl",
-  description: "text-sm text-slate-500",
+  sectionHeader: cn(profileSettingsX, "w-full space-y-1 bg-[#f5f7f9] pb-3 pt-4 md:pb-4 md:pt-5"),
+  sectionHeaderPlain: cn(profileSettingsX, "w-full space-y-1 bg-[#f5f7f9] pb-3 pt-4 md:pb-4 md:pt-5"),
+  sectionBody: cn(profileSettingsX, "w-full min-w-0 pb-5 pt-4 md:pb-6 md:pt-5"),
+  title: "flex w-full items-center gap-2.5 text-[18px] font-semibold leading-snug text-[#1a1a1a] sm:text-[20px]",
+  description: "text-[13px] text-[#6b7280]",
   iconWrap:
-    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600",
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#eef2ff] text-[#2a5af5]",
   list: "w-full space-y-3",
   /** Single grouped list — one border, dividers between rows (no stacked cards). */
   listGroup: "w-full overflow-hidden rounded-xl border border-stone-200 bg-white divide-y divide-stone-200",

@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +12,9 @@ import {
   Calendar,
   UserPlus,
   CalendarPlus,
-  MapPin,
   CalendarX,
   Loader2,
   ArrowLeft,
-  Users,
   BedDouble,
   FileText,
   Sparkles,
@@ -71,10 +69,6 @@ import { loyaltyService } from "@/services/loyalty.service";
 import { resolveOrganisationId } from "@/utils/organisationContext.util";
 import { ClientLoyaltyWallet } from "@/models/loyalty.model";
 import {
-  useOrganisationClients,
-  useInvalidateOrganisationClients,
-} from "@/hooks/useOrganisationClients";
-import {
   Table,
   TableBody,
   TableCell,
@@ -113,7 +107,7 @@ const ClientManagement = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const { id: globalLocationId } = useGlobalId();
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [loyaltyByUserId, setLoyaltyByUserId] = useState<Record<number, ClientLoyaltyWallet>>({});
@@ -129,7 +123,7 @@ const ClientManagement = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isOnSpotDialogOpen, setIsOnSpotDialogOpen] = useState(false);
   const [mobileInput, setMobileInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   type CrmTabId = "today" | "history" | "timeline" | "events" | "rooms";
   const [crmTab, setCrmTab] = useState<CrmTabId>("today");
   const [clientRoomStays, setClientRoomStays] = useState<OrganisationRoom[]>([]);
@@ -139,40 +133,6 @@ const ClientManagement = () => {
   const mountCreateClientDialog = useMountWhenOpened(isCreateDialogOpen);
   const mountOnSpotDialog = useMountWhenOpened(isOnSpotDialogOpen);
   const mountRoomDetailsDialog = useMountWhenOpened(isRoomDetailsOpen);
-
-  const organisationId = user?.organisationid || 0;
-  const organisationLocationId = globalLocationId
-    ? Number(globalLocationId)
-    : (user?.locationid || 0);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(mobileInput.trim());
-    }, 250);
-
-    return () => window.clearTimeout(timer);
-  }, [mobileInput]);
-
-  const {
-    data: clientsPages,
-    isLoading: isLoadingClients,
-    refetch: refetchClients,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useOrganisationClients({
-    organisationId,
-    organisationLocationId,
-    search: debouncedSearch,
-    enabled: isAuthenticated,
-  });
-  const clients = useMemo(
-    () => clientsPages?.pages.flat() ?? [],
-    [clientsPages],
-  );
-  const filteredClients = clients;
-  const visibleClients = clients;
-  const invalidateOrganisationClients = useInvalidateOrganisationClients();
 
   const appointmentService = useMemo(() => new AppoinmentService(), []);
   const appointmentRecordService = useMemo(() => new AppointmentRecordService(), []);
@@ -478,131 +438,86 @@ const ClientManagement = () => {
     }
   };
 
-  const handleClientClick = async (client: ClientInfoRes) => {
-    const isRoomOnly = client.userid < 0;
-    setCrmTab(client.is_room_customer && isRoomOnly ? "rooms" : "today");
-
-    setSelectedClient({
-      id: Number(client.userid),
-      name: client.username || "",
-      mobile: client.mobile || "",
-      email: client.guest_email || "",
-      lastVisit: new Date(),
-      totalAppointments: 0,
-      totalSpent: 0,
-      isRoomCustomer: Boolean(client.is_room_customer),
-      isRoomOnly,
-      roomNumber: client.room_number || "",
-      bookingReference: client.booking_reference || "",
-    } as any);
-
-    try {
-      let stats = { totalAppointments: 0, lastVisit: new Date(), totalSpent: 0 };
-      if (client.userid > 0) {
-        const organisationId = user?.organisationid || 0;
-        const [loadedStats] = await Promise.all([
-          loadClientData(client.userid, organisationId),
-          loadLoyaltyForClient(client.userid, client.username, client.mobile),
-        ]);
-        stats = loadedStats;
-      } else {
-        setIsLoadingClientData(true);
-        setClientAppointments([]);
-        setAppointmentRecords([]);
-        setClientEventBookings([]);
-        setEventsMap({});
-        setTodayAppointment(null);
-        setIsLoadingClientData(false);
-      }
-
-      const roomStays = await loadRoomStaysForClient(client);
-      setClientRoomStays(roomStays);
-
-      if (stats.totalAppointments === 0 && roomStays.length > 0) {
-        const checkInDates = roomStays
-          .map((room) => getRoomBookingStartDate(room))
-          .filter((date): date is Date => date instanceof Date);
-        if (checkInDates.length > 0) {
-          checkInDates.sort((a, b) => b.getTime() - a.getTime());
-          stats = { ...stats, lastVisit: checkInDates[0] };
-        }
-      }
-
-      setSelectedClient({
-        id: Number(client.userid),
-        name: client.username || "",
-        mobile: client.mobile || "",
-        email: client.guest_email || "",
-        lastVisit: stats.lastVisit,
-        totalAppointments: stats.totalAppointments,
-        totalSpent: stats.totalSpent,
-        isRoomCustomer: Boolean(client.is_room_customer),
-        isRoomOnly,
-        roomNumber: client.room_number || "",
-        bookingReference: client.booking_reference || "",
-      } as any);
-    } catch (error) {
-      console.error('Error loading client details', error);
-      setClientRoomStays([]);
-      setSelectedClient({
-        id: Number(client.userid),
-        name: client.username || "",
-        mobile: client.mobile || "",
-        email: client.guest_email || "",
-        lastVisit: new Date(),
-        totalAppointments: 0,
-        totalSpent: 0,
-        isRoomCustomer: Boolean(client.is_room_customer),
-        isRoomOnly: client.userid < 0,
-      } as any);
-      setClientAppointments([]);
-      setAppointmentRecords([]);
-      setClientEventBookings([]);
-      setEventsMap({});
-      setTodayAppointment(null);
-    }
-  };
-
   const handleClientSearch = async (mobile: string) => {
+    const digits = mobile.replace(/\D/g, "");
+    if (!digits) {
+      toast({
+        title: "Mobile required",
+        description: "Enter a mobile number to look up a customer.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSearching(true);
     try {
       const req = new SearchAppointmentByMobileReq();
       req.organisationid = user?.organisationid || 0;
-      req.mobilenumber = mobile;
+      req.mobilenumber = digits;
 
       const results = await appointmentService.searchByMobile(req);
 
       if (results && results.length > 0) {
         const first = results[0] as BookedAppoinmentRes;
         const userId = first.userid;
+        const displayMobile = first.mobile || digits;
+        const displayName = first.username || "";
 
+        setCrmTab("today");
         setSelectedClient({
           id: Number(userId),
-          name: first.username || "",
-          mobile: first.mobile || mobile,
+          name: displayName,
+          mobile: displayMobile,
           email: "",
           lastVisit: new Date(),
           totalAppointments: 0,
           totalSpent: 0,
         } as any);
 
-        const [stats] = await Promise.all([
-          loadClientData(userId, user?.organisationid || 0),
-          loadLoyaltyForClient(userId, first.username || "", first.mobile || mobile),
-        ]);
+        const roomLookup = {
+          userid: userId,
+          username: displayName,
+          mobile: displayMobile,
+          is_room_customer: true,
+        } as ClientInfoRes;
 
+        const loyaltyPromise = loadLoyaltyForClient(userId, displayName, displayMobile);
+        const [stats, roomStays] = await Promise.all([
+          loadClientData(userId, user?.organisationid || 0),
+          loadRoomStaysForClient(roomLookup),
+        ]);
+        await loyaltyPromise;
+
+        let nextStats = stats;
+        if (stats.totalAppointments === 0 && roomStays.length > 0) {
+          const checkInDates = roomStays
+            .map((room) => getRoomBookingStartDate(room))
+            .filter((date): date is Date => date instanceof Date);
+          if (checkInDates.length > 0) {
+            checkInDates.sort((a, b) => b.getTime() - a.getTime());
+            nextStats = { ...stats, lastVisit: checkInDates[0] };
+          }
+        }
+
+        setClientRoomStays(roomStays);
         setSelectedClient({
           id: Number(userId),
-          name: first.username || "",
-          mobile: first.mobile || mobile,
+          name: displayName,
+          mobile: displayMobile,
           email: "",
-          lastVisit: stats.lastVisit,
-          totalAppointments: stats.totalAppointments,
-          totalSpent: stats.totalSpent,
+          lastVisit: nextStats.lastVisit,
+          totalAppointments: nextStats.totalAppointments,
+          totalSpent: nextStats.totalSpent,
+          isRoomCustomer: roomStays.length > 0,
         } as any);
 
+        if (roomStays.length > 0) {
+          setCrmTab(nextStats.totalAppointments === 0 ? "rooms" : "today");
+        }
+
         toast({
-          title: "Client Found",
-          description: `${first.username || mobile} loaded with recent history.`,
+          title: "Customer found",
+          description: `${displayName || digits} loaded with recent history.`,
         });
       } else {
         setSelectedClient(null);
@@ -613,21 +528,21 @@ const ClientManagement = () => {
         setEventsMap({});
         setTodayAppointment(null);
         toast({
-          title: "Client Not Found",
-          description: "No client found with this mobile number.",
+          title: "Customer not found",
+          description: "No customer found with this mobile number.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error searching client', error);
+      console.error("Error searching client", error);
       toast({ title: "Error", description: "Search failed", variant: "destructive" });
+    } finally {
+      setIsSearching(false);
     }
   };
 
   const handleClientCreated = () => {
-    // Reload clients list after a new client is created
-    void invalidateOrganisationClients();
-    void refetchClients();
+    // No list to refresh — look up the new customer by mobile when needed.
   };
 
   const handleAddAppointmentRecord = () => {
@@ -636,248 +551,171 @@ const ClientManagement = () => {
   };
 
 
-  const showListPanel = !isMobile || !selectedClient;
-  const showDetailPanel = !isMobile || !!selectedClient;
-
   return (
     <div className={cn(org.page, "flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#f8fafc]")}>
-      <div className="flex min-h-0 flex-1 overflow-hidden lg:flex-row">
-        {showListPanel ? (
-          <aside className="flex min-h-0 flex-1 flex-col overflow-hidden border-stone-200 bg-white lg:h-full lg:w-[22rem] lg:flex-none lg:border-r xl:w-96">
-              <div className="shrink-0 border-b border-stone-100 p-4 sm:p-5">
-                <form
-                  className="flex gap-2"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const t = mobileInput.trim().replace(/\s+/g, "");
-                    if (t) void handleClientSearch(t);
-                  }}
-                >
-                  <div className="relative min-w-0 flex-1">
-                    <Search
-                      className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
-                      aria-hidden
-                    />
-                    <Input
-                      type="search"
-                      value={mobileInput}
-                      onChange={(e) => setMobileInput(e.target.value)}
-                      placeholder="Search name or mobile…"
-                      className={cn(org.input, "h-11 pl-10")}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className={cn(org.btnPrimary, "h-11 shrink-0 px-4")}
-                    aria-label="Search by mobile"
-                  >
-                    <Phone className="h-4 w-4" />
-                  </Button>
-                </form>
-                <p className="mt-2 text-xs text-stone-500">
-                  Filter the list as you type, or search by exact mobile number.
-                </p>
-              </div>
+      <header className="shrink-0 border-b border-[#e6eaf0] bg-white">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-5 sm:px-6 sm:py-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-[15px] font-semibold tracking-tight text-[#1a1a1a] sm:text-base">
+                Find customer
+              </h1>
+              <p className="mt-0.5 text-[13px] text-[#5b6572]">
+                Enter a mobile number and press Enter to load their profile.
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setIsOnSpotDialogOpen(true)}
+              className={cn(org.btnPrimary, "h-9 shrink-0")}
+            >
+              <UserPlus className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">On-Spot</span>
+            </Button>
+          </div>
 
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-stone-200 bg-white px-4 py-3 sm:px-5">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-semibold text-appointza-navy">All customers</h2>
-                    <span className="rounded-full border border-stone-200 bg-white px-2.5 py-0.5 text-xs font-medium tabular-nums text-stone-600">
-                      {isLoadingClients ? "…" : filteredClients.length}
-                    </span>
-                  </div>
+          <form
+            className="relative"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleClientSearch(mobileInput);
+            }}
+          >
+            <Phone
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aa3af]"
+              aria-hidden
+            />
+            <Input
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              value={mobileInput}
+              onChange={(e) => setMobileInput(e.target.value.replace(/\D/g, ""))}
+              placeholder="Mobile number"
+              disabled={isSearching}
+              className={cn(
+                org.input,
+                "h-12 rounded-lg border-[#e6eaf0] pl-11 pr-12 text-[15px] tracking-wide tabular-nums shadow-none placeholder:tracking-normal placeholder:text-[#9aa3af] focus-visible:border-[#2a5af5] focus-visible:ring-[#2a5af5]/15",
+              )}
+              aria-label="Customer mobile number"
+            />
+            {isSearching ? (
+              <Loader2
+                className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#2a5af5]"
+                aria-hidden
+              />
+            ) : (
+              <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-[#e6eaf0] bg-[#f8fafc] px-1.5 py-0.5 text-[10px] font-medium text-[#9aa3af] sm:inline">
+                Enter
+              </kbd>
+            )}
+          </form>
+        </div>
+      </header>
+
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-[#f8fafc]">
+        {selectedClient ? (
+          <>
+            <div className="border-b border-[#e6eaf0] bg-white px-4 py-5 sm:px-6 sm:py-6">
+              <div className="mx-auto w-full max-w-5xl">
+                {isMobile ? (
                   <Button
                     type="button"
+                    variant="ghost"
                     size="sm"
-                    onClick={() => setIsOnSpotDialogOpen(true)}
-                    className={cn(org.btnPrimary, "h-9 text-xs")}
+                    className="-ml-2 mb-3 h-9 gap-1.5 px-2 text-[#5b6572] hover:text-[#1a1a1a]"
+                    onClick={() => {
+                      setSelectedClient(null);
+                      setMobileInput("");
+                    }}
                   >
-                    <UserPlus className="h-3.5 w-3.5 shrink-0" />
-                    On-Spot Registration
+                    <ArrowLeft className="h-4 w-4" />
+                    New search
                   </Button>
-                </div>
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                  {isLoadingClients ? (
-                    <div className="flex items-center justify-center gap-2 p-8 text-sm text-stone-500">
-                      <Loader2 className="h-4 w-4 animate-spin text-appointza-coral" />
-                      Loading customers…
+                ) : null}
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#e6eaf0] bg-[#eef2ff] text-lg font-semibold text-[#2a5af5]">
+                      {clientInitials(selectedClient.name)}
                     </div>
-                  ) : clients.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-stone-500">
-                      No customers yet. Use On-Spot Registration to add one.
+                    <div className="min-w-0">
+                      <h2 className="text-xl font-semibold tracking-tight text-[#1a1a1a] sm:text-2xl">
+                        {selectedClient.name}
+                      </h2>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {selectedClient.isRoomCustomer ? (
+                          <Badge variant="secondary">Room guest</Badge>
+                        ) : null}
+                        {selectedClient.bookingReference ? (
+                          <Badge variant="outline">Ref {selectedClient.bookingReference}</Badge>
+                        ) : null}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-[#5b6572]">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Phone className="h-4 w-4 text-[#2a5af5]" aria-hidden />
+                          {selectedClient.mobile}
+                        </span>
+                      </div>
                     </div>
-                  ) : filteredClients.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-stone-500">
-                      No customers match your search.
-                    </div>
-                  ) : (
-                    <>
-                      <ul className="divide-y divide-stone-100">
-                        {visibleClients.map((c) => {
-                          const isSelected = selectedClient?.id === Number(c.userid);
-                          return (
-                            <li key={c.userid}>
-                              <button
-                                type="button"
-                                onClick={() => void handleClientClick(c)}
-                                className={cn(
-                                  "flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors sm:px-5",
-                                  isSelected
-                                    ? "border-l-[3px] border-appointza-coral bg-[#FFF0EB] pl-[calc(1rem-3px)] sm:pl-[calc(1.25rem-3px)]"
-                                    : "border-l-[3px] border-transparent hover:bg-stone-50"
-                                )}
-                              >
-                                <span
-                                  className={cn(
-                                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold",
-                                    isSelected
-                                      ? "bg-gradient-coral text-white"
-                                      : "bg-stone-100 text-stone-600"
-                                  )}
-                                  aria-hidden
-                                >
-                                  {clientInitials(c.username)}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate font-medium text-appointza-navy">
-                                    {c.username || "Unknown"}
-                                  </p>
-                                  <p className="truncate text-sm text-stone-500">{c.mobile || "—"}</p>
-                                </div>
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                      {hasNextPage ? (
-                        <div className="border-t border-stone-100 p-3">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="h-9 w-full text-xs"
-                            disabled={isFetchingNextPage}
-                            onClick={() => void fetchNextPage()}
-                          >
-                            {isFetchingNextPage ? "Loading…" : "Show more"}
-                          </Button>
-                        </div>
-                      ) : null}
-                    </>
-                  )}
-                </div>
-              </div>
-            </aside>
-          ) : null}
-
-          {showDetailPanel ? (
-            <main className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-[#f8fafc]">
-              {selectedClient ? (
-                <>
-                  <div className="border-b border-stone-100 bg-white p-4 sm:p-6">
-                    {isMobile ? (
+                  </div>
+                  <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
+                    {!selectedClient.isRoomOnly ? (
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="-ml-2 mb-3 h-9 gap-1.5 px-2 text-stone-600 hover:text-appointza-navy"
-                        onClick={() => setSelectedClient(null)}
+                        onClick={() =>
+                          navigate(`/organization/clients/${selectedClient.id}/book`, {
+                            state: { name: selectedClient.name, mobile: selectedClient.mobile },
+                          })
+                        }
+                        className={cn(org.btnPrimary, "w-full lg:w-auto")}
                       >
-                        <ArrowLeft className="h-4 w-4" />
-                        Back to list
+                        <CalendarPlus className="h-4 w-4 shrink-0" />
+                        On-Spot Booking
                       </Button>
                     ) : null}
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="flex items-start gap-4">
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-lg font-semibold text-blue-700">
-                          {clientInitials(selectedClient.name)}
-                        </div>
-                        <div className="min-w-0">
-                          <h2 className="text-xl font-semibold text-appointza-navy sm:text-2xl">
-                            {selectedClient.name}
-                          </h2>
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            {selectedClient.isRoomCustomer ? (
-                              <Badge variant="secondary">Room guest</Badge>
-                            ) : null}
-                            {selectedClient.bookingReference ? (
-                              <Badge variant="outline">Ref {selectedClient.bookingReference}</Badge>
-                            ) : null}
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-stone-600">
-                            <span className="inline-flex items-center gap-1.5">
-                              <Phone className="h-4 w-4 text-appointza-coral" aria-hidden />
-                              {selectedClient.mobile}
-                            </span>
-                            {(() => {
-                              const loc = clients.find((x) => Number(x.userid) === selectedClient.id)?.city;
-                              return loc ? (
-                                <span className="inline-flex items-center gap-1.5">
-                                  <MapPin className="h-4 w-4 text-stone-400" aria-hidden />
-                                  {loc}
-                                </span>
-                              ) : null;
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
-                        {!selectedClient.isRoomOnly ? (
-                          <Button
-                            type="button"
-                            onClick={() =>
-                              navigate(`/organization/clients/${selectedClient.id}/book`, {
-                                state: { name: selectedClient.name, mobile: selectedClient.mobile },
-                              })
-                            }
-                            className={cn(org.btnPrimary, "w-full lg:w-auto")}
-                          >
-                            <CalendarPlus className="h-4 w-4 shrink-0" />
-                            On-Spot Booking
-                          </Button>
-                        ) : null}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleAddAppointmentRecord}
-                          className="w-full lg:w-auto"
-                        >
-                          <FileText className="h-4 w-4 shrink-0" />
-                          Add Appointment Record
-                        </Button>
-                      </div>
-                    </div>
-                    <div
-                      className={cn(
-                        "mt-5 grid gap-3",
-                        selectedClient.isRoomCustomer ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2",
-                      )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddAppointmentRecord}
+                      className={cn(org.btnOutline, "w-full lg:w-auto")}
                     >
-                      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3">
-                        <p className="text-xs font-medium text-stone-500">
-                          {selectedClient.isRoomCustomer ? "Service visits" : "Total visits"}
-                        </p>
-                        <p className="mt-0.5 text-lg font-semibold tabular-nums text-appointza-navy">
-                          {selectedClient.totalAppointments}
-                        </p>
-                      </div>
-                      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3">
-                        <p className="text-xs font-medium text-stone-500">
-                          {selectedClient.isRoomCustomer ? "Latest stay" : "Last visit"}
-                        </p>
-                        <p className="mt-0.5 text-lg font-semibold text-appointza-navy">
-                          {format(selectedClient.lastVisit, "MMM d, yyyy")}
-                        </p>
-                      </div>
-                      {selectedClient.isRoomCustomer ? (
-                        <div className="rounded-xl border border-stone-200 bg-white px-4 py-3">
-                          <p className="text-xs font-medium text-stone-500">Room stays</p>
-                          <p className="mt-0.5 text-lg font-semibold tabular-nums text-appointza-navy">
-                            {clientRoomStays.length}
-                          </p>
-                        </div>
-                      ) : null}
+                      <FileText className="h-4 w-4 shrink-0" />
+                      Add Appointment Record
+                    </Button>
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    "mt-5 grid gap-3",
+                    selectedClient.isRoomCustomer ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2",
+                  )}
+                >
+                  <div className="rounded-lg border border-[#e6eaf0] bg-[#f8fafc] px-4 py-3">
+                    <p className="text-[12px] font-medium text-[#5b6572]">
+                      {selectedClient.isRoomCustomer ? "Service visits" : "Total visits"}
+                    </p>
+                    <p className="mt-0.5 text-lg font-semibold tabular-nums text-[#1a1a1a]">
+                      {selectedClient.totalAppointments}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-[#e6eaf0] bg-[#f8fafc] px-4 py-3">
+                    <p className="text-[12px] font-medium text-[#5b6572]">
+                      {selectedClient.isRoomCustomer ? "Latest stay" : "Last visit"}
+                    </p>
+                    <p className="mt-0.5 text-lg font-semibold text-[#1a1a1a]">
+                      {format(selectedClient.lastVisit, "MMM d, yyyy")}
+                    </p>
+                  </div>
+                  {selectedClient.isRoomCustomer ? (
+                    <div className="rounded-lg border border-[#e6eaf0] bg-[#f8fafc] px-4 py-3">
+                      <p className="text-[12px] font-medium text-[#5b6572]">Room stays</p>
+                      <p className="mt-0.5 text-lg font-semibold tabular-nums text-[#1a1a1a]">
+                        {clientRoomStays.length}
+                      </p>
                     </div>
+                  ) : null}
+                </div>
                     {!selectedClient.isRoomOnly && selectedClient.id > 0 ? (
                       <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50/40 p-4">
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -941,39 +779,40 @@ const ClientManagement = () => {
                         )}
                       </div>
                     ) : null}
-                  </div>
+              </div>
+            </div>
 
-                  <div className="border-b border-stone-100 bg-white">
-                    <div className="-mb-px flex overflow-x-auto">
-                      {(
-                        [
-                          { id: "today" as const, label: "Today" },
-                          { id: "history" as const, label: "History" },
-                          { id: "timeline" as const, label: "Timeline" },
-                          { id: "events" as const, label: "Events" },
-                          ...(selectedClient.isRoomCustomer ?
-                            [{ id: "rooms" as const, label: "Room stays" }]
-                          : []),
-                        ] as const
-                      ).map((tab) => (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => setCrmTab(tab.id)}
-                          className={cn(
-                            "shrink-0 whitespace-nowrap border-b-2 px-5 py-3.5 text-sm font-medium transition-colors sm:px-6",
-                            crmTab === tab.id ?
-                              "border-appointza-coral text-[#E85D4C]"
-                            : "border-transparent text-stone-500 hover:text-stone-700"
-                          )}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+            <div className="border-b border-[#e6eaf0] bg-white">
+              <div className="mx-auto flex w-full max-w-5xl overflow-x-auto px-2 sm:px-4">
+                {(
+                  [
+                    { id: "today" as const, label: "Today" },
+                    { id: "history" as const, label: "History" },
+                    { id: "timeline" as const, label: "Timeline" },
+                    { id: "events" as const, label: "Events" },
+                    ...(selectedClient.isRoomCustomer
+                      ? [{ id: "rooms" as const, label: "Room stays" }]
+                      : []),
+                  ] as const
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setCrmTab(tab.id)}
+                    className={cn(
+                      "shrink-0 whitespace-nowrap border-b-2 px-4 py-3 text-[13px] font-medium transition-colors sm:px-5",
+                      crmTab === tab.id
+                        ? "border-[#2a5af5] text-[#2a5af5]"
+                        : "border-transparent text-[#5b6572] hover:text-[#1a1a1a]",
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-                  <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
+            <div className="mx-auto w-full max-w-5xl flex-1 p-3 sm:p-4">
                   {crmTab === "today" ?
                     <>
                       {isLoadingClientData ?
@@ -1236,20 +1075,20 @@ const ClientManagement = () => {
                       }
                     </>
                   }
-                  </div>
-                </>
-              ) : (
-                <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
-                  <Users className="h-12 w-12 text-stone-300" aria-hidden />
-                  <h3 className="mt-4 text-lg font-semibold text-appointza-navy">Select a customer</h3>
-                  <p className="mt-2 max-w-sm text-sm text-stone-500">
-                    Pick someone from the list or search by mobile to view appointments, history, and events.
-                  </p>
-                </div>
-              )}
-            </main>
-          ) : null}
-      </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-[#e6eaf0] bg-white shadow-sm">
+              <Search className="h-6 w-6 text-[#2a5af5]" aria-hidden />
+            </div>
+            <h3 className="mt-5 text-[15px] font-semibold text-[#1a1a1a]">Look up a customer</h3>
+            <p className="mt-1.5 max-w-sm text-[13px] leading-relaxed text-[#5b6572]">
+              Type their mobile number above and press Enter to see appointments, history, and events.
+            </p>
+          </div>
+        )}
+      </main>
 
       {/* Event booking details dialog */}
       <Dialog

@@ -1379,9 +1379,9 @@ const AppointmentBooking = () => {
 
             <div
               className={cn(
-                "space-y-4 min-h-0 min-w-0",
-                "max-h-[min(65dvh,36rem)] overflow-y-auto overscroll-y-contain pr-1 md:pr-2",
-                "[scrollbar-gutter:stable]"
+                "min-w-0 space-y-4",
+                // Mobile: page scrolls as one surface. Desktop: nested list scroll.
+                "md:min-h-0 md:max-h-[min(65dvh,36rem)] md:overflow-y-auto md:overscroll-y-contain md:pr-2 md:[scrollbar-gutter:stable]",
               )}
             >
               {services.length === 0 ? (
@@ -1610,29 +1610,29 @@ const AppointmentBooking = () => {
               )}
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm flex flex-col min-h-0 min-w-0">
-              <div className="flex justify-between items-center mb-5 gap-2 shrink-0">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-orange-600 shrink-0" />
-                  Available Time Slots
+            <div className="flex min-w-0 flex-col rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 md:min-h-0">
+              <div className="mb-4 flex shrink-0 items-center justify-between gap-2 sm:mb-5">
+                <h3 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
+                  <Clock className="h-4 w-4 shrink-0 text-orange-600" />
+                  <span className="truncate">Available Time Slots</span>
                 </h3>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-50 shrink-0 h-auto py-1 px-2"
+                  className="h-auto shrink-0 px-2 py-1 text-sm text-orange-600 hover:bg-orange-50 hover:text-orange-700"
                   onClick={loadTimeSlots}
                   disabled={isLoading}
                 >
-                  <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
+                  <RefreshCw className={`mr-1 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                   Refresh
                 </Button>
               </div>
 
               <div
                 className={cn(
-                  "min-h-0 min-w-0 space-y-4",
-                  "max-h-[min(50dvh,28rem)] overflow-y-auto overscroll-y-contain pr-1",
-                  "[scrollbar-gutter:stable]"
+                  "min-w-0 space-y-4 overflow-x-hidden",
+                  // Mobile: expand with the page. Desktop sidebar: keep a capped scroll region.
+                  "md:min-h-0 md:max-h-[min(50dvh,28rem)] md:overflow-y-auto md:overscroll-y-contain md:pr-1 md:[scrollbar-gutter:stable]",
                 )}
               >
               {timeSlots.length > 0 ? (

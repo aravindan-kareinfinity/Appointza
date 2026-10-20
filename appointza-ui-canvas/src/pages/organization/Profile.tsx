@@ -32,6 +32,9 @@ import {
   CreditCard,
   Settings,
   Building2,
+  MessageCircle,
+  Mail,
+  Database,
 } from "lucide-react";
 import { org } from "@/lib/orgTheme";
 import { settingsEmbedded, profileSettingsX } from "@/lib/settingsEmbedded";
@@ -56,10 +59,13 @@ import { FilesService } from "@/services/files.service";
 import { useLocation } from "@/hooks/useLocation";
 import { useLocationList } from "@/hooks/useLocationList";
 import IntegrationTokenPanel from "@/components/organization/IntegrationTokenPanel";
+import WhatsAppIntegrationSettings from "@/pages/organization/WhatsAppIntegrationSettings";
+import EmailIntegrationSettings from "@/pages/organization/EmailIntegrationSettings";
+import ReferenceValuesPage from "@/pages/organization/ReferenceValues";
 
 /** Settings nav — vertical sidebar on desktop. Mobile uses a select dropdown. */
 const profileSidebarTriggerClass =
-  "h-auto w-full justify-start gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-stone-600 shadow-none hover:bg-blue-50 hover:text-blue-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-none";
+  "relative h-auto w-full justify-start gap-2.5 rounded-md px-3 py-2 text-left text-[13px] font-medium text-[#5b6572] shadow-none hover:bg-[#f4f6f9] hover:text-[#1a1a1a] data-[state=active]:bg-[#eef2f7] data-[state=active]:text-[#1a1a1a] data-[state=active]:shadow-none data-[state=active]:before:absolute data-[state=active]:before:left-0 data-[state=active]:before:top-1.5 data-[state=active]:before:bottom-1.5 data-[state=active]:before:w-[3px] data-[state=active]:before:rounded-r-full data-[state=active]:before:bg-[#2a5af5]";
 
 const profileSidebarListClass =
   "hidden !h-auto w-full flex-col items-stretch justify-start gap-0.5 rounded-none border-0 bg-transparent p-0 shadow-none lg:flex";
@@ -111,6 +117,9 @@ type ProfileSettingsTab =
   | "payment"
   | "loyalty"
   | "billing"
+  | "whatsapp"
+  | "email"
+  | "appointment-values"
   | "account";
 
 const OrganizationProfile = () => {
@@ -145,6 +154,7 @@ const OrganizationProfile = () => {
   const hasLocationManagementAccess = !isStaff || userpermission?.editandviewLocationManagement === true;
   const hasTemplatesAccess = !isStaff || userpermission?.editandviewTemplates === true;
   const hasPaymentSettingsAccess = !isStaff || userpermission?.editandviewPaymentSettings === true;
+  const hasBusinessValuesAccess = !isStaff || userpermission?.editandviewBusinessvalues === true;
 
   const accessibleTabValues = useMemo((): ProfileSettingsTab[] => {
     const list: ProfileSettingsTab[] = ["profile"];
@@ -158,6 +168,11 @@ const OrganizationProfile = () => {
     if (hasPaymentSettingsAccess) list.push("payment");
     if (!isStaff) list.push("loyalty");
     if (!isStaff) list.push("billing");
+    if (!isStaff) {
+      list.push("whatsapp");
+      list.push("email");
+    }
+    if (hasBusinessValuesAccess) list.push("appointment-values");
     list.push("account");
     return list;
   }, [
@@ -166,6 +181,7 @@ const OrganizationProfile = () => {
     hasLocationManagementAccess,
     hasTemplatesAccess,
     hasPaymentSettingsAccess,
+    hasBusinessValuesAccess,
     isStaff,
   ]);
 
@@ -182,6 +198,9 @@ const OrganizationProfile = () => {
           { value: "payment", label: "Payment Settings", icon: CreditCard },
           { value: "loyalty", label: "Loyalty", icon: Award },
           { value: "billing", label: "Credit Wallet", icon: Wallet },
+          { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+          { value: "email", label: "Email", icon: Mail },
+          { value: "appointment-values", label: "Reference Values", icon: Database },
           { value: "account", label: "Account", icon: Settings },
         ] as const
       ).filter((item) => accessibleTabValues.includes(item.value)),
@@ -189,11 +208,13 @@ const OrganizationProfile = () => {
   );
 
   const activeTab = useMemo(() => {
-    const raw = searchParams.get("tab") as ProfileSettingsTab | null;
-    if (raw === "location" && searchParams.get("subtab") === "organization") {
+    const raw = searchParams.get("tab");
+    if (raw === "integrations") return "whatsapp";
+    const tab = raw as ProfileSettingsTab | null;
+    if (tab === "location" && searchParams.get("subtab") === "organization") {
       return hasLocationManagementAccess ? "organization" : "profile";
     }
-    if (raw && accessibleTabValues.includes(raw)) return raw;
+    if (tab && accessibleTabValues.includes(tab)) return tab;
     return "profile";
   }, [searchParams, accessibleTabValues, hasLocationManagementAccess]);
 
@@ -872,6 +893,18 @@ const OrganizationProfile = () => {
                   Credit Wallet
                 </TabsTrigger>
               )}
+              {!isStaff && (
+                <TabsTrigger value="whatsapp" className={profileSidebarTriggerClass}>
+                  <MessageCircle className="h-4 w-4 shrink-0" />
+                  WhatsApp
+                </TabsTrigger>
+              )}
+              {!isStaff && (
+                <TabsTrigger value="email" className={profileSidebarTriggerClass}>
+                  <Mail className="h-4 w-4 shrink-0" />
+                  Email
+                </TabsTrigger>
+              )}
               <TabsTrigger value="account" className={profileSidebarTriggerClass}>
                 <Settings className="h-4 w-4 shrink-0" />
                 Account
@@ -880,8 +913,8 @@ const OrganizationProfile = () => {
           </div>
         </aside>
 
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white pt-0">
-            <Card className={cn(org.card, "w-full overflow-hidden rounded-none border-0 bg-white shadow-none")}>
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-white pt-0">
+            <Card className={cn(org.card, "min-h-full w-full rounded-none border-0 bg-white shadow-none")}>
             <TabsContent value="profile" className={profileTabPanelClass}>
               <div className="w-full">
             {/* Profile Photo */}
@@ -1333,6 +1366,33 @@ const OrganizationProfile = () => {
                     </div>
                   </OrganizationPageShell>
                 ) : null}
+              </TabsContent>
+            )}
+
+            {!isStaff && (
+              <TabsContent
+                value="whatsapp"
+                className={cn(profileTabPanelClass, "min-h-full data-[state=inactive]:hidden")}
+              >
+                {activeTab === "whatsapp" ? <WhatsAppIntegrationSettings embedded /> : null}
+              </TabsContent>
+            )}
+
+            {!isStaff && (
+              <TabsContent
+                value="email"
+                className={cn(profileTabPanelClass, "min-h-full data-[state=inactive]:hidden")}
+              >
+                {activeTab === "email" ? <EmailIntegrationSettings embedded /> : null}
+              </TabsContent>
+            )}
+
+            {hasBusinessValuesAccess && (
+              <TabsContent
+                value="appointment-values"
+                className={cn(profileTabPanelClass, "min-h-full data-[state=inactive]:hidden")}
+              >
+                {activeTab === "appointment-values" ? <ReferenceValuesPage embedded /> : null}
               </TabsContent>
             )}
 

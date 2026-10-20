@@ -485,28 +485,18 @@ const PaymentSettings = ({ embedded = false }: { embedded?: boolean }) => {
         />
       ) : null}
       <div className={cn(embedded ? settingsEmbedded.sectionBody : "space-y-4 sm:space-y-6")}>
-        {!embedded && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
-              <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0" />
-              <span className="truncate">Payment Settings</span>
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1">
-              Manage payment gateway credentials for your organization
-            </p>
-          </div>
+        {!embedded ? (
+          <div className="flex justify-end">
             <Button
               variant="outline"
-              onClick={() => navigate('/organization/profile')}
-              className="w-full sm:w-auto h-10 sm:h-11"
+              onClick={() => navigate("/organization/profile")}
+              className="h-9 gap-2"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Back to Profile</span>
-              <span className="sm:hidden">Back</span>
+              <ArrowLeft className="h-4 w-4" />
+              Back
             </Button>
-        </div>
-        )}
+          </div>
+        ) : null}
 
         {/* Add/Edit Form */}
         <Card className={cn(settingsEmbedded.card(embedded), "w-full rounded-2xl border-stone-200 bg-white shadow-none")}>

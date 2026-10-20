@@ -426,7 +426,7 @@ export default function OrganizationLoyalty({ embedded = false }: { embedded?: b
 
   if (organisationId <= 0) {
     return (
-      <OrganizationPageShell embedded={embedded} title={embedded ? undefined : "Loyalty & Rewards"} description={embedded ? undefined : "Configure loyalty programs for your organisation."}>
+      <OrganizationPageShell embedded={embedded}>
         {embedded ? (
           <SettingsEmbeddedHeader
             icon={Award}
@@ -448,8 +448,6 @@ export default function OrganizationLoyalty({ embedded = false }: { embedded?: b
   return (
     <OrganizationPageShell
       embedded={embedded}
-      title={embedded ? undefined : "Loyalty & Rewards"}
-      description={embedded ? undefined : "Configure schemes, points, tiers, and customer wallets — all scoped to your organisation."}
       actions={embedded ? undefined : actionButtons}
     >
       {embedded ? (

@@ -7,6 +7,7 @@ import {
 } from "@/utils/orgSidebar.util";
 import { useNavigate, useLocation } from "react-router-dom";
 import OrganizationSidebar from "./OrganizationSidebar";
+import OrganizationTopBar from "./OrganizationTopBar";
 import DashboardSwitcher from "./DashboardSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -75,6 +76,20 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
       '/organization/services': 'editandviewCreateService', // Check for service or event permission
       '/organization/leads': 'editandviewClients',
       '/organization/clients': 'editandviewClients',
+      '/organization/crm': 'editandviewClients',
+      '/organization/crm/contacts': 'editandviewClients',
+      '/organization/crm/leads': 'editandviewClients',
+      '/organization/crm/pipeline': 'editandviewClients',
+      '/organization/crm/inbox': 'editandviewClients',
+      '/organization/crm/email-campaigns': 'editandviewClients',
+      '/organization/crm/whatsapp-campaigns': 'editandviewClients',
+      '/organization/crm/templates': 'editandviewClients',
+      '/organization/crm/tasks': 'editandviewClients',
+      '/organization/crm/reports': 'editandviewClients',
+      '/organization/crm/catalogue': 'editandviewClients',
+      '/organization/crm/business-profile': 'editandviewClients',
+      '/organization/crm/clients': 'editandviewClients',
+      '/organization/reference-values': 'editandviewBusinessvalues',
     };
     
     // Check exact match first
@@ -189,6 +204,7 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
                     { path: '/organization/appointments', perm: 'editandviewAppointments' },
                     { path: '/organization/appointments?kind=events', perm: 'editandviewEvents' },
                     { path: '/organization/services', perm: 'editandviewCreateService' },
+                    { path: '/organization/crm/clients', perm: 'editandviewClients' },
                     { path: '/organization/clients', perm: 'editandviewClients' },
                     { path: '/organization/profile', perm: null }, // Profile is always accessible
                   ];
@@ -228,9 +244,14 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
   }
 
   const isTemplateBuilder = location.pathname.includes("/template-builder");
-  const isClientManagement = /^\/organization\/clients\/?$/.test(location.pathname);
+  const isClientManagement =
+    /^\/organization\/clients\/?$/.test(location.pathname) ||
+    /^\/organization\/crm\/clients\/?$/.test(location.pathname);
   const isClientBookPage = /^\/organization\/clients\/\d+\/book\/?$/.test(location.pathname);
-  const isLeadsPage = /^\/organization\/leads\/?$/.test(location.pathname);
+  const isLeadsPage =
+    /^\/organization\/leads\/?$/.test(location.pathname) ||
+    /^\/organization\/crm\/leads\/?$/.test(location.pathname);
+  const isCrmPage = /^\/organization\/crm(\/|$)/.test(location.pathname);
   const isProfilePage = /^\/organization\/profile\/?$/.test(location.pathname);
   const isHospitalityPage = /^\/organization\/hospitality\/?$/.test(location.pathname);
   const isFullBleedPage =
@@ -238,6 +259,7 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
     isClientManagement ||
     isClientBookPage ||
     isLeadsPage ||
+    isCrmPage ||
     isProfilePage ||
     isHospitalityPage;
   const inOnboardingFlow =
@@ -245,7 +267,13 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
 
   return (
     <OrgTemplateAssetsProvider>
-    <div className="app-shell org-flat-shell h-dvh overflow-hidden safe-area-sides">
+    <div
+      className={cn(
+        "app-shell h-dvh overflow-hidden safe-area-sides",
+        inOnboardingFlow || isMobile ? "org-flat-shell" : "org-razorpay-shell",
+      )}
+    >
+      {!inOnboardingFlow && !isMobile ? <OrganizationTopBar /> : null}
       {!inOnboardingFlow && (
         <OrganizationSidebar
           collapsed={sidebarCollapsed}
@@ -260,22 +288,22 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
             : isMobile
               ? "safe-area-top pl-0 pb-20"
               : sidebarCollapsed
-                ? `pt-0 ${ORG_SIDEBAR_OFFSET_CLASS.collapsed}`
-                : `pt-0 ${ORG_SIDEBAR_OFFSET_CLASS.expanded}`,
+                ? `pt-12 ${ORG_SIDEBAR_OFFSET_CLASS.collapsed}`
+                : `pt-12 ${ORG_SIDEBAR_OFFSET_CLASS.expanded}`,
         )}
         style={isMobile && !inOnboardingFlow ? { paddingBottom: 'calc(5rem + var(--safe-area-bottom))' } : undefined}
       >
-        {/* No top padding on desktop: aligns main column with sidebar; mobile uses safe-area-top only */}
         <main
           className={cn(
-            "h-full w-full max-w-none",
+            "h-full w-full max-w-none bg-[#f5f7f9]",
+            !inOnboardingFlow && !isMobile && "org-workspace-curve-right overflow-hidden",
             inOnboardingFlow && "bg-appointza-cream",
             isFullBleedPage
               ? cn(
                   "flex min-h-0 flex-col p-0",
                   isClientBookPage ? "overflow-y-auto overscroll-contain" : "overflow-hidden",
                 )
-              : "overflow-y-auto pb-4 pt-4 md:pb-6 md:pt-5 lg:pb-8 lg:pt-6",
+              : "overflow-y-auto pb-4 pt-4 md:pb-5 md:pt-4 lg:pb-6 lg:pt-5",
           )}
         >
           {canSwitchMode && !isFullBleedPage && !inOnboardingFlow && (

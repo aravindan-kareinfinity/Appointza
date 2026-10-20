@@ -29,9 +29,9 @@ import { useToast } from "@/hooks/use-toast";
 import { OrganizationPageShell } from "@/components/layout/OrganizationPageShell";
 import SettingsEmbeddedHeader from "@/components/layout/SettingsEmbeddedHeader";
 import { settingsEmbedded } from "@/lib/settingsEmbedded";
+import { org } from "@/lib/orgTheme";
 import { cn } from "@/lib/utils";
 import { 
-  Clock,
   MapPin, 
   Plus, 
   Edit, 
@@ -57,7 +57,6 @@ import { OrganisationLocationService } from "@/services/organisationlocation.ser
 import { OrganisationService } from "@/services/organisation.service";
 import { Organisation, OrganisationType } from "@/models/organisation.model";
 import { FilesService } from "@/services/files.service";
-import { organisationTypeLabel } from "@/components/organization/OrganisationTypeSelector";
 import { LocationPicker } from "@/components/organization/LocationPicker";
 import { GeocodingService } from "@/services/geocoding.service";
 import {
@@ -67,17 +66,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ResponsiveEditSheet } from "@/components/organization/ResponsiveEditSheet";
 import { OrgImageAssetField } from "@/components/organization/OrgImageAssetField";
 import { HospitalityProfileSettingsReq } from "@/models/hospitality.model";
 import { hospitalityService } from "@/services/hospitality.service";
 import { OrganisationCatalogOfferingsSelector } from "@/components/organization/OrganisationCatalogOfferingsSelector";
 import {
-  CATALOG_OFFERING_LABELS,
-  defaultOfferingsForOrganisationType,
   mergeCatalogOfferingsIntoAttributes,
   organisationTypeFromCatalogOfferings,
-  parseCatalogOfferings,
   resolveInitialCatalogOfferings,
   type CatalogOfferingKind,
 } from "@/utils/organisationCatalogOfferings.util";
@@ -226,7 +221,6 @@ const LocationsScreen = ({
   
   // Organization state
   const [organization, setOrganization] = useState<Organisation | null>(null);
-  const [showOrgEditDialog, setShowOrgEditDialog] = useState(false);
   const [hospitalitySettings, setHospitalitySettings] = useState<HospitalityProfileSettingsReq | null>(
     null,
   );
@@ -301,27 +295,10 @@ const LocationsScreen = ({
     setOrgAppointmentOpenBefore(appointmentSettings.openbefore);
   }, [organization, fetchedOrganization]);
 
-  const displayedCatalogOfferings = useMemo(() => {
-    if (!organization) return [] as CatalogOfferingKind[];
-    const stored = parseCatalogOfferings(organization.attributes_json);
-    if (stored.length > 0) return stored;
-    return defaultOfferingsForOrganisationType(organization.organisation_type);
-  }, [organization]);
-
-  const displayedAppointmentSettings = useMemo(
-    () => parseOrganisationAppointmentSettings(organization?.attributes_json),
-    [organization],
-  );
-
-  const offersServiceAppointments = displayedCatalogOfferings.includes("services");
-
   const editOrganisationType = useMemo(
     (): OrganisationType => organisationTypeFromCatalogOfferings(selectedCatalogOfferings),
     [selectedCatalogOfferings],
   );
-
-  const isHospitalityOrganisation =
-    organization?.organisation_type === "hospitality" || organization?.organisation_type === "both";
 
   const syncLocationSubtab = (subtab: "locations" | "organization") => {
     setSearchParams(
@@ -335,36 +312,6 @@ const LocationsScreen = ({
     );
   };
 
-  const openOrganizationEdit = () => {
-    syncLocationSubtab("organization");
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.set("subtab", "organization");
-        next.set("edit", "organization");
-        return next;
-      },
-      { replace: true },
-    );
-    setShowOrgEditDialog(true);
-    syncCatalogOfferingsFromOrg();
-    if (isHospitalityOrganisation) {
-      void loadHospitalitySettings(organization?.organisation_type);
-    }
-  };
-
-  const closeOrganizationEdit = () => {
-    setShowOrgEditDialog(false);
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.delete("edit");
-        return next;
-      },
-      { replace: true },
-    );
-  };
-
   useEffect(() => {
     if (locationSubtab === "organization" && organization) {
       syncCatalogOfferingsFromOrg();
@@ -372,18 +319,26 @@ const LocationsScreen = ({
   }, [locationSubtab, organization, syncCatalogOfferingsFromOrg]);
 
   useEffect(() => {
-    if (!showOrgEditDialog) return;
+    if (locationSubtab !== "organization") return;
     if (editOrganisationType === "hospitality" || editOrganisationType === "both") {
       void loadHospitalitySettings(editOrganisationType);
     }
-  }, [showOrgEditDialog, editOrganisationType, loadHospitalitySettings]);
+  }, [locationSubtab, editOrganisationType, loadHospitalitySettings]);
 
   useEffect(() => {
-    if (searchParams.get("edit") === "organization" && organization) {
-      setShowOrgEditDialog(true);
-      syncCatalogOfferingsFromOrg();
+    // Deep links that used ?edit=organization no longer open a side panel.
+    if (searchParams.get("edit") === "organization") {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("edit");
+          if (!next.get("subtab")) next.set("subtab", "organization");
+          return next;
+        },
+        { replace: true },
+      );
     }
-  }, [organization, searchParams, syncCatalogOfferingsFromOrg]);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (
@@ -391,10 +346,15 @@ const LocationsScreen = ({
       (organization.organisation_type === "hospitality" || organization.organisation_type === "both")
     ) {
       void loadHospitalitySettings(organization.organisation_type);
-    } else {
+    } else if (
+      !(
+        editOrganisationType === "hospitality" ||
+        editOrganisationType === "both"
+      )
+    ) {
       setHospitalitySettings(null);
     }
-  }, [organization, loadHospitalitySettings]);
+  }, [organization, editOrganisationType, loadHospitalitySettings]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -835,6 +795,17 @@ const LocationsScreen = ({
       },
     );
 
+    let attributesPayload: Organisation.AttributesData = new Organisation.AttributesData();
+    try {
+      attributesPayload = JSON.parse(attributesJson) as Organisation.AttributesData;
+    } catch {
+      attributesPayload = {
+        catalog_offerings: selectedCatalogOfferings,
+        appointment_counter: orgAppointmentCounter,
+        appointment_openbefore: orgAppointmentOpenBefore,
+      };
+    }
+
     const updatedOrganization = {
       ...organization,
       name: organization?.name?.trim() || "",
@@ -845,7 +816,8 @@ const LocationsScreen = ({
       organisation_type: derivedOrganisationType,
       booking_amount: organization?.booking_amount ?? 0,
       attributes_json: attributesJson,
-      attributes: organization?.attributes || new Organisation.AttributesData(),
+      // Backend persists Serialize(attributes) — must include catalog_offerings here.
+      attributes: attributesPayload,
     };
 
     const savingHospitality =
@@ -871,10 +843,9 @@ const LocationsScreen = ({
       }
 
       toast({
-        title: "Success",
-        description: "Organization details updated successfully",
+        title: "Saved",
+        description: "Organization details updated.",
       });
-      closeOrganizationEdit();
       await queryClient.invalidateQueries({ queryKey: organisationQueryKey(organizationId) });
       await refetchOrganization();
     } catch (error: unknown) {
@@ -937,24 +908,19 @@ const LocationsScreen = ({
         />
       ) : null}
       <div className={cn(embedded ? settingsEmbedded.sectionBody : "space-y-6")}>
-        {!embedded && (
-        <div className="flex items-center gap-4">
+        {!embedded ? (
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => window.history.back()}
               className="p-2"
+              aria-label="Go back"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-3xl font-bold tracking-tight">Locations & Organization</h2>
-            <p className="text-muted-foreground">
-              Manage your business locations and organization details.
-            </p>
           </div>
-        </div>
-        )}
+        ) : null}
 
         <Tabs
           value={locationSubtab}
@@ -1373,155 +1339,22 @@ const LocationsScreen = ({
 
           </TabsContent>
 
-          <TabsContent value="organization" className="space-y-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              {!hideInnerTabs ? (
-              <div>
-                <h3 className="text-xl font-semibold">Organization Details</h3>
-                <p className="text-muted-foreground">
-                  Manage your organization information and branding.
-                </p>
+          <TabsContent value="organization" className="space-y-4">
+            {!organization ? (
+              <div className="flex items-center gap-2 py-10 text-[13px] text-[#667085]">
+                <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
+                Loading organisation…
               </div>
-              ) : null}
-              <Button
-                onClick={openOrganizationEdit}
-                className="min-h-11 w-full bg-blue-600 shadow-none hover:bg-blue-700 sm:ml-auto sm:w-auto"
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Edit Organization
-              </Button>
-            </div>
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-[#e6eaf0] bg-white shadow-none">
+                <div className="border-b border-[#e6eaf0] px-4 py-3 sm:px-5">
+                  <p className="text-[13px] font-semibold text-[#1a1a1a]">Organisation details</p>
+                  <p className="text-[12px] text-[#667085]">
+                    Change anything below, then tap Save at the bottom right.
+                  </p>
+                </div>
 
-            {/* Organization Details Card */}
-            {organization && (
-              <Card className="rounded-2xl border-stone-200 bg-white shadow-none">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
-                    {organization?.name || 'Organization'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">Organization Name</Label>
-                      <p className="text-sm text-gray-600">{organization?.name || 'Not set'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">GST Number</Label>
-                      <p className="text-sm text-gray-600">{organization?.gstnumber || 'Not set'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Primary Type</Label>
-                      <p className="text-sm text-gray-600">{organization?.primarytypecode || 'Not set'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Secondary Type</Label>
-                      <p className="text-sm text-gray-600">{organization?.secondarytypecode || 'Not set'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Organisation type</Label>
-                      <p className="text-sm text-gray-600">
-                        {organisationTypeLabel(organization?.organisation_type)}
-                      </p>
-                    </div>
-                    {displayedCatalogOfferings.length > 0 ? (
-                      <div className="md:col-span-2">
-                        <Label className="text-sm font-medium">What you provide</Label>
-                        <p className="text-sm text-gray-600">
-                          {displayedCatalogOfferings
-                            .map((kind) => CATALOG_OFFERING_LABELS[kind])
-                            .join(", ")}
-                        </p>
-                      </div>
-                    ) : null}
-                    {isHospitalityOrganisation && hospitalitySettings ?
-                      <div>
-                        <Label className="text-sm font-medium">Booking type</Label>
-                        <p className="text-sm text-gray-600">
-                          {hospitalitySettings.booking_type === "hourly" ?
-                            `Hourly (min ${hospitalitySettings.minimum_hours}h)`
-                          : "Overnight (per night)"}
-                        </p>
-                      </div>
-                    : null}
-                  </div>
-                  
-                  {organization?.notes && (
-                    <div>
-                      <Label className="text-sm font-medium">Notes</Label>
-                      <p className="text-sm text-gray-600">{organization?.notes}</p>
-                    </div>
-                  )}
-
-                  <OrgImageAssetField
-                    label="Organization Logo"
-                    description="Upload or pick from organisation assets."
-                    imageIds={organization?.organisationlogo ? [organization.organisationlogo] : []}
-                    onChange={(ids) =>
-                      setOrganization((prev) =>
-                        prev ? { ...prev, organisationlogo: ids[0] ?? 0 } : null,
-                      )
-                    }
-                    multiple={false}
-                    maxImages={1}
-                    idPrefix="org-logo-view"
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {organization && offersServiceAppointments ? (
-              <Card className="rounded-2xl border-stone-200 bg-white shadow-none">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Service appointment options
-                  </CardTitle>
-                  <CardDescription>
-                    Organisation-wide counters and how far ahead customers can book. Hours stay per location
-                    under Settings → Business hours.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <Label className="text-sm font-medium">Counters</Label>
-                    <p className="text-sm text-gray-600">{displayedAppointmentSettings.counter}</p>
-                    <p className="mt-1 text-xs text-stone-500">
-                      How many customers can book the same time slot (e.g. 2 chairs).
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Booking window</Label>
-                    <p className="text-sm text-gray-600">
-                      {displayedAppointmentSettings.openbefore > 0
-                        ? `${displayedAppointmentSettings.openbefore} day${displayedAppointmentSettings.openbefore === 1 ? "" : "s"} in advance`
-                        : "No limit"}
-                    </p>
-                    <p className="mt-1 text-xs text-stone-500">
-                      Customers can only pick dates within this window.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : null}
-
-            {/* Organization Edit Panel */}
-            <ResponsiveEditSheet
-              open={showOrgEditDialog}
-              onOpenChange={(open) => {
-                if (open) setShowOrgEditDialog(true);
-              }}
-              title="Edit Organization Details"
-              subtitle="Update your organization information, type, and booking settings."
-              isEdit
-              saving={savingOrganization}
-              onCancel={closeOrganizationEdit}
-              onSave={() => void handleSaveOrganization()}
-              saveLabel="Save Changes"
-            >
-              {organization ?
-                <div className="space-y-4">
+                <div className="space-y-5 px-4 py-4 pb-24 sm:px-5">
                   <OrganisationCatalogOfferingsSelector
                     value={selectedCatalogOfferings}
                     onChange={setSelectedCatalogOfferings}
@@ -1529,42 +1362,46 @@ const LocationsScreen = ({
 
                   {(selectedCatalogOfferings.includes("services") ||
                     selectedCatalogOfferings.includes("events")) && (
-                    <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-4">
+                    <div className="space-y-3 rounded-xl border border-[#e6eaf0] bg-[#fafbfc] p-4">
                       <div>
-                        <p className="text-sm font-semibold text-stone-900">
+                        <p className="text-[13px] font-semibold text-[#1a1a1a]">
                           Service appointment options
                         </p>
-                        <p className="text-xs text-stone-500">
-                          Applies to every location. Set opening hours separately under Business hours.
+                        <p className="text-[12px] text-[#667085]">
+                          Applies to every location. Opening hours are under Business hours.
                         </p>
                       </div>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-1">
-                          <Label htmlFor="org-appointment-counter">Counters</Label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="org-appointment-counter" className={org.label}>
+                            Counters
+                          </Label>
                           <NumberInput
                             id="org-appointment-counter"
                             min={1}
                             value={orgAppointmentCounter}
                             onValueChange={setOrgAppointmentCounter}
                             emptyWhenZero={false}
-                            className="h-11"
+                            className={cn(org.input, "h-9")}
                           />
-                          <p className="text-xs text-stone-500">
-                            Same time slot can be booked this many times (e.g. 8 slots × 2 counters).
+                          <p className="text-[12px] text-[#667085]">
+                            Same time slot can be booked this many times.
                           </p>
                         </div>
-                        <div className="space-y-1">
-                          <Label htmlFor="org-appointment-window">Booking window (days)</Label>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="org-appointment-window" className={org.label}>
+                            Booking window (days)
+                          </Label>
                           <NumberInput
                             id="org-appointment-window"
                             min={0}
                             value={orgAppointmentOpenBefore}
                             onValueChange={setOrgAppointmentOpenBefore}
                             emptyWhenZero={false}
-                            className="h-11"
+                            className={cn(org.input, "h-9")}
                           />
-                          <p className="text-xs text-stone-500">
-                            How many days ahead customers can book. 0 means no limit.
+                          <p className="text-[12px] text-[#667085]">
+                            How many days ahead customers can book. 0 = no limit.
                           </p>
                         </div>
                       </div>
@@ -1572,35 +1409,36 @@ const LocationsScreen = ({
                   )}
 
                   {(editOrganisationType === "hospitality" || editOrganisationType === "both") &&
-                  hospitalitySettings ?
-                    <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-4">
+                  hospitalitySettings ? (
+                    <div className="space-y-3 rounded-xl border border-[#e6eaf0] bg-[#fafbfc] p-4">
                       <div>
-                        <p className="text-sm font-semibold text-stone-900">Stay booking settings</p>
-                        <p className="text-xs text-stone-500">
-                          Stored on your organisation profile. Full policies are in{" "}
+                        <p className="text-[13px] font-semibold text-[#1a1a1a]">Stay booking settings</p>
+                        <p className="text-[12px] text-[#667085]">
+                          Full policies are in{" "}
                           <Link
                             to="/organization/hospitality?section=policies"
-                            className="font-medium text-orange-600 hover:underline"
+                            className="font-medium text-[#2a5af5] hover:underline"
                           >
                             Hospitality → Policies
                           </Link>
                           .
                         </p>
                       </div>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-1 sm:col-span-2">
-                          <Label>Booking type</Label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className={org.label}>Booking type</Label>
                           <Select
                             value={hospitalitySettings.booking_type}
                             onValueChange={(value) =>
                               setHospitalitySettings({
                                 ...hospitalitySettings,
                                 booking_type: value,
-                                minimum_hours: value === "hourly" ? hospitalitySettings.minimum_hours || 2 : 0,
+                                minimum_hours:
+                                  value === "hourly" ? hospitalitySettings.minimum_hours || 2 : 0,
                               })
                             }
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className={cn(org.selectTrigger, "h-9")}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -1609,12 +1447,13 @@ const LocationsScreen = ({
                             </SelectContent>
                           </Select>
                         </div>
-                        {hospitalitySettings.booking_type === "hourly" ?
-                          <div className="space-y-1">
-                            <Label>Minimum hours</Label>
+                        {hospitalitySettings.booking_type === "hourly" ? (
+                          <div className="space-y-1.5">
+                            <Label className={org.label}>Minimum hours</Label>
                             <Input
                               type="number"
                               min={1}
+                              className={cn(org.input, "h-9")}
                               value={hospitalitySettings.minimum_hours || ""}
                               onChange={(e) =>
                                 setHospitalitySettings({
@@ -1624,84 +1463,96 @@ const LocationsScreen = ({
                               }
                             />
                           </div>
-                        : null}
+                        ) : null}
                       </div>
                     </div>
-                  : null}
+                  ) : null}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="org-name" className="text-sm sm:text-base">Organization Name</Label>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="org-name" className={org.label}>
+                        Organization name
+                      </Label>
                       <Input
                         id="org-name"
-                        value={organization?.name || ""}
+                        value={organization.name || ""}
                         onChange={(e) =>
                           setOrganization((prev) => (prev ? { ...prev, name: e.target.value } : null))
                         }
                         placeholder="Enter organization name"
-                        className="h-10 sm:h-11"
+                        className={cn(org.input, "h-9")}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="org-gst" className="text-sm sm:text-base">GST Number</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="org-gst" className={org.label}>
+                        GST number
+                      </Label>
                       <Input
                         id="org-gst"
-                        value={organization?.gstnumber || ""}
+                        value={organization.gstnumber || ""}
                         onChange={(e) =>
-                          setOrganization((prev) => (prev ? { ...prev, gstnumber: e.target.value } : null))
+                          setOrganization((prev) =>
+                            prev ? { ...prev, gstnumber: e.target.value } : null,
+                          )
                         }
                         placeholder="Enter GST number"
-                        className="h-10 sm:h-11"
+                        className={cn(org.input, "h-9")}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="org-primary-type" className="text-sm sm:text-base">Primary Type Code</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="org-primary-type" className={org.label}>
+                        Primary type code
+                      </Label>
                       <Input
                         id="org-primary-type"
-                        value={organization?.primarytypecode || ""}
+                        value={organization.primarytypecode || ""}
                         onChange={(e) =>
                           setOrganization((prev) =>
                             prev ? { ...prev, primarytypecode: e.target.value } : null,
                           )
                         }
                         placeholder="Enter primary type code"
-                        className="h-10 sm:h-11"
+                        className={cn(org.input, "h-9")}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="org-secondary-type" className="text-sm sm:text-base">Secondary Type Code</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="org-secondary-type" className={org.label}>
+                        Secondary type code
+                      </Label>
                       <Input
                         id="org-secondary-type"
-                        value={organization?.secondarytypecode || ""}
+                        value={organization.secondarytypecode || ""}
                         onChange={(e) =>
                           setOrganization((prev) =>
                             prev ? { ...prev, secondarytypecode: e.target.value } : null,
                           )
                         }
                         placeholder="Enter secondary type code"
-                        className="h-10 sm:h-11"
+                        className={cn(org.input, "h-9")}
                       />
                     </div>
                   </div>
 
-                  <div className="grid gap-2">
-                    <Label htmlFor="org-notes" className="text-sm sm:text-base">Notes</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="org-notes" className={org.label}>
+                      Notes
+                    </Label>
                     <Textarea
                       id="org-notes"
-                      value={organization?.notes || ""}
+                      value={organization.notes || ""}
                       onChange={(e) =>
                         setOrganization((prev) => (prev ? { ...prev, notes: e.target.value } : null))
                       }
-                      placeholder="Enter organization notes or description (paragraph)"
-                      rows={4}
-                      className="resize-y text-sm sm:text-base"
+                      placeholder="Short description of your business"
+                      rows={3}
+                      className={cn(org.input, "min-h-[4.5rem] resize-y")}
                     />
                   </div>
 
                   <OrgImageAssetField
-                    label="Organization Logo"
+                    label="Organization logo"
                     description="Upload or pick from organisation assets."
-                    imageIds={organization?.organisationlogo ? [organization.organisationlogo] : []}
+                    imageIds={organization.organisationlogo ? [organization.organisationlogo] : []}
                     onChange={(ids) =>
                       setOrganization((prev) =>
                         prev ? { ...prev, organisationlogo: ids[0] ?? 0 } : null,
@@ -1712,8 +1563,24 @@ const LocationsScreen = ({
                     idPrefix="org-logo-edit"
                   />
                 </div>
-              : null}
-            </ResponsiveEditSheet>
+
+                <div className={org.saveBar}>
+                  <Button
+                    type="button"
+                    onClick={() => void handleSaveOrganization()}
+                    disabled={savingOrganization}
+                    className={org.saveBtn}
+                  >
+                    {savingOrganization ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    Save
+                  </Button>
+                </div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
