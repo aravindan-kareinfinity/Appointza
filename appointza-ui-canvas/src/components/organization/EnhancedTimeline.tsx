@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +31,8 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
+import { org } from "@/lib/orgTheme";
 
 interface EnhancedTimelineProps {
   appointments: BookedAppoinmentRes[];
@@ -672,22 +673,30 @@ const EnhancedTimeline = ({
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "appointment":
-        return <Calendar className="h-4 w-4 text-blue-500" />;
+        return <Calendar className="h-3.5 w-3.5 text-[#2a5af5]" />;
       case "record":
-        return <FileText className="h-4 w-4 text-green-500" />;
+        return <FileText className="h-3.5 w-3.5 text-emerald-600" />;
       case "separator":
-        return <Calendar className="h-4 w-4 text-gray-400" />;
+        return <Calendar className="h-3.5 w-3.5 text-[#9aa3af]" />;
       default:
-        return <Clock className="h-4 w-4" />;
+        return <Clock className="h-3.5 w-3.5 text-[#9aa3af]" />;
     }
   };
 
   const getTypeBadge = (type: string) => {
     switch (type) {
       case "appointment":
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Appointment</Badge>;
+        return (
+          <Badge className="h-5 border-transparent bg-[#eef2ff] px-1.5 text-[10px] font-medium text-[#2a5af5] hover:bg-[#eef2ff]">
+            Appointment
+          </Badge>
+        );
       case "record":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Record</Badge>;
+        return (
+          <Badge className="h-5 border-transparent bg-emerald-50 px-1.5 text-[10px] font-medium text-emerald-700 hover:bg-emerald-50">
+            Record
+          </Badge>
+        );
       default:
         return null;
     }
@@ -841,28 +850,35 @@ const EnhancedTimeline = ({
 
   return (
     <>
-      <Card className="border-0 bg-transparent shadow-none">
-        <CardHeader className="p-0 pb-3">
-          <div className="flex items-center justify-between gap-3">
-            <CardTitle className="text-lg sm:text-xl">Timeline</CardTitle>
-            <Button onClick={() => void handleOpenAddRecord()} size="sm" className="shrink-0">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Appointment Record
-            </Button>
+      <div className="overflow-hidden rounded-lg border border-[#e6eaf0] bg-white">
+        <div className="flex items-center justify-between gap-3 border-b border-[#e6eaf0] px-3 py-2.5 sm:px-4">
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-[#1a1a1a]">Timeline</p>
+            <p className="mt-0.5 text-[12px] text-[#5b6572]">Appointments and records</p>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
+          <Button
+            type="button"
+            onClick={() => void handleOpenAddRecord()}
+            size="sm"
+            className={cn(org.btnPrimary, "h-8 shrink-0")}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add record
+          </Button>
+        </div>
+
+        <div className="p-3 sm:p-4">
           {!isLoadingTasks && tasks.length === 0 ? (
-            <div className="mb-4 rounded-xl border border-dashed border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
-              <div className="flex items-start gap-3">
-                <Settings2 className="mt-0.5 h-4 w-4 shrink-0 text-appointza-coral" />
+            <div className="mb-3 rounded-md border border-dashed border-[#e6eaf0] bg-[#f8fafc] px-3 py-2.5 text-[12px] text-[#5b6572]">
+              <div className="flex items-start gap-2">
+                <Settings2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2a5af5]" />
                 <div>
-                  <p className="font-medium text-appointza-navy">No appointment fields configured</p>
-                  <p className="mt-1">Create appointment value fields here — same form as Profile → Appointment values.</p>
+                  <p className="font-medium text-[#1a1a1a]">No appointment fields configured</p>
+                  <p className="mt-0.5">Create fields here — same as Profile → Appointment values.</p>
                   <Button
                     type="button"
                     variant="link"
-                    className="mt-2 h-auto p-0 text-appointza-coral"
+                    className="mt-1 h-auto p-0 text-[12px] text-[#2a5af5]"
                     onClick={() => setIsCreateValueOpen(true)}
                   >
                     Create reference value
@@ -871,269 +887,233 @@ const EnhancedTimeline = ({
               </div>
             </div>
           ) : null}
-          <div className="space-y-4">
-            {timeline.map((item, index) => {
-              if (item.type === "separator") {
+
+          {timeline.length === 0 ? (
+            <div className="py-8 text-center">
+              <Clock className="mx-auto h-7 w-7 text-[#cfd6e0]" aria-hidden />
+              <p className="mt-2 text-[13px] font-medium text-[#1a1a1a]">No timeline entries yet</p>
+              <p className="mt-0.5 text-[12px] text-[#5b6572]">Bookings and records will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {timeline.map((item, index) => {
+                if (item.type === "separator") {
+                  return (
+                    <div key={item.id} className="flex items-center gap-2 pt-1">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[#e6eaf0] bg-[#f8fafc]">
+                        {getTypeIcon(item.type)}
+                      </div>
+                      <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#5b6572]">
+                        {item.title}
+                      </h3>
+                    </div>
+                  );
+                }
+
                 return (
                   <div key={item.id} className="relative">
-                    <div className="mb-3 flex items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-stone-300 bg-stone-100">
-                        {getTypeIcon(item.type)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-base font-semibold text-gray-900">{item.title}</h3>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
+                    {index < timeline.length - 1 && timeline[index + 1].type !== "separator" ? (
+                      <div
+                        className="absolute left-3 top-7 w-px bg-[#e6eaf0]"
+                        style={{ height: "calc(100% - 0.25rem)" }}
+                      />
+                    ) : null}
 
-              return (
-                <div key={item.id} className="relative">
-                  {/* Timeline line */}
-                  {index < timeline.length - 1 && timeline[index + 1].type !== "separator" && (
-                    <div
-                      className="absolute left-4 top-8 w-0.5 bg-stone-200"
-                      style={{ height: "calc(100% + 0.75rem)" }}
-                    />
-                  )}
-                  
-                  <div className="flex gap-3">
-                    {/* Timeline icon */}
-                    <div className="shrink-0">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-stone-200 bg-white">
+                    <div className="flex gap-2.5">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[#e6eaf0] bg-white">
                         {getTypeIcon(item.type)}
                       </div>
-                    </div>
-                    
-                    {/* Timeline content */}
-                    <div className="min-w-0 flex-1 pb-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-medium text-gray-900">{item.title}</h4>
-                        {getTypeBadge(item.type)}
-                      </div>
-                      
-                      <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-                      
-                      <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{format(item.timestamp, "h:mm a")}</span>
+
+                      <div className="min-w-0 flex-1 rounded-md border border-[#e6eaf0] bg-[#f8fafc] p-2.5 sm:p-3">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <h4 className="min-w-0 flex-1 text-[13px] font-medium text-[#1a1a1a]">
+                            {item.title}
+                          </h4>
+                          {getTypeBadge(item.type)}
                         </div>
-                        {item.staff && (
-                          <div className="flex items-center space-x-1">
-                            <User className="h-3 w-3" />
-                            <span>{item.staff}</span>
-                          </div>
-                        )}
-                      </div>
 
-                      {/* Record details - always visible */}
-                      {item.record && (
-                        <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg border">
-                          <div className="flex items-center justify-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenEditRecord(item.record!)}
-                            >
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit Record
-                            </Button>
-                          </div>
-                          {/* Always show record info, even if empty */}
-                          <div className="text-xs text-gray-500 mb-3">
-                            Record ID: {item.record.id} | 
-                            Appointment Date: {(() => {
-                              const appointmentDate = parseDateFromApi(item.record.appointmentdate);
-                              return !isNaN(appointmentDate.getTime()) ? format(appointmentDate, "PPp") : "Invalid Date";
-                            })()} | 
-                            Created: {(() => {
-                              const createdDate = item.record.createdon ? new Date(item.record.createdon) : new Date();
-                              return !isNaN(createdDate.getTime()) ? format(createdDate, "PPp") : "Invalid Date";
-                            })()}
-                          </div>
-                          
-                          {/* Report */}
-                          <div>
-                            <h5 className="text-sm font-semibold text-gray-900 mb-2">Report</h5>
-                            {item.record.record?.report ? (
-                              <div className="text-sm text-gray-700 whitespace-pre-wrap bg-white p-3 rounded border">
-                                {item.record.record.report}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-gray-400 italic bg-white p-3 rounded border">
-                                No report available
-                              </div>
-                            )}
-                          </div>
+                        <p className="mt-0.5 text-[12px] text-[#5b6572]">{item.description}</p>
 
-                          {/* Notes */}
-                          <div>
-                            <h5 className="text-sm font-semibold text-gray-900 mb-2">Notes</h5>
-                            {item.record.record?.notes ? (
-                              <div className="text-sm text-gray-700 whitespace-pre-wrap bg-white p-3 rounded border">
-                                {item.record.record.notes}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-gray-400 italic bg-white p-3 rounded border">
-                                No notes available
-                              </div>
-                            )}
-                          </div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#9aa3af]">
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="h-3 w-3" aria-hidden />
+                            {format(item.timestamp, "h:mm a")}
+                          </span>
+                          {item.staff ? (
+                            <span className="inline-flex items-center gap-1">
+                              <User className="h-3 w-3" aria-hidden />
+                              {item.staff}
+                            </span>
+                          ) : null}
+                        </div>
 
-                          {/* Tasks (Additional Data) */}
-                          <div>
-                            <h5 className="text-sm font-semibold text-gray-900 mb-2">Tasks</h5>
-                            {item.record.record?.additionalData && Object.keys(item.record.record.additionalData).length > 0 ? (
-                              <div className="space-y-2">
-                                {Object.entries(item.record.record.additionalData).map(([key, value], idx) => (
-                                  <div key={idx} className="bg-white p-3 rounded border">
-                                    <div className="text-xs font-medium text-gray-500 mb-1">
-                                      {(() => {
-                                        const id = Number(key);
-                                        return Number.isFinite(id) ? (taskLabelById[id] || key) : key;
-                                      })()}
-                                    </div>
-                                    <div className="text-sm text-gray-900">
-                                      {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-gray-400 italic bg-white p-3 rounded border">
-                                No tasks available
-                              </div>
-                            )}
-                          </div>
+                        {item.record ? (
+                          <div className="mt-2.5 space-y-2.5 border-t border-[#e6eaf0] pt-2.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-[11px] text-[#9aa3af]">
+                                #{item.record.id}
+                                {" · "}
+                                {(() => {
+                                  const appointmentDate = parseDateFromApi(item.record.appointmentdate);
+                                  return !isNaN(appointmentDate.getTime())
+                                    ? format(appointmentDate, "MMM d, yyyy")
+                                    : "—";
+                                })()}
+                              </p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className={cn(org.btnOutline, "h-7 px-2 text-[12px]")}
+                                onClick={() => handleOpenEditRecord(item.record!)}
+                              >
+                                <Pencil className="h-3 w-3" />
+                                Edit
+                              </Button>
+                            </div>
 
-                          {/* Files and Images */}
-                          <div>
-                            <h5 className="text-sm font-semibold text-gray-900 mb-2">Files & Images</h5>
-                            {item.record.fileids?.files && item.record.fileids.files.length > 0 ? (
-                              <div className="space-y-3">
-                                {/* Image Grid */}
-                                {item.record.fileids.files.filter((f) => f.filetype?.startsWith("image/")).length > 0 && (
-                                  <div>
-                                    <div className="text-xs font-medium text-gray-500 mb-2">Images</div>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <div>
+                              <p className={cn(org.label, "mb-1")}>Report</p>
+                              <div className="rounded-md border border-[#e6eaf0] bg-white px-2.5 py-2 text-[12px] text-[#1a1a1a] whitespace-pre-wrap">
+                                {item.record.record?.report || (
+                                  <span className="italic text-[#9aa3af]">No report</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className={cn(org.label, "mb-1")}>Notes</p>
+                              <div className="rounded-md border border-[#e6eaf0] bg-white px-2.5 py-2 text-[12px] text-[#1a1a1a] whitespace-pre-wrap">
+                                {item.record.record?.notes || (
+                                  <span className="italic text-[#9aa3af]">No notes</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className={cn(org.label, "mb-1")}>Tasks</p>
+                              {item.record.record?.additionalData &&
+                              Object.keys(item.record.record.additionalData).length > 0 ? (
+                                <div className="space-y-1.5">
+                                  {Object.entries(item.record.record.additionalData).map(
+                                    ([key, value], idx) => (
+                                      <div
+                                        key={idx}
+                                        className="rounded-md border border-[#e6eaf0] bg-white px-2.5 py-2"
+                                      >
+                                        <p className="text-[11px] font-medium text-[#5b6572]">
+                                          {(() => {
+                                            const id = Number(key);
+                                            return Number.isFinite(id)
+                                              ? taskLabelById[id] || key
+                                              : key;
+                                          })()}
+                                        </p>
+                                        <p className="mt-0.5 text-[12px] text-[#1a1a1a]">
+                                          {typeof value === "object"
+                                            ? JSON.stringify(value, null, 2)
+                                            : String(value)}
+                                        </p>
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="rounded-md border border-[#e6eaf0] bg-white px-2.5 py-2 text-[12px] italic text-[#9aa3af]">
+                                  No tasks
+                                </div>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className={cn(org.label, "mb-1")}>Files</p>
+                              {item.record.fileids?.files &&
+                              item.record.fileids.files.length > 0 ? (
+                                <div className="space-y-2">
+                                  {item.record.fileids.files.filter((f) =>
+                                    f.filetype?.startsWith("image/"),
+                                  ).length > 0 ? (
+                                    <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5">
                                       {item.record.fileids.files
                                         .filter((file) => file.filetype?.startsWith("image/"))
                                         .map((file) => (
-                                          <div
+                                          <button
                                             key={file.id}
-                                            className="relative group border rounded-lg overflow-hidden bg-gray-100 aspect-square"
+                                            type="button"
+                                            className="relative aspect-square overflow-hidden rounded-md border border-[#e6eaf0] bg-[#f8fafc]"
+                                            onClick={() => handleViewImage(file)}
                                           >
                                             {imageUrls[file.id] ? (
                                               <img
                                                 src={imageUrls[file.id]}
                                                 alt={file.filename}
-                                                className="w-full h-full object-cover cursor-pointer"
-                                                onClick={() => handleViewImage(file)}
+                                                className="h-full w-full object-cover"
                                                 onError={(e) => {
                                                   const target = e.target as HTMLImageElement;
                                                   target.src = filesService.getImageUrl(file.id);
                                                 }}
                                               />
                                             ) : loadingImages.has(file.id) ? (
-                                              <div className="w-full h-full flex items-center justify-center">
-                                                <Clock className="h-6 w-6 animate-spin text-muted-foreground" />
+                                              <div className="flex h-full w-full items-center justify-center">
+                                                <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
                                               </div>
                                             ) : (
                                               <img
                                                 src={filesService.getImageUrl(file.id)}
                                                 alt={file.filename}
-                                                className="w-full h-full object-cover cursor-pointer"
-                                                onClick={() => handleViewImage(file)}
+                                                className="h-full w-full object-cover"
                                               />
                                             )}
-                                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity flex items-center justify-center">
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="opacity-0 group-hover:opacity-100 text-white hover:text-white hover:bg-white/20"
-                                                onClick={() => handleViewImage(file)}
-                                              >
-                                                <Eye className="h-4 w-4 mr-1" />
-                                                View
-                                              </Button>
-                                            </div>
-                                          </div>
+                                            <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity hover:bg-black/35 hover:opacity-100">
+                                              <Eye className="h-3.5 w-3.5 text-white" />
+                                            </span>
+                                          </button>
                                         ))}
                                     </div>
-                                  </div>
-                                )}
+                                  ) : null}
 
-                                {/* Other Files */}
-                                {item.record.fileids.files.filter((f) => !f.filetype?.startsWith("image/")).length > 0 && (
-                                  <div>
-                                    <div className="text-xs font-medium text-gray-500 mb-2">Documents</div>
-                                    <div className="space-y-2">
+                                  {item.record.fileids.files.filter(
+                                    (f) => !f.filetype?.startsWith("image/"),
+                                  ).length > 0 ? (
+                                    <div className="space-y-1">
                                       {item.record.fileids.files
                                         .filter((file) => !file.filetype?.startsWith("image/"))
                                         .map((file) => (
                                           <div
                                             key={file.id}
-                                            className="flex items-center justify-between p-2 bg-white rounded border"
+                                            className="flex items-center gap-2 rounded-md border border-[#e6eaf0] bg-white px-2.5 py-1.5"
                                           >
-                                            <div className="flex items-center space-x-2">
-                                              <File className="h-4 w-4 text-gray-400" />
-                                              <div>
-                                                <div className="text-sm font-medium">{file.filename}</div>
-                                                <div className="text-xs text-gray-500">
-                                                  {file.filetype} • {(file.filesize / 1024).toFixed(2)} KB
-                                                </div>
-                                              </div>
+                                            <File className="h-3.5 w-3.5 shrink-0 text-[#9aa3af]" />
+                                            <div className="min-w-0">
+                                              <p className="truncate text-[12px] font-medium text-[#1a1a1a]">
+                                                {file.filename}
+                                              </p>
+                                              <p className="text-[11px] text-[#9aa3af]">
+                                                {file.filetype} · {(file.filesize / 1024).toFixed(1)} KB
+                                              </p>
                                             </div>
                                           </div>
                                         ))}
                                     </div>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-gray-400 italic bg-white p-3 rounded border">
-                                No files or images available
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Status */}
-                          <div>
-                            <h5 className="text-sm font-semibold text-gray-900 mb-2">Status</h5>
-                            <div className="text-sm text-gray-700 bg-white p-3 rounded border">
-                              Status: {item.record.status || 0} | 
-                              Has Reschedule: {item.record.ishasreschedule ? "Yes" : "No"}
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <div className="rounded-md border border-[#e6eaf0] bg-white px-2.5 py-2 text-[12px] italic text-[#9aa3af]">
+                                  No files
+                                </div>
+                              )}
                             </div>
                           </div>
-
-                          {/* Timestamps */}
-                          <div>
-                            <div>
-                              <h5 className="text-xs font-semibold text-gray-500 mb-1">Created</h5>
-                              <div className="text-xs text-gray-600">
-                                {format(item.record.createdon, "PPp")}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-          
-          {timeline.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <Clock className="mx-auto h-8 w-8 mb-2 opacity-50" />
-              <p>No timeline entries yet</p>
+                );
+              })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Image Viewer Dialog */}
       <Dialog open={selectedImage !== null} onOpenChange={() => setSelectedImage(null)}>
@@ -1270,7 +1250,7 @@ const EnhancedTimeline = ({
                 <Button
                   type="button"
                   variant="link"
-                  className="mt-1 h-auto p-0 text-appointza-coral"
+                  className="mt-1 h-auto p-0 text-[#2a5af5]"
                   onClick={() => setIsCreateValueOpen(true)}
                 >
                   Create reference value

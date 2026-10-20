@@ -2,7 +2,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -551,239 +550,254 @@ const ClientManagement = () => {
   };
 
 
+  const pagePad = "px-4 sm:px-6";
+
   return (
     <div className={cn(org.page, "flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#f8fafc]")}>
-      <header className="shrink-0 border-b border-[#e6eaf0] bg-white">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-5 sm:px-6 sm:py-6">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="text-[15px] font-semibold tracking-tight text-[#1a1a1a] sm:text-base">
-                Find customer
-              </h1>
-              <p className="mt-0.5 text-[13px] text-[#5b6572]">
-                Enter a mobile number and press Enter to load their profile.
-              </p>
+      <header className={cn("shrink-0 border-b border-[#e6eaf0] bg-white py-3", pagePad)}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h1 className="text-[15px] font-semibold tracking-tight text-[#1a1a1a]">
+                  Find customer
+                </h1>
+                <p className="mt-0.5 text-[12px] text-[#5b6572]">
+                  Mobile number · press Enter
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsOnSpotDialogOpen(true)}
+                className={cn(org.btnPrimary, "h-8 shrink-0 sm:hidden")}
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+              </Button>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setIsOnSpotDialogOpen(true)}
-              className={cn(org.btnPrimary, "h-9 shrink-0")}
+            <form
+              className="relative max-w-md"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleClientSearch(mobileInput);
+              }}
             >
-              <UserPlus className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden sm:inline">On-Spot</span>
-            </Button>
-          </div>
-
-          <form
-            className="relative"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void handleClientSearch(mobileInput);
-            }}
-          >
-            <Phone
-              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aa3af]"
-              aria-hidden
-            />
-            <Input
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel"
-              value={mobileInput}
-              onChange={(e) => setMobileInput(e.target.value.replace(/\D/g, ""))}
-              placeholder="Mobile number"
-              disabled={isSearching}
-              className={cn(
-                org.input,
-                "h-12 rounded-lg border-[#e6eaf0] pl-11 pr-12 text-[15px] tracking-wide tabular-nums shadow-none placeholder:tracking-normal placeholder:text-[#9aa3af] focus-visible:border-[#2a5af5] focus-visible:ring-[#2a5af5]/15",
-              )}
-              aria-label="Customer mobile number"
-            />
-            {isSearching ? (
-              <Loader2
-                className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#2a5af5]"
+              <Phone
+                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9aa3af]"
                 aria-hidden
               />
-            ) : (
-              <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-[#e6eaf0] bg-[#f8fafc] px-1.5 py-0.5 text-[10px] font-medium text-[#9aa3af] sm:inline">
-                Enter
-              </kbd>
-            )}
-          </form>
+              <Input
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                value={mobileInput}
+                onChange={(e) => setMobileInput(e.target.value.replace(/\D/g, ""))}
+                placeholder="Mobile number"
+                disabled={isSearching}
+                className={cn(
+                  org.input,
+                  "h-9 rounded-md border-[#e6eaf0] pl-9 pr-11 text-[13px] tabular-nums shadow-none placeholder:text-[#9aa3af] focus-visible:border-[#2a5af5] focus-visible:ring-[#2a5af5]/15",
+                )}
+                aria-label="Customer mobile number"
+              />
+              {isSearching ? (
+                <Loader2
+                  className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-[#2a5af5]"
+                  aria-hidden
+                />
+              ) : (
+                <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-[#e6eaf0] bg-[#f8fafc] px-1.5 py-0.5 text-[10px] font-medium text-[#9aa3af] sm:inline">
+                  Enter
+                </kbd>
+              )}
+            </form>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setIsOnSpotDialogOpen(true)}
+            className={cn(org.btnPrimary, "hidden h-9 shrink-0 sm:inline-flex")}
+          >
+            <UserPlus className="h-3.5 w-3.5 shrink-0" />
+            On-Spot
+          </Button>
         </div>
       </header>
 
       <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-[#f8fafc]">
         {selectedClient ? (
           <>
-            <div className="border-b border-[#e6eaf0] bg-white px-4 py-5 sm:px-6 sm:py-6">
-              <div className="mx-auto w-full max-w-5xl">
-                {isMobile ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="-ml-2 mb-3 h-9 gap-1.5 px-2 text-[#5b6572] hover:text-[#1a1a1a]"
-                    onClick={() => {
-                      setSelectedClient(null);
-                      setMobileInput("");
-                    }}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    New search
-                  </Button>
-                ) : null}
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#e6eaf0] bg-[#eef2ff] text-lg font-semibold text-[#2a5af5]">
-                      {clientInitials(selectedClient.name)}
-                    </div>
-                    <div className="min-w-0">
-                      <h2 className="text-xl font-semibold tracking-tight text-[#1a1a1a] sm:text-2xl">
+            <div className={cn("border-b border-[#e6eaf0] bg-white py-3", pagePad)}>
+              {isMobile ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="-ml-2 mb-2 h-8 gap-1.5 px-2 text-[#5b6572] hover:text-[#1a1a1a]"
+                  onClick={() => {
+                    setSelectedClient(null);
+                    setMobileInput("");
+                  }}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  New search
+                </Button>
+              ) : null}
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[#e6eaf0] bg-[#eef2ff] text-sm font-semibold text-[#2a5af5]">
+                    {clientInitials(selectedClient.name)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-[15px] font-semibold tracking-tight text-[#1a1a1a]">
                         {selectedClient.name}
                       </h2>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        {selectedClient.isRoomCustomer ? (
-                          <Badge variant="secondary">Room guest</Badge>
-                        ) : null}
-                        {selectedClient.bookingReference ? (
-                          <Badge variant="outline">Ref {selectedClient.bookingReference}</Badge>
-                        ) : null}
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-[#5b6572]">
-                        <span className="inline-flex items-center gap-1.5">
-                          <Phone className="h-4 w-4 text-[#2a5af5]" aria-hidden />
-                          {selectedClient.mobile}
-                        </span>
-                      </div>
+                      {selectedClient.isRoomCustomer ? (
+                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                          Room guest
+                        </Badge>
+                      ) : null}
+                      {selectedClient.bookingReference ? (
+                        <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                          Ref {selectedClient.bookingReference}
+                        </Badge>
+                      ) : null}
                     </div>
+                    <p className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] text-[#5b6572]">
+                      <Phone className="h-3 w-3 text-[#2a5af5]" aria-hidden />
+                      <span className="tabular-nums">{selectedClient.mobile}</span>
+                    </p>
                   </div>
-                  <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
-                    {!selectedClient.isRoomOnly ? (
-                      <Button
-                        type="button"
-                        onClick={() =>
-                          navigate(`/organization/clients/${selectedClient.id}/book`, {
-                            state: { name: selectedClient.name, mobile: selectedClient.mobile },
-                          })
-                        }
-                        className={cn(org.btnPrimary, "w-full lg:w-auto")}
-                      >
-                        <CalendarPlus className="h-4 w-4 shrink-0" />
-                        On-Spot Booking
-                      </Button>
-                    ) : null}
+                </div>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  {!selectedClient.isRoomOnly ? (
                     <Button
                       type="button"
-                      variant="outline"
-                      onClick={handleAddAppointmentRecord}
-                      className={cn(org.btnOutline, "w-full lg:w-auto")}
+                      onClick={() =>
+                        navigate(`/organization/clients/${selectedClient.id}/book`, {
+                          state: { name: selectedClient.name, mobile: selectedClient.mobile },
+                        })
+                      }
+                      className={cn(org.btnPrimary, "h-8")}
                     >
-                      <FileText className="h-4 w-4 shrink-0" />
-                      Add Appointment Record
+                      <CalendarPlus className="h-3.5 w-3.5 shrink-0" />
+                      Book
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddAppointmentRecord}
+                    className={cn(org.btnOutline, "h-8")}
+                  >
+                    <FileText className="h-3.5 w-3.5 shrink-0" />
+                    Add record
+                  </Button>
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  "mt-3 grid gap-2",
+                  selectedClient.isRoomCustomer ? "grid-cols-3" : "grid-cols-2",
+                  "sm:max-w-xl",
+                )}
+              >
+                <div className="rounded-md border border-[#e6eaf0] bg-[#f8fafc] px-3 py-2">
+                  <p className="text-[11px] font-medium text-[#5b6572]">
+                    {selectedClient.isRoomCustomer ? "Service visits" : "Total visits"}
+                  </p>
+                  <p className="mt-0.5 text-[15px] font-semibold tabular-nums text-[#1a1a1a]">
+                    {selectedClient.totalAppointments}
+                  </p>
+                </div>
+                <div className="rounded-md border border-[#e6eaf0] bg-[#f8fafc] px-3 py-2">
+                  <p className="text-[11px] font-medium text-[#5b6572]">
+                    {selectedClient.isRoomCustomer ? "Latest stay" : "Last visit"}
+                  </p>
+                  <p className="mt-0.5 text-[15px] font-semibold text-[#1a1a1a]">
+                    {format(selectedClient.lastVisit, "MMM d, yyyy")}
+                  </p>
+                </div>
+                {selectedClient.isRoomCustomer ? (
+                  <div className="rounded-md border border-[#e6eaf0] bg-[#f8fafc] px-3 py-2">
+                    <p className="text-[11px] font-medium text-[#5b6572]">Room stays</p>
+                    <p className="mt-0.5 text-[15px] font-semibold tabular-nums text-[#1a1a1a]">
+                      {clientRoomStays.length}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+
+              {!selectedClient.isRoomOnly && selectedClient.id > 0 ? (
+                <div className="mt-3 rounded-md border border-amber-200 bg-amber-50/40 px-3 py-2.5">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-amber-900">
+                      <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                      Loyalty
+                      {loadingLoyaltyUserId === selectedClient.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin text-amber-700" aria-hidden />
+                      ) : null}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 border-amber-300 bg-white px-2 text-[12px] hover:bg-amber-50"
+                      disabled={loadingLoyaltyUserId === selectedClient.id}
+                      onClick={() =>
+                        void openLoyaltyDetails(
+                          selectedClient.id,
+                          selectedClient.name,
+                          selectedClient.mobile,
+                        )
+                      }
+                    >
+                      Details
                     </Button>
                   </div>
-                </div>
-                <div
-                  className={cn(
-                    "mt-5 grid gap-3",
-                    selectedClient.isRoomCustomer ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2",
-                  )}
-                >
-                  <div className="rounded-lg border border-[#e6eaf0] bg-[#f8fafc] px-4 py-3">
-                    <p className="text-[12px] font-medium text-[#5b6572]">
-                      {selectedClient.isRoomCustomer ? "Service visits" : "Total visits"}
-                    </p>
-                    <p className="mt-0.5 text-lg font-semibold tabular-nums text-[#1a1a1a]">
-                      {selectedClient.totalAppointments}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-[#e6eaf0] bg-[#f8fafc] px-4 py-3">
-                    <p className="text-[12px] font-medium text-[#5b6572]">
-                      {selectedClient.isRoomCustomer ? "Latest stay" : "Last visit"}
-                    </p>
-                    <p className="mt-0.5 text-lg font-semibold text-[#1a1a1a]">
-                      {format(selectedClient.lastVisit, "MMM d, yyyy")}
-                    </p>
-                  </div>
-                  {selectedClient.isRoomCustomer ? (
-                    <div className="rounded-lg border border-[#e6eaf0] bg-[#f8fafc] px-4 py-3">
-                      <p className="text-[12px] font-medium text-[#5b6572]">Room stays</p>
-                      <p className="mt-0.5 text-lg font-semibold tabular-nums text-[#1a1a1a]">
-                        {clientRoomStays.length}
-                      </p>
+                  {loadingLoyaltyUserId === selectedClient.id &&
+                  !loyaltyByUserId[selectedClient.id] ? (
+                    <div className="flex items-center gap-2 py-2 text-[12px] text-stone-500">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Loading…
                     </div>
-                  ) : null}
-                </div>
-                    {!selectedClient.isRoomOnly && selectedClient.id > 0 ? (
-                      <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50/40 p-4">
-                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                          <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-900">
-                            <Sparkles className="h-4 w-4" aria-hidden />
-                            Loyalty
-                            {loadingLoyaltyUserId === selectedClient.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-700" aria-hidden />
-                            ) : null}
-                          </p>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="border-amber-300 bg-white hover:bg-amber-50"
-                            disabled={loadingLoyaltyUserId === selectedClient.id}
-                            onClick={() =>
-                              void openLoyaltyDetails(
-                                selectedClient.id,
-                                selectedClient.name,
-                                selectedClient.mobile,
-                              )
-                            }
-                          >
-                            Details
-                          </Button>
-                        </div>
-                        {loadingLoyaltyUserId === selectedClient.id &&
-                        !loyaltyByUserId[selectedClient.id] ? (
-                          <div className="flex items-center gap-2 py-4 text-sm text-stone-500">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Loading loyalty data…
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            <div className="rounded-lg border border-amber-200/80 bg-white px-3 py-2.5">
-                              <p className="text-xs font-medium text-stone-500">Points</p>
-                              <p className="mt-0.5 text-lg font-semibold tabular-nums text-appointza-navy">
-                                {(loyaltyByUserId[selectedClient.id]?.current_points ?? 0).toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="rounded-lg border border-amber-200/80 bg-white px-3 py-2.5">
-                              <p className="text-xs font-medium text-stone-500">Services</p>
-                              <p className="mt-0.5 text-lg font-semibold tabular-nums text-appointza-navy">
-                                {loyaltyByUserId[selectedClient.id]?.completed_services_count ?? 0}
-                              </p>
-                            </div>
-                            <div className="rounded-lg border border-amber-200/80 bg-white px-3 py-2.5">
-                              <p className="text-xs font-medium text-stone-500">Tier</p>
-                              <p className="mt-0.5 text-lg font-semibold text-appointza-navy">
-                                {loyaltyByUserId[selectedClient.id]?.current_tier_name || "—"}
-                              </p>
-                            </div>
-                            <div className="rounded-lg border border-amber-200/80 bg-white px-3 py-2.5">
-                              <p className="text-xs font-medium text-stone-500">Spend</p>
-                              <p className="mt-0.5 text-lg font-semibold tabular-nums text-appointza-navy">
-                                ₹{Number(loyaltyByUserId[selectedClient.id]?.total_spend ?? 0).toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:max-w-2xl">
+                      <div className="rounded-md border border-amber-200/80 bg-white px-2.5 py-2">
+                        <p className="text-[11px] font-medium text-stone-500">Points</p>
+                        <p className="mt-0.5 text-[14px] font-semibold tabular-nums text-[#1a1a1a]">
+                          {(loyaltyByUserId[selectedClient.id]?.current_points ?? 0).toLocaleString()}
+                        </p>
                       </div>
-                    ) : null}
-              </div>
+                      <div className="rounded-md border border-amber-200/80 bg-white px-2.5 py-2">
+                        <p className="text-[11px] font-medium text-stone-500">Services</p>
+                        <p className="mt-0.5 text-[14px] font-semibold tabular-nums text-[#1a1a1a]">
+                          {loyaltyByUserId[selectedClient.id]?.completed_services_count ?? 0}
+                        </p>
+                      </div>
+                      <div className="rounded-md border border-amber-200/80 bg-white px-2.5 py-2">
+                        <p className="text-[11px] font-medium text-stone-500">Tier</p>
+                        <p className="mt-0.5 truncate text-[14px] font-semibold text-[#1a1a1a]">
+                          {loyaltyByUserId[selectedClient.id]?.current_tier_name || "—"}
+                        </p>
+                      </div>
+                      <div className="rounded-md border border-amber-200/80 bg-white px-2.5 py-2">
+                        <p className="text-[11px] font-medium text-stone-500">Spend</p>
+                        <p className="mt-0.5 text-[14px] font-semibold tabular-nums text-[#1a1a1a]">
+                          ₹{Number(loyaltyByUserId[selectedClient.id]?.total_spend ?? 0).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </div>
 
-            <div className="border-b border-[#e6eaf0] bg-white">
-              <div className="mx-auto flex w-full max-w-5xl overflow-x-auto px-2 sm:px-4">
+            <div className={cn("border-b border-[#e6eaf0] bg-white", pagePad)}>
+              <div className="-mx-1 flex overflow-x-auto">
                 {(
                   [
                     { id: "today" as const, label: "Today" },
@@ -800,7 +814,7 @@ const ClientManagement = () => {
                     type="button"
                     onClick={() => setCrmTab(tab.id)}
                     className={cn(
-                      "shrink-0 whitespace-nowrap border-b-2 px-4 py-3 text-[13px] font-medium transition-colors sm:px-5",
+                      "shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] font-medium transition-colors sm:px-4",
                       crmTab === tab.id
                         ? "border-[#2a5af5] text-[#2a5af5]"
                         : "border-transparent text-[#5b6572] hover:text-[#1a1a1a]",
@@ -812,269 +826,271 @@ const ClientManagement = () => {
               </div>
             </div>
 
-            <div className="mx-auto w-full max-w-5xl flex-1 p-3 sm:p-4">
-                  {crmTab === "today" ?
-                    <>
-                      {isLoadingClientData ?
-                        <div className={org.loading}>
-                          <Loader2 className="h-6 w-6 animate-spin text-appointza-coral" />
-                        </div>
-                      : todayAppointment ?
-                        <TodayAppointmentCard
-                          appointment={{
-                            id: Number(todayAppointment.id || 0),
-                            clientName: selectedClient?.name || todayAppointment.username || "",
-                            service:
-                              Array.isArray((todayAppointment as any)?.attributes?.servicelist) &&
-                              (todayAppointment as any).attributes.servicelist.length > 0
-                                ? (todayAppointment as any).attributes.servicelist[0].servicename
-                                : "Appointment",
-                            time: String(todayAppointment.fromtime || ""),
-                            duration:
-                              Array.isArray((todayAppointment as any)?.attributes?.servicelist) &&
-                              (todayAppointment as any).attributes.servicelist.length > 0
-                                ? (todayAppointment as any).attributes.servicelist.reduce(
-                                    (sum: number, svc: any) => sum + (Number(svc.servicetimetaken) || 0),
-                                    0
-                                  )
-                                : 0,
-                            status: todayAppointment.statuscode || "",
-                            staff: todayAppointment.staffname || "",
-                            price:
-                              Array.isArray((todayAppointment as any)?.attributes?.servicelist) &&
-                              (todayAppointment as any).attributes.servicelist.length > 0
-                                ? (todayAppointment as any).attributes.servicelist.reduce(
-                                    (sum: number, svc: any) => sum + (Number(svc.serviceprice) || 0),
-                                    0
-                                  )
-                                : 0,
-                          }}
-                        />
-                      : <div className={org.empty}>
-                          <CalendarX className="mx-auto mb-3 h-12 w-12 text-stone-300" aria-hidden />
-                          <p className="font-medium text-appointza-navy">No appointment today</p>
-                          <p className="mt-1 text-stone-500">This customer has no booking scheduled for today.</p>
-                        </div>
-                      }
-                    </>
-                  : crmTab === "history" ?
-                    <>
-                      {isLoadingClientData ?
-                        <div className={org.loading}>
-                          <Loader2 className="h-6 w-6 animate-spin text-appointza-coral" />
-                        </div>
-                      : <ClientServiceHistory appointments={clientAppointments} />}
-                    </>
-                  : crmTab === "timeline" ?
-                    <>
-                      {isLoadingClientData ?
-                        <div className={org.loading}>
-                          <Loader2 className="h-6 w-6 animate-spin text-appointza-coral" />
-                        </div>
-                      : <EnhancedTimeline
-                          appointments={clientAppointments}
-                          appointmentRecords={appointmentRecords}
-                          userId={selectedClient?.id > 0 ? selectedClient.id : 0}
-                          organizationId={user?.organisationid || 0}
-                          clientMobile={selectedClient?.mobile || ""}
-                          openAddRecordRequest={addRecordRequest}
-                          onRequireClientRegistration={() => setIsOnSpotDialogOpen(true)}
-                          onRecordAdded={async () => {
-                            const clientId = selectedClient?.id;
-                            if (clientId && clientId > 0) {
-                              await loadClientData(clientId, user?.organisationid || 0);
-                              return;
-                            }
-                            const mobile = (selectedClient?.mobile || "").trim();
-                            if (!mobile) return;
-                            try {
-                              const req = new SearchAppointmentByMobileReq();
-                              req.organisationid = user?.organisationid || 0;
-                              req.mobilenumber = mobile;
-                              const results = await appointmentService.searchByMobile(req);
-                              if (results?.[0]?.userid) {
-                                await loadClientData(Number(results[0].userid), user?.organisationid || 0);
-                              }
-                            } catch (error) {
-                              console.error("Error refreshing client after record save", error);
-                            }
-                          }}
-                        />}
-                    </>
-                  : crmTab === "rooms" ?
-                    <>
-                      {isLoadingClientData ?
-                        <div className={org.loading}>
-                          <Loader2 className="h-6 w-6 animate-spin text-appointza-coral" />
-                        </div>
-                      : clientRoomStays.length === 0 ?
-                        <div className={org.empty}>
-                          <BedDouble className="mx-auto mb-3 h-12 w-12 text-stone-300" aria-hidden />
-                          <p className="font-medium text-appointza-navy">No room stays</p>
-                          <p className="mt-1 text-stone-500">This guest has no active or recent room bookings.</p>
-                        </div>
-                      : <Card className={cn(org.card, "border-0 shadow-none")}>
-                          <CardHeader>
-                            <CardTitle className="text-base sm:text-lg">Room stay history</CardTitle>
-                            <CardDescription className="text-xs sm:text-sm">
-                              Bookings linked to this guest&apos;s phone or room assignment
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-3">
-                              {clientRoomStays.map((room) => {
-                                const checkIn = getRoomBookingStartDate(room);
-                                const checkOut = getRoomBookingEndDate(room);
-                                return (
-                                  <div
-                                    key={room.id}
-                                    className="flex flex-col gap-3 rounded-xl border border-stone-100 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
-                                  >
-                                    <div className="min-w-0">
-                                      <div className="truncate text-sm font-medium sm:text-base">
-                                        {roomBookingLabel(room)}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground sm:text-sm">
-                                        Check-in: {checkIn ? format(checkIn, "MMM d, yyyy") : "—"}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground sm:text-sm">
-                                        Check-out: {checkOut ? format(checkOut, "MMM d, yyyy") : "—"}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground sm:text-sm">
-                                        Ref: {roomBookingReference(room)}
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <Badge className={statusClassName(room.status)}>
-                                        {roomStatusDisplay(room)}
-                                      </Badge>
-                                      <Badge variant="outline">{roomPaymentSummary(room)}</Badge>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => {
-                                          setRoomDetailsTarget(room);
-                                          setIsRoomDetailsOpen(true);
-                                        }}
-                                      >
-                                        View details
-                                      </Button>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      }
-                    </>
-                  : <>
-                      {isLoadingClientData ?
-                        <div className={org.loading}>
-                          <Loader2 className="h-6 w-6 animate-spin text-appointza-coral" />
-                        </div>
-                      : clientEventBookings.length === 0 ?
-                        <div className={org.empty}>
-                          <Calendar className="mx-auto mb-3 h-12 w-12 text-stone-300" aria-hidden />
-                          <p className="font-medium text-appointza-navy">No event bookings</p>
-                          <p className="mt-1 text-stone-500">This customer has not registered for any events yet.</p>
-                        </div>
-                      : <Card className={cn(org.card, "border-0 shadow-none")}>
-                          <CardHeader>
-                            <CardTitle className="text-base sm:text-lg">Event booking history</CardTitle>
-                            <CardDescription className="text-xs sm:text-sm">
-                              All event registrations for this client
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-3">
-                              {clientEventBookings.map((booking) => {
-                                const event = eventsMap[booking.event_id];
-                                const eventDate =
-                                  event?.event_date ?
-                                    formatEventDateLong(event.event_date)
-                                  : "N/A";
-                                const bookingDate =
-                                  booking.created_at ?
-                                    format(new Date(booking.created_at), "MMM d, yyyy")
-                                  : "N/A";
-                                const decoded = decodeEventBookingNotes(booking.notes);
-                                const form =
-                                  decoded.payload?.form && typeof decoded.payload.form === "object" ?
-                                    decoded.payload.form
-                                  : null;
-                                const hasFormValues =
-                                  !!form &&
-                                  Object.keys(form).some((k) =>
-                                    String((form as Record<string, unknown>)[k] ?? "").trim().length > 0
-                                  );
-                                return (
-                                  <div
-                                    key={booking.id}
-                                    className="flex flex-col gap-3 rounded-xl border border-stone-100 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
-                                  >
-                                    <div className="min-w-0">
-                                      <div className="truncate text-sm font-medium sm:text-base">
-                                        {event?.event_name || `Event #${booking.event_id}`}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground sm:text-sm">
-                                        Event date: {eventDate}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground sm:text-sm">
-                                        Booked on: {bookingDate}
-                                      </div>
-                                      {hasFormValues ?
-                                        <div className="mt-2 space-y-1 text-xs sm:text-sm">
-                                          <div className="text-muted-foreground">Form details:</div>
-                                          <div className="grid gap-1">
-                                            {Object.entries(form as Record<string, unknown>)
-                                              .slice(0, 4)
-                                              .map(([k, v]) => (
-                                                <div key={k} className="flex gap-2">
-                                                  <span className="font-medium">{k}:</span>
-                                                  <span className="break-words text-muted-foreground">
-                                                    {String(v)}
-                                                  </span>
-                                                </div>
-                                              ))}
-                                            {Object.keys(form as Record<string, unknown>).length > 4 ?
-                                              <div className="text-muted-foreground">…</div>
-                                            : null}
-                                          </div>
-                                        </div>
-                                      : <div className="mt-2 text-xs text-muted-foreground">
-                                          No form details added yet.
-                                        </div>}
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <Badge variant="outline" className="text-xs">
-                                        People: {booking.number_of_people}
-                                      </Badge>
-                                      <Badge variant="outline" className="text-xs">
-                                        Payment: {booking.payment_status || "pending"}
-                                      </Badge>
-                                      <Badge variant="outline" className="text-xs">
-                                        Status: {booking.check_in_status || "not_checked_in"}
-                                      </Badge>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant={hasFormValues ? "outline" : "default"}
-                                        onClick={() => openEventDetailsEditor(booking)}
-                                      >
-                                        {hasFormValues ? "Edit details" : "Add details"}
-                                      </Button>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      }
-                    </>
+            <div className={cn("flex-1 py-3", pagePad)}>
+              {(() => {
+                const loadingEl = (
+                  <div className="flex items-center justify-center gap-2 rounded-lg border border-[#e6eaf0] bg-white py-10 text-[13px] text-[#5b6572]">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
+                    Loading…
+                  </div>
+                );
+
+                if (crmTab === "today") {
+                  if (isLoadingClientData) return loadingEl;
+                  if (todayAppointment) {
+                    return (
+                      <TodayAppointmentCard
+                        appointment={{
+                          id: Number(todayAppointment.id || 0),
+                          clientName: selectedClient?.name || todayAppointment.username || "",
+                          service:
+                            Array.isArray((todayAppointment as any)?.attributes?.servicelist) &&
+                            (todayAppointment as any).attributes.servicelist.length > 0
+                              ? (todayAppointment as any).attributes.servicelist[0].servicename
+                              : "Appointment",
+                          time: String(todayAppointment.fromtime || ""),
+                          duration:
+                            Array.isArray((todayAppointment as any)?.attributes?.servicelist) &&
+                            (todayAppointment as any).attributes.servicelist.length > 0
+                              ? (todayAppointment as any).attributes.servicelist.reduce(
+                                  (sum: number, svc: any) => sum + (Number(svc.servicetimetaken) || 0),
+                                  0,
+                                )
+                              : 0,
+                          status: todayAppointment.statuscode || "",
+                          staff: todayAppointment.staffname || "",
+                          price:
+                            Array.isArray((todayAppointment as any)?.attributes?.servicelist) &&
+                            (todayAppointment as any).attributes.servicelist.length > 0
+                              ? (todayAppointment as any).attributes.servicelist.reduce(
+                                  (sum: number, svc: any) => sum + (Number(svc.serviceprice) || 0),
+                                  0,
+                                )
+                              : 0,
+                        }}
+                      />
+                    );
                   }
+                  return (
+                    <div className="rounded-lg border border-[#e6eaf0] bg-white px-4 py-10 text-center">
+                      <CalendarX className="mx-auto h-8 w-8 text-[#cfd6e0]" aria-hidden />
+                      <p className="mt-3 text-[13px] font-medium text-[#1a1a1a]">No appointment today</p>
+                      <p className="mt-1 text-[12px] text-[#5b6572]">
+                        This customer has no booking scheduled for today.
+                      </p>
+                    </div>
+                  );
+                }
+
+                if (crmTab === "history") {
+                  if (isLoadingClientData) return loadingEl;
+                  return <ClientServiceHistory appointments={clientAppointments} />;
+                }
+
+                if (crmTab === "timeline") {
+                  if (isLoadingClientData) return loadingEl;
+                  return (
+                    <EnhancedTimeline
+                      appointments={clientAppointments}
+                      appointmentRecords={appointmentRecords}
+                      userId={selectedClient?.id > 0 ? selectedClient.id : 0}
+                      organizationId={user?.organisationid || 0}
+                      clientMobile={selectedClient?.mobile || ""}
+                      openAddRecordRequest={addRecordRequest}
+                      onRequireClientRegistration={() => setIsOnSpotDialogOpen(true)}
+                      onRecordAdded={async () => {
+                        const clientId = selectedClient?.id;
+                        if (clientId && clientId > 0) {
+                          await loadClientData(clientId, user?.organisationid || 0);
+                          return;
+                        }
+                        const mobile = (selectedClient?.mobile || "").trim();
+                        if (!mobile) return;
+                        try {
+                          const req = new SearchAppointmentByMobileReq();
+                          req.organisationid = user?.organisationid || 0;
+                          req.mobilenumber = mobile;
+                          const results = await appointmentService.searchByMobile(req);
+                          if (results?.[0]?.userid) {
+                            await loadClientData(Number(results[0].userid), user?.organisationid || 0);
+                          }
+                        } catch (error) {
+                          console.error("Error refreshing client after record save", error);
+                        }
+                      }}
+                    />
+                  );
+                }
+
+                if (crmTab === "rooms") {
+                  if (isLoadingClientData) return loadingEl;
+                  if (clientRoomStays.length === 0) {
+                    return (
+                      <div className="rounded-lg border border-[#e6eaf0] bg-white px-4 py-10 text-center">
+                        <BedDouble className="mx-auto h-8 w-8 text-[#cfd6e0]" aria-hidden />
+                        <p className="mt-3 text-[13px] font-medium text-[#1a1a1a]">No room stays</p>
+                        <p className="mt-1 text-[12px] text-[#5b6572]">
+                          This guest has no active or recent room bookings.
+                        </p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="overflow-hidden rounded-lg border border-[#e6eaf0] bg-white">
+                      <div className="border-b border-[#e6eaf0] px-3 py-2.5 sm:px-4">
+                        <p className="text-[13px] font-semibold text-[#1a1a1a]">Room stays</p>
+                      </div>
+                      <ul className="divide-y divide-[#e6eaf0]">
+                        {clientRoomStays.map((room) => {
+                          const checkIn = getRoomBookingStartDate(room);
+                          const checkOut = getRoomBookingEndDate(room);
+                          return (
+                            <li
+                              key={room.id}
+                              className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-[13px] font-medium text-[#1a1a1a]">
+                                  {roomBookingLabel(room)}
+                                </p>
+                                <p className="mt-0.5 text-[12px] text-[#5b6572]">
+                                  {checkIn ? format(checkIn, "MMM d") : "—"}
+                                  {" → "}
+                                  {checkOut ? format(checkOut, "MMM d, yyyy") : "—"}
+                                  <span className="text-[#cfd6e0]"> · </span>
+                                  Ref {roomBookingReference(room)}
+                                </p>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <Badge className={cn(statusClassName(room.status), "h-5 text-[10px]")}>
+                                  {roomStatusDisplay(room)}
+                                </Badge>
+                                <Badge variant="outline" className="h-5 text-[10px]">
+                                  {roomPaymentSummary(room)}
+                                </Badge>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className={cn(org.btnOutline, "h-7 px-2 text-[12px]")}
+                                  onClick={() => {
+                                    setRoomDetailsTarget(room);
+                                    setIsRoomDetailsOpen(true);
+                                  }}
+                                >
+                                  Details
+                                </Button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  );
+                }
+
+                if (isLoadingClientData) return loadingEl;
+                if (clientEventBookings.length === 0) {
+                  return (
+                    <div className="rounded-lg border border-[#e6eaf0] bg-white px-4 py-10 text-center">
+                      <Calendar className="mx-auto h-8 w-8 text-[#cfd6e0]" aria-hidden />
+                      <p className="mt-3 text-[13px] font-medium text-[#1a1a1a]">No event bookings</p>
+                      <p className="mt-1 text-[12px] text-[#5b6572]">
+                        This customer has not registered for any events yet.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="overflow-hidden rounded-lg border border-[#e6eaf0] bg-white">
+                    <div className="border-b border-[#e6eaf0] px-3 py-2.5 sm:px-4">
+                      <p className="text-[13px] font-semibold text-[#1a1a1a]">Events</p>
+                      <p className="mt-0.5 text-[12px] text-[#5b6572]">
+                        {clientEventBookings.length} booking
+                        {clientEventBookings.length === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <ul className="divide-y divide-[#e6eaf0]">
+                      {clientEventBookings.map((booking) => {
+                        const event = eventsMap[booking.event_id];
+                        const eventDate = event?.event_date
+                          ? formatEventDateLong(event.event_date)
+                          : "N/A";
+                        const bookingDate = booking.created_at
+                          ? format(new Date(booking.created_at), "MMM d, yyyy")
+                          : "N/A";
+                        const decoded = decodeEventBookingNotes(booking.notes);
+                        const form =
+                          decoded.payload?.form && typeof decoded.payload.form === "object"
+                            ? decoded.payload.form
+                            : null;
+                        const hasFormValues =
+                          !!form &&
+                          Object.keys(form).some(
+                            (k) =>
+                              String((form as Record<string, unknown>)[k] ?? "").trim().length > 0,
+                          );
+                        return (
+                          <li
+                            key={booking.id}
+                            className="flex flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-4"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-[13px] font-medium text-[#1a1a1a]">
+                                {event?.event_name || `Event #${booking.event_id}`}
+                              </p>
+                              <p className="mt-0.5 text-[12px] text-[#5b6572]">
+                                {eventDate}
+                                <span className="text-[#cfd6e0]"> · </span>
+                                Booked {bookingDate}
+                              </p>
+                              {hasFormValues ? (
+                                <div className="mt-1.5 grid gap-0.5 text-[12px] text-[#5b6572]">
+                                  {Object.entries(form as Record<string, unknown>)
+                                    .slice(0, 3)
+                                    .map(([k, v]) => (
+                                      <p key={k} className="truncate">
+                                        <span className="font-medium text-[#1a1a1a]">{k}:</span>{" "}
+                                        {String(v)}
+                                      </p>
+                                    ))}
+                                </div>
+                              ) : (
+                                <p className="mt-1 text-[11px] italic text-[#9aa3af]">
+                                  No form details yet
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <Badge variant="outline" className="h-5 text-[10px]">
+                                {booking.number_of_people} people
+                              </Badge>
+                              <Badge variant="outline" className="h-5 text-[10px]">
+                                {booking.payment_status || "pending"}
+                              </Badge>
+                              <Badge variant="outline" className="h-5 text-[10px]">
+                                {booking.check_in_status || "not_checked_in"}
+                              </Badge>
+                              <Button
+                                type="button"
+                                size="sm"
+                                className={cn(
+                                  hasFormValues ? org.btnOutline : org.btnPrimary,
+                                  "h-7 px-2 text-[12px]",
+                                )}
+                                onClick={() => openEventDetailsEditor(booking)}
+                              >
+                                {hasFormValues ? "Edit" : "Add details"}
+                              </Button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })()}
             </div>
           </>
         ) : (
