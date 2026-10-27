@@ -35,12 +35,34 @@ namespace appointza.Authentication.Models
         public string plan_code { get; set; }
         /// <summary>Optional referral code from an existing organisation</summary>
         public string referral_code { get; set; }
+        /// <summary>
+        /// When true (org signup Screen 1), create a draft Organisation and link it to the user
+        /// so refresh/login stays in business onboarding even before Screen 2 fills the profile.
+        /// </summary>
+        public bool is_business_registration { get; set; }
     }
 
     public class RegisterResponse
     {
         public string mobile { get; set; }
         public string name { get; set; }
+    }
+
+    /// <summary>
+    /// Screen 2 — attach a business organisation to an authenticated user who has no org yet.
+    /// </summary>
+    public class CompleteBusinessOnboardingRequest
+    {
+        public string organisationname { get; set; } = "";
+        public string organisationgstnumber { get; set; } = "";
+        public long primarytype { get; set; }
+        public string primarytypecode { get; set; } = "";
+        public long secondarytype { get; set; }
+        public string secondarytypecode { get; set; } = "";
+        public long organisationlogo { get; set; }
+        public string referral_code { get; set; } = "";
+        public string plan_code { get; set; } = "";
+        public string userdesignation { get; set; } = "";
     }
 
     public class GetOtpRequest
@@ -88,6 +110,11 @@ namespace appointza.Authentication.Models
         public string? email { get; set; }
         public string? name { get; set; }
         public string? picture { get; set; }
+        /// <summary>
+        /// Business signup / Google continue: if the user exists without an organisation,
+        /// create a draft Organisation and link it so they stay in org onboarding.
+        /// </summary>
+        public bool is_business_registration { get; set; }
     }
 }
 

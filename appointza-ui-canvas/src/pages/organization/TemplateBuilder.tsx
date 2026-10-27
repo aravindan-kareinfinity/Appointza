@@ -31,6 +31,11 @@ import {
   clearOnboardingCompleteCache,
   ORG_WEBSITE_TEMPLATE_MAX_PER_ORG,
 } from "@/utils/organizationOnboarding.util";
+import {
+  BUSINESS_COMPLETE_PATH,
+  BUSINESS_DOMAIN_PATH,
+  setBusinessOnboardingStep,
+} from "@/utils/businessOnboarding.util";
 import { OnboardingPageGuide } from "@/components/onboarding/OrganizationOnboarding";
 import { useOrgTemplateAssets } from "@/contexts/OrgTemplateAssetsContext";
 import { ReferenceValueService } from "@/services/referencevalue.service";
@@ -105,8 +110,15 @@ function TemplateBuilderInner() {
   } = useOnboardingStatus();
   const navigate = useNavigate();
   const templatesBackRoute = organizationTemplatesRoute(isComplete);
-  const inOnboarding = !isComplete && hasCustomDomain && hasServices;
   const [searchParams, setSearchParams] = useSearchParams();
+  /** New register website step opens builder with ?onboarding=1&return=/register/domain */
+  const isRegisterOnboarding = searchParams.get("onboarding") === "1";
+  const registerReturnPath = (() => {
+    const raw = searchParams.get("return") || "";
+    return raw.startsWith("/register") ? raw : BUSINESS_DOMAIN_PATH;
+  })();
+  const inOnboarding =
+    !isRegisterOnboarding && !isComplete && hasCustomDomain && hasServices;
   const { registerFileIds } = useOrgTemplateAssets();
 
   const refService = useMemo(() => new ReferenceValueService(), []);
@@ -617,7 +629,17 @@ function TemplateBuilderInner() {
         invalidatePublicSiteCacheForLocation(previewLocationId);
       }
 
-      if (!isComplete && savedTemplateId > 0 && assignSucceeded && previewLocationId > 0) {
+      const locationAlreadyAssigned = locations.some(
+        (loc) => loc.id === previewLocationId && Number(loc.templateid) === savedTemplateId,
+      );
+      const websiteAssigned = assignSucceeded || locationAlreadyAssigned;
+
+      if (
+        (isRegisterOnboarding || !isComplete) &&
+        savedTemplateId > 0 &&
+        websiteAssigned &&
+        previewLocationId > 0
+      ) {
         clearOnboardingCompleteCache(organisationId);
         queryClient.setQueryData<ReferenceValue[]>(
           referenceValuesQueryKey(organisationId, TEMPLATE_REFERENCE_TYPE_ID),
@@ -635,14 +657,29 @@ function TemplateBuilderInner() {
             ];
           },
         );
-        const refreshed = await refetchOnboarding();
-        const websiteReady = refreshed.data?.hasWebsite ?? false;
-        if (websiteReady) {
+
+        if (isRegisterOnboarding) {
+          // After website: ask for domain name next (do not finish setup here).
+          setBusinessOnboardingStep("domain");
+          void queryClient.invalidateQueries({ queryKey: ["onboarding-status"] });
+          void queryClient.invalidateQueries({ queryKey: ["organisation-locations"] });
           toast({
             title: "Website ready!",
-            description: "Next step: set your business hours so customers can book.",
+            description: "Next: choose your public domain name.",
           });
-          window.setTimeout(() => navigate(onboardingStepRoute("timing")), 700);
+          window.setTimeout(() => {
+            navigate(registerReturnPath || BUSINESS_DOMAIN_PATH, { replace: true });
+          }, 500);
+        } else {
+          const refreshed = await refetchOnboarding();
+          const websiteReady = refreshed.data?.hasWebsite ?? false;
+          if (websiteReady) {
+            toast({
+              title: "Website ready!",
+              description: "Nice work — finish setup from What's next.",
+            });
+            window.setTimeout(() => navigate(BUSINESS_COMPLETE_PATH), 700);
+          }
         }
       }
     } catch (e) {
@@ -759,6 +796,10 @@ function TemplateBuilderInner() {
   };
 
   const handleBackFromBuilder = () => {
+    if (isRegisterOnboarding) {
+      navigate(registerReturnPath, { replace: true });
+      return;
+    }
     if (!isComplete && nextStep === "website") {
       navigate(onboardingStepRoute("services"));
       return;

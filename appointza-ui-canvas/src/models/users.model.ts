@@ -68,6 +68,8 @@ export class UsersRegisterReq {
   profileimage: number = 0;
   plan_code: string = '';
   referral_code: string = '';
+  /** Business signup — backend creates a draft Organisation linked to this user. */
+  is_business_registration: boolean = false;
 }
 
 export class UsersRegisterRes {

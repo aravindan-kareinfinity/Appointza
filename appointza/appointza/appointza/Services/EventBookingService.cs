@@ -204,6 +204,17 @@ namespace appointza.Services
             
             // Send WhatsApp notifications to both organization and customer after successful booking
             _ = Task.Run(async () => await SendEventBookingNotifications(eventBooking));
+
+            // Phase 7: durable org-scoped automation (customer). Legacy GrowAasan path above unchanged.
+            try
+            {
+                PublishEventAutomation(eventBooking, WhatsAppAutomationTriggers.EventRegistration);
+                PublishEventAutomation(eventBooking, WhatsAppAutomationTriggers.EventReminder);
+            }
+            catch (Exception autoEx)
+            {
+                logger.LogWarning(autoEx, "Failed to enqueue event registration automation");
+            }
             
             return eventBooking;
         }
@@ -550,7 +561,29 @@ namespace appointza.Services
             db.AddParameter(command, "id", DbTypes.Types.Long).Value = req.id;
             db.AddParameter(command, "updated_at", DbTypes.Types.DateTime).Value = DateTime.UtcNow;
             
-            return await db.ExecuteNonQuery(command) > 0;
+            var ok = await db.ExecuteNonQuery(command) > 0;
+            if (ok)
+            {
+                try
+                {
+                    var booking = await GetBookingById(db, req.id);
+                    if (booking != null)
+                    {
+                        var publisher = serviceProvider.GetRequiredService<WhatsAppAutomationPublisher>();
+                        var orgId = await ResolveEventOrganisationId(booking.event_id);
+                        if (orgId > 0)
+                        {
+                            publisher.InvalidatePending(orgId, WhatsAppAutomationEntityTypes.EventBooking, booking.id);
+                            PublishEventAutomation(booking, WhatsAppAutomationTriggers.EventCancelled, orgId);
+                        }
+                    }
+                }
+                catch (Exception autoEx)
+                {
+                    logger.LogWarning(autoEx, "Failed to enqueue event cancel automation");
+                }
+            }
+            return ok;
         }
         
         private async Task RestoreEventRemainingSlot(IDb db, long eventId, int numberOfPeople)
@@ -596,6 +629,19 @@ namespace appointza.Services
             if (oldBooking != null)
             {
                 _ = Task.Run(async () => await SendEventStatusUpdateNotification(eventBooking, oldBooking));
+                try
+                {
+                    if (!string.Equals(oldBooking.payment_status, eventBooking.payment_status, StringComparison.OrdinalIgnoreCase) ||
+                        !string.Equals(oldBooking.confirmation_status, eventBooking.confirmation_status, StringComparison.OrdinalIgnoreCase) ||
+                        !string.Equals(oldBooking.check_in_status, eventBooking.check_in_status, StringComparison.OrdinalIgnoreCase))
+                    {
+                        PublishEventAutomation(eventBooking, WhatsAppAutomationTriggers.EventStatusChanged);
+                    }
+                }
+                catch (Exception autoEx)
+                {
+                    logger.LogWarning(autoEx, "Failed to enqueue event status automation");
+                }
             }
             
             return eventBooking;
@@ -822,6 +868,77 @@ namespace appointza.Services
                 result = true;
             }
             return result;
+        }
+
+        private void PublishEventAutomation(EventBooking booking, string trigger, long? organisationId = null)
+        {
+            if (booking == null || booking.id <= 0) return;
+            if (string.IsNullOrWhiteSpace(booking.user_mobile)) return;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var orgId = organisationId ?? await ResolveEventOrganisationId(booking.event_id);
+                    if (orgId <= 0) return;
+
+                    DateTime? occurrence = null;
+                    string eventName = booking.event_name ?? "Event";
+                    try
+                    {
+                        var eventService = serviceProvider.GetRequiredService<EventService>();
+                        var events = await eventService.Select(new EventSelectReq { id = (int)booking.event_id });
+                        var ev = events?.FirstOrDefault();
+                        if (ev != null)
+                        {
+                            eventName = ev.event_name ?? eventName;
+                            occurrence = ev.event_date ?? ev.from_date;
+                        }
+                    }
+                    catch { /* best effort */ }
+
+                    var publisher = serviceProvider.GetRequiredService<WhatsAppAutomationPublisher>();
+                    publisher.Enqueue(new WhatsAppAutomationBusinessEvent
+                    {
+                        organisation_id = orgId,
+                        trigger_type = trigger,
+                        business_entity_type = WhatsAppAutomationEntityTypes.EventBooking,
+                        business_entity_id = booking.id,
+                        recipient_phone = booking.user_mobile,
+                        recipient_display_name = booking.user_name ?? "",
+                        occurrence_at_utc = occurrence.HasValue
+                            ? DateTime.SpecifyKind(occurrence.Value, DateTimeKind.Utc)
+                            : null,
+                        variables = new Dictionary<string, string>
+                        {
+                            ["customer_name"] = booking.user_name ?? "",
+                            ["event_name"] = eventName,
+                            ["booking_reference"] = booking.id.ToString(),
+                            ["phone"] = booking.user_mobile ?? "",
+                        },
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "PublishEventAutomation failed for booking {Id}", booking.id);
+                }
+            });
+        }
+
+        private async Task<long> ResolveEventOrganisationId(long eventId)
+        {
+            try
+            {
+                using var db = await dbprovider.GetDb();
+                await db.Connect();
+                using var command = db.GetCommand("SELECT organisation_id FROM events WHERE id = @id LIMIT 1;");
+                db.AddParameter(command, "id", DbTypes.Types.Long).Value = eventId;
+                using var reader = await db.Execute(command);
+                if (await reader.ReadAsync())
+                    return reader["organisation_id"] == DBNull.Value ? 0 : Convert.ToInt64(reader["organisation_id"]);
+            }
+            catch { /* ignore */ }
+            return 0;
         }
 
         private static string FormatEventTime(Event eventDetails)

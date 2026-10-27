@@ -1,0 +1,130 @@
+// Firebase Console → Firestore Database → Rules → Publish
+// Entitlement + subscriptions are server-written only (Cloud Functions Admin SDK).
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && !request.resource.data.keys().hasAny([
+          'premium', 'premiumStatus', 'premiumProductId', 'premiumExpiresAt',
+          'subscriptionTier', 'subscriptionStatus', 'packageName', 'packageStartDate',
+          'packageEndDate', 'planId', 'planName', 'billingPeriod', 'billingPeriodMonths',
+          'expiryTime', 'renewalStatus', 'autoRenewing', 'lastPaymentId',
+          'lastPaymentLinkId', 'lastPaymentAmount', 'lastPaymentCurrency', 'lastPaidAt',
+          'lastOrderId', 'lastRazorpayOrderId', 'freeTrialUsed', 'freeTrialStatus',
+          'freeTrialUsedAt', 'freeTrialEndsAt'
+        ]);
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'premium', 'premiumStatus', 'premiumProductId', 'premiumExpiresAt',
+          'subscriptionTier', 'subscriptionStatus', 'packageName', 'packageStartDate',
+          'packageEndDate', 'planId', 'planName', 'billingPeriod', 'billingPeriodMonths',
+          'expiryTime', 'renewalStatus', 'autoRenewing', 'lastPaymentId',
+          'lastPaymentLinkId', 'lastPaymentAmount', 'lastPaymentCurrency', 'lastPaidAt',
+          'lastOrderId', 'lastRazorpayOrderId', 'freeTrialUsed', 'freeTrialStatus',
+          'freeTrialUsedAt', 'freeTrialEndsAt'
+        ]);
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/entitlement/{docId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/subscriptions/{subscriptionId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/purchases/{purchaseId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/entitlementSources/{sourceId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/payments/{paymentId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/trials/{trialId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write, delete: if false;
+    }
+
+    match /users/{userId}/leads/{leadId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/loginRecords/{recordId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/trips/{tripId} {
+      allow read, write, delete: if request.auth != null
+        && request.auth.uid == userId;
+    }
+
+    match /sharedTrips/{shareCode} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    match /users/{userId}/savedPlaces/{placeId} {
+      allow read, write, delete: if request.auth != null
+        && request.auth.uid == userId;
+    }
+
+    match /razorpayPaymentLinks/{linkId} {
+      allow read, write: if false;
+    }
+
+    match /razorpayOrders/{orderId} {
+      allow read, write: if false;
+    }
+
+    match /razorpayWebhookEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /uberOAuth/{uid} {
+      allow read, write: if false;
+    }
+
+    match /uberOAuthStates/{state} {
+      allow read, write: if false;
+    }
+
+    match /becknSearches/{transactionId}/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /blaBlaCarProOrg/{docId} {
+      allow read, write: if false;
+    }
+
+    match /blaBlaCarProCustomers/{uid} {
+      allow read, write: if false;
+    }
+  }
+}

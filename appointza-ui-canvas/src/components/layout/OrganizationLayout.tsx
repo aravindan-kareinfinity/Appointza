@@ -7,13 +7,12 @@ import {
 } from "@/utils/orgSidebar.util";
 import { useNavigate, useLocation } from "react-router-dom";
 import OrganizationSidebar from "./OrganizationSidebar";
+import OnboardingSidebar from "./OnboardingSidebar";
 import OrganizationTopBar from "./OrganizationTopBar";
 import DashboardSwitcher from "./DashboardSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
-import { UserTypeUtil } from "@/utils/userType.util";
-import { PrivilegeUtil } from "@/utils/privilege.util";
 import { cn } from "@/lib/utils";
 import { org } from "@/lib/orgTheme";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +20,11 @@ import { Button } from "@/components/ui/button";
 import { ShieldX } from "lucide-react";
 import { OnboardingSetupScreen } from "@/components/onboarding/OrganizationOnboarding";
 import { isOrganizationOnboardingRoute } from "@/utils/organizationOnboarding.util";
+import {
+  isPendingBusinessOnboarding,
+  isRegisterCreateFlow,
+  isRegisterOnboardingPath,
+} from "@/utils/businessOnboarding.util";
 import { OrgTemplateAssetsProvider } from "@/contexts/OrgTemplateAssetsContext";
 
 interface OrganizationLayoutProps {
@@ -42,7 +46,8 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
     isComplete,
     isLoading: isLoadingOnboarding,
     nextStep,
-  } = useOnboardingStatus({ enabled: !isProfileSettingsRoute });
+    backendState,
+  } = useOnboardingStatus();
   
   // Get user context from localStorage
   const getUserContext = () => {
@@ -71,8 +76,6 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
     const routePermissionMap: Record<string, string> = {
       '/organization/dashboard': 'editandviewDashboard',
       '/organization/appointments': 'editandviewAppointments',
-      '/organization/calendar': 'editandviewAppointments',
-      '/organization/event-bookings': 'editandviewEvents',
       '/organization/services': 'editandviewCreateService', // Check for service or event permission
       '/organization/leads': 'editandviewClients',
       '/organization/clients': 'editandviewClients',
@@ -81,14 +84,15 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
       '/organization/crm/leads': 'editandviewClients',
       '/organization/crm/pipeline': 'editandviewClients',
       '/organization/crm/inbox': 'editandviewClients',
+      '/organization/crm/whatsapp/inbox': 'editandviewClients',
       '/organization/crm/email-campaigns': 'editandviewClients',
       '/organization/crm/whatsapp-campaigns': 'editandviewClients',
+      '/organization/crm/whatsapp/automations': 'editandviewClients',
       '/organization/crm/templates': 'editandviewClients',
       '/organization/crm/tasks': 'editandviewClients',
       '/organization/crm/reports': 'editandviewClients',
       '/organization/crm/catalogue': 'editandviewClients',
       '/organization/crm/business-profile': 'editandviewClients',
-      '/organization/crm/clients': 'editandviewClients',
       '/organization/reference-values': 'editandviewBusinessvalues',
     };
     
@@ -99,11 +103,7 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
         // Services route needs either service or event permission
         return userpermission?.editandviewCreateService === true || userpermission?.editandviewCreateEvent === true;
       }
-      if (
-        route === '/organization/appointments' ||
-        route === '/organization/calendar' ||
-        route === '/organization/event-bookings'
-      ) {
+      if (route === '/organization/appointments') {
         // Bookings merges appointments + event participants
         return (
           userpermission?.editandviewAppointments === true ||
@@ -119,11 +119,7 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
         if (mappedRoute === '/organization/services') {
           return userpermission?.editandviewCreateService === true || userpermission?.editandviewCreateEvent === true;
         }
-        if (
-          mappedRoute === '/organization/appointments' ||
-          mappedRoute === '/organization/calendar' ||
-          mappedRoute === '/organization/event-bookings'
-        ) {
+        if (mappedRoute === '/organization/appointments') {
           return (
             userpermission?.editandviewAppointments === true ||
             userpermission?.editandviewEvents === true
@@ -150,19 +146,33 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
     return () => window.removeEventListener("storage", syncFromStorage);
   }, []);
 
+  const onRegisterOnboarding = isRegisterOnboardingPath(location.pathname);
+  const allowPendingBusinessSetup =
+    onRegisterOnboarding && isPendingBusinessOnboarding();
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login', { state: { from: location.pathname } });
       return;
     } 
     
-    if (userType === 'user' && !canSwitchMode) {
+    if (userType === 'user' && !canSwitchMode && !allowPendingBusinessSetup) {
       navigate('/user/dashboard');
       return;
     }
-  }, [isAuthenticated, userType, canSwitchMode, navigate, location.pathname]);
+  }, [
+    isAuthenticated,
+    userType,
+    canSwitchMode,
+    navigate,
+    location.pathname,
+    allowPendingBusinessSetup,
+  ]);
 
-  if (!isAuthenticated || (userType !== 'organization' && !canSwitchMode)) {
+  if (
+    !isAuthenticated ||
+    (userType !== 'organization' && !canSwitchMode && !allowPendingBusinessSetup)
+  ) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -203,8 +213,7 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
                   const accessibleRoutes = [
                     { path: '/organization/appointments', perm: 'editandviewAppointments' },
                     { path: '/organization/appointments?kind=events', perm: 'editandviewEvents' },
-                    { path: '/organization/services', perm: 'editandviewCreateService' },
-                    { path: '/organization/crm/clients', perm: 'editandviewClients' },
+                    { path: '/organization/services?kind=services', perm: 'editandviewCreateService' },
                     { path: '/organization/clients', perm: 'editandviewClients' },
                     { path: '/organization/profile', perm: null }, // Profile is always accessible
                   ];
@@ -226,22 +235,16 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
     );
   }
 
-  // Show onboarding blocking screen if incomplete and not on onboarding routes
-  // Skip onboarding check for staff users - they don't need to set up services/timing
-  // Profile settings remain accessible during setup
-  if (userType === "organization" && !isOnboardingRoute && !isStaff && !isProfileSettingsRoute) {
-    if (!isLoadingOnboarding && !isComplete) {
-      return (
-        <OnboardingSetupScreen
-          hasCustomDomain={hasCustomDomain}
-          hasServices={hasServices}
-          hasWebsite={hasWebsite}
-          hasTiming={hasTiming}
-          nextStep={nextStep}
-        />
-      );
-    }
-  }
+  // Incomplete org owners: keep them in setup (hub) unless on an allowed setup/settings route.
+  const forceOnboardingHub =
+    userType === "organization" &&
+    !isStaff &&
+    !isLoadingOnboarding &&
+    !isComplete &&
+    !isOnboardingRoute &&
+    !isProfileSettingsRoute &&
+    !isRegisterCreateFlow() &&
+    !onRegisterOnboarding;
 
   const isTemplateBuilder = location.pathname.includes("/template-builder");
   const isClientManagement =
@@ -255,26 +258,39 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
   const isProfilePage = /^\/organization\/profile\/?$/.test(location.pathname);
   const isHospitalityPage = /^\/organization\/hospitality\/?$/.test(location.pathname);
   const isFullBleedPage =
-    isTemplateBuilder ||
-    isClientManagement ||
-    isClientBookPage ||
-    isLeadsPage ||
-    isCrmPage ||
-    isProfilePage ||
-    isHospitalityPage;
-  const inOnboardingFlow =
-    userType === "organization" && !isStaff && !isComplete && isOnboardingRoute;
+    !forceOnboardingHub &&
+    !onRegisterOnboarding &&
+    (isTemplateBuilder ||
+      isClientManagement ||
+      isClientBookPage ||
+      isLeadsPage ||
+      isCrmPage ||
+      isProfilePage ||
+      isHospitalityPage);
+  /** Incomplete setup (or active register onboarding): Setup sidebar instead of Workspace. */
+  const showOnboardingSidebar =
+    onRegisterOnboarding ||
+    (userType === "organization" && !isStaff && !isComplete);
 
   return (
     <OrgTemplateAssetsProvider>
     <div
       className={cn(
         "app-shell h-dvh overflow-hidden safe-area-sides",
-        inOnboardingFlow || isMobile ? "org-flat-shell" : "org-razorpay-shell",
+        isMobile ? "org-flat-shell" : "org-razorpay-shell",
       )}
     >
-      {!inOnboardingFlow && !isMobile ? <OrganizationTopBar /> : null}
-      {!inOnboardingFlow && (
+      {!isMobile ? <OrganizationTopBar /> : null}
+      {showOnboardingSidebar ? (
+        <OnboardingSidebar
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={handleSidebarCollapsedChange}
+          backendState={backendState}
+          hasServices={hasServices}
+          hasWebsite={hasWebsite}
+          hasTiming={hasTiming}
+        />
+      ) : (
         <OrganizationSidebar
           collapsed={sidebarCollapsed}
           onCollapsedChange={handleSidebarCollapsedChange}
@@ -283,21 +299,18 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
       <div
         className={cn(
           "h-dvh overflow-hidden transition-all duration-300",
-          inOnboardingFlow
-            ? "w-full pt-0"
-            : isMobile
-              ? "safe-area-top pl-0 pb-20"
-              : sidebarCollapsed
-                ? `pt-12 ${ORG_SIDEBAR_OFFSET_CLASS.collapsed}`
-                : `pt-12 ${ORG_SIDEBAR_OFFSET_CLASS.expanded}`,
+          isMobile
+            ? "safe-area-top pl-0 pb-20"
+            : sidebarCollapsed
+              ? `pt-12 ${ORG_SIDEBAR_OFFSET_CLASS.collapsed}`
+              : `pt-12 ${ORG_SIDEBAR_OFFSET_CLASS.expanded}`,
         )}
-        style={isMobile && !inOnboardingFlow ? { paddingBottom: 'calc(5rem + var(--safe-area-bottom))' } : undefined}
+        style={isMobile ? { paddingBottom: "calc(5rem + var(--safe-area-bottom))" } : undefined}
       >
         <main
           className={cn(
             "h-full w-full max-w-none bg-[#f5f7f9]",
-            !inOnboardingFlow && !isMobile && "org-workspace-curve-right overflow-hidden",
-            inOnboardingFlow && "bg-appointza-cream",
+            !isMobile && "org-workspace-curve-right overflow-hidden",
             isFullBleedPage
               ? cn(
                   "flex min-h-0 flex-col p-0",
@@ -306,7 +319,7 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
               : "overflow-y-auto pb-4 pt-4 md:pb-5 md:pt-4 lg:pb-6 lg:pt-5",
           )}
         >
-          {canSwitchMode && !isFullBleedPage && !inOnboardingFlow && (
+          {canSwitchMode && !isFullBleedPage && !showOnboardingSidebar && (
             <div className={cn(org.pageHeader, "mb-6 shrink-0 pb-0 pt-0")}>
               <DashboardSwitcher />
             </div>
@@ -318,7 +331,17 @@ const OrganizationLayout = ({ children }: OrganizationLayoutProps) => {
                 "flex min-h-0 flex-1 flex-col overflow-hidden",
             )}
           >
-            {children}
+            {forceOnboardingHub ? (
+              <OnboardingSetupScreen
+                hasCustomDomain={hasCustomDomain}
+                hasServices={hasServices}
+                hasWebsite={hasWebsite}
+                hasTiming={hasTiming}
+                nextStep={nextStep}
+              />
+            ) : (
+              children
+            )}
           </div>
         </main>
       </div>

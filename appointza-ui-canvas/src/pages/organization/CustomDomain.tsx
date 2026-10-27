@@ -163,7 +163,7 @@ const CustomDomainScreen = () => {
       });
 
       if (!isComplete) {
-        navigate("/organization/services", { replace: true });
+        navigate("/register/website", { replace: true });
       }
     } catch (error: unknown) {
       console.error("Failed to save custom domain:", error);

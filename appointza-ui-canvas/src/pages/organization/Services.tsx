@@ -97,9 +97,16 @@ import { getServicePriceSummary, getServiceStartingPrice } from "@/utils/service
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useOrganisationCatalogOfferings } from "@/hooks/useOrganisationCatalogOfferings";
 import { normalizeCatalogTab } from "@/utils/organisationCatalogOfferings.util";
-import { OnboardingPageGuide } from "@/components/onboarding/OrganizationOnboarding";
-import { ServicesEventsExplainer } from "@/components/onboarding/ServicesEventsExplainer";
 import { onboardingStepRoute } from "@/utils/organizationOnboarding.util";
+import {
+  BUSINESS_CREATE_PATH,
+  clearRegisterCreateReturn,
+  isRegisterCreateFlow,
+  readRegisterCreateReturn,
+  stashRegisterCreateReturn,
+} from "@/utils/businessOnboarding.util";
+import { RegisterCreateSkipButton } from "@/components/onboarding/RegisterCreateSkipButton";
+import { useOrgTemplateAssets } from "@/contexts/OrgTemplateAssetsContext";
 import { compareDateOnly, isDateOnlyAfterToday, toDateOnlyString } from "@/utils/eventDate.util";
 import {
   eventWhenBadge,
@@ -118,15 +125,14 @@ const OrganizationServices = () => {
   const {
     isComplete,
     nextStep,
-    hasCustomDomain,
-    hasServices,
-    hasWebsite,
-    hasTiming,
     refetch: refetchOnboarding,
   } = useOnboardingStatus();
   const { user, isAuthenticated, userType } = useAuth();
   const { id: globalLocationId, setId: setGlobalLocationId } = useGlobalId();
   const organizationId = user?.organisationid ?? 0;
+  /** Register Screen 5: same services UI as production; return path is in sessionStorage. */
+  const isRegisterOnboarding =
+    searchParams.get("onboarding") === "1" || isRegisterCreateFlow();
   const {
     offerings: catalogOfferings,
     offersServices,
@@ -155,6 +161,18 @@ const OrganizationServices = () => {
       { replace: true },
     );
   };
+
+  // Legacy ?onboarding=1&return=… → clean production URL (return kept in sessionStorage).
+  useEffect(() => {
+    if (searchParams.get("onboarding") !== "1") return;
+    const returnTo = searchParams.get("return");
+    const kind = searchParams.get("kind") || "services";
+    stashRegisterCreateReturn(
+      returnTo && returnTo.startsWith("/") ? returnTo : BUSINESS_CREATE_PATH,
+      kind === "events" ? "events" : kind === "services" ? "services" : undefined,
+    );
+    navigate(`/organization/services?kind=${encodeURIComponent(kind)}`, { replace: true });
+  }, [searchParams, navigate]);
 
   useEffect(() => {
     if (isLoadingCatalogOfferings || organizationId <= 0) return;
@@ -222,6 +240,17 @@ const OrganizationServices = () => {
 
   // Service image upload state (stored in OrganisationServices.attributes.ImageIds)
   const [serviceImages, setServiceImages] = useState<number[]>([]);
+  const { registerFileIds } = useOrgTemplateAssets();
+
+  const syncImagesToAssets = async (ids: number[]) => {
+    const unique = ids.map(Number).filter((id) => id > 0);
+    if (!unique.length) return;
+    try {
+      await registerFileIds(unique);
+    } catch (error) {
+      console.error("Failed to sync images into Assets library:", error);
+    }
+  };
 
   // Events state - use globalLocationId from GlobalIdContext
   const eventLocationId = globalLocationId ? Number(globalLocationId) : undefined;
@@ -404,6 +433,7 @@ const OrganizationServices = () => {
 
     try {
       const serviceToSave = prepareServiceForSave();
+      await syncImagesToAssets(serviceImages);
 
       if (editingService) {
         // Ensure we preserve the ID and version when editing
@@ -428,7 +458,17 @@ const OrganizationServices = () => {
         setSelectedComboServices([]);
         setServiceImages([]);
 
-        if (!isComplete && wasFirstService) {
+        if (isRegisterOnboarding || isRegisterCreateFlow()) {
+          // Opened from Screen 5 — return so the router can open the next item / website.
+          await refetchOnboarding();
+          const returnTo =
+            readRegisterCreateReturn() ||
+            (searchParams.get("return")?.startsWith("/")
+              ? searchParams.get("return")!
+              : "/register/create");
+          clearRegisterCreateReturn();
+          navigate(returnTo, { replace: true });
+        } else if (!isComplete && wasFirstService) {
           await refetchOnboarding();
           navigate(
             onboardingStepRoute(
@@ -711,6 +751,7 @@ const OrganizationServices = () => {
 
     try {
       const eventToSave = prepareEventForSave();
+      await syncImagesToAssets(eventImages);
 
       if (editingEvent) {
         updateEvent(eventToSave);
@@ -955,33 +996,8 @@ const OrganizationServices = () => {
     );
   }
 
-  const showServicesEventsGuide =
-    !isComplete || (services.length === 0 && events.length === 0);
-
   return (
     <div className="org-page">
-      {!isComplete && (
-        <div className="org-page-section pb-0 pt-2 sm:pt-4">
-          <OnboardingPageGuide
-            compact
-            stepId="services"
-            hasCustomDomain={hasCustomDomain}
-            hasServices={hasServices}
-            hasWebsite={hasWebsite}
-            hasTiming={hasTiming}
-            locationId={selectedLocationId > 0 ? selectedLocationId : undefined}
-          />
-        </div>
-      )}
-
-      {showServicesEventsGuide && offersServices && offersEvents && (
-        <ServicesEventsExplainer
-          activeTab={activeTab === "events" ? "events" : "services"}
-          onTabChange={(tab) => setActiveTab(tab)}
-          inOnboarding={!isComplete}
-        />
-      )}
-
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as CatalogTab)}
@@ -1047,6 +1063,17 @@ const OrganizationServices = () => {
                   </button>
                 </div>
 
+                {!showAddForm &&
+                !showEditForm &&
+                !showComboForm &&
+                !showAddEventForm &&
+                !showEditEventForm &&
+                !showEventBookingPanel ? (
+                  <RegisterCreateSkipButton
+                    fallbackOffering={activeTab === "events" ? "events" : "services"}
+                  />
+                ) : null}
+
                 {activeTab === "services" ? (
                   <>
                     {services.length >= 2 && !showAddForm && !showEditForm && !showComboForm && (
@@ -1108,14 +1135,20 @@ const OrganizationServices = () => {
                     <Package className="h-12 w-12 mx-auto text-zinc-400 mb-2" aria-hidden />
                     <h3 className="text-lg font-semibold text-appointza-navy">No services available</h3>
                     <p className="text-stone-600 text-sm mb-4">Add your first service to get started!</p>
-                    <Button
-                      onClick={() => openServiceForm(undefined, false)}
-                      className="rounded-xl border border-stone-200 bg-white text-appointza-navy shadow-none hover:border-blue-300 hover:bg-blue-50"
-                      variant="outline"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Service
-                    </Button>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <Button
+                        onClick={() => openServiceForm(undefined, false)}
+                        className="rounded-xl border border-stone-200 bg-white text-appointza-navy shadow-none hover:border-blue-300 hover:bg-blue-50"
+                        variant="outline"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Service
+                      </Button>
+                      <RegisterCreateSkipButton
+                        fallbackOffering="services"
+                        className="h-auto rounded-xl border-stone-200 bg-white text-appointza-navy shadow-none hover:border-blue-300 hover:bg-blue-50"
+                      />
+                    </div>
                   </div>
                 ) : catalogListView === "table" ? (
                   <div className="overflow-hidden rounded-lg border border-[#e6eaf0] bg-white">
@@ -1374,13 +1407,19 @@ const OrganizationServices = () => {
                       <p className="text-stone-600 mb-6 text-sm">
                         Try changing search, date, or visibility filters, or add a new event.
                       </p>
-                      <Button
-                        onClick={() => openEventForm()}
-                        className="rounded-xl bg-blue-600 text-white shadow-none hover:bg-blue-700"
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Event
-                      </Button>
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <Button
+                          onClick={() => openEventForm()}
+                          className="rounded-xl bg-blue-600 text-white shadow-none hover:bg-blue-700"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Event
+                        </Button>
+                        <RegisterCreateSkipButton
+                          fallbackOffering="events"
+                          className="h-auto rounded-xl border-stone-200 bg-white text-appointza-navy shadow-none hover:border-blue-300 hover:bg-blue-50"
+                        />
+                      </div>
                     </CardContent>
                   </Card>
                 ) : catalogListView === "table" ? (

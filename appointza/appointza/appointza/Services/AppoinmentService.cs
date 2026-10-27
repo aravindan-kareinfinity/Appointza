@@ -29,8 +29,9 @@ namespace appointza.Services
         Sms.Services.SmsService smsService;
         CreditWalletService creditWalletService;
         OrganisationLoyaltyService organisationLoyaltyService;
+        WhatsAppAutomationPublisher whatsAppAutomationPublisher;
 
-        public AppoinmentService(IDbProvider dbprovider, IQueryBuilderProvider querybuilderprovider, RequestState requeststate, ReferenceValueService referenceValueService, ReferenceTypeService referenceTypeService, /* PaymentService paymentService, */ TimelineService timelineService, WhatsAppMsg.Services.WhatsAppService whatsAppService, UsersService usersService, OrganisationService organisationService, OrganisationLocationService organisationLocationService, Sms.Services.SmsService smsService, CreditWalletService creditWalletService, OrganisationLoyaltyService organisationLoyaltyService)
+        public AppoinmentService(IDbProvider dbprovider, IQueryBuilderProvider querybuilderprovider, RequestState requeststate, ReferenceValueService referenceValueService, ReferenceTypeService referenceTypeService, /* PaymentService paymentService, */ TimelineService timelineService, WhatsAppMsg.Services.WhatsAppService whatsAppService, UsersService usersService, OrganisationService organisationService, OrganisationLocationService organisationLocationService, Sms.Services.SmsService smsService, CreditWalletService creditWalletService, OrganisationLoyaltyService organisationLoyaltyService, WhatsAppAutomationPublisher whatsAppAutomationPublisher)
         {
             this.dbprovider = dbprovider;
             this.querybuilderprovider = querybuilderprovider;
@@ -47,6 +48,7 @@ namespace appointza.Services
             this.smsService = smsService;
             this.creditWalletService = creditWalletService;
             this.organisationLoyaltyService = organisationLoyaltyService;
+            this.whatsAppAutomationPublisher = whatsAppAutomationPublisher;
         }
 
         /// <summary>
@@ -295,6 +297,17 @@ namespace appointza.Services
                 // Log error but don't fail the appointment creation
                 Console.WriteLine($"Error sending booking WhatsApp notification: {ex.Message}");
             }
+
+            // Phase 7: durable org-scoped automation outbox (does not replace legacy GrowAasan notify above).
+            try
+            {
+                await PublishAppointmentAutomation(db, appoinment, WhatsAppAutomationTriggers.BookingCreated);
+                await PublishAppointmentAutomation(db, appoinment, WhatsAppAutomationTriggers.BookingReminder);
+            }
+            catch (Exception autoEx)
+            {
+                Console.WriteLine($"Error enqueueing booking automation: {autoEx.Message}");
+            }
         }
         public async Task<Appoinment> Update(Appoinment appoinment)
         {
@@ -357,6 +370,22 @@ namespace appointza.Services
             {
                 appoinment.version = appoinment.version + 1;
                 result = true;
+                if (appoinment.ishasreshedule)
+                {
+                    try
+                    {
+                        whatsAppAutomationPublisher.InvalidatePending(
+                            appoinment.organizationid,
+                            WhatsAppAutomationEntityTypes.Appointment,
+                            appoinment.id);
+                        await PublishAppointmentAutomation(db, appoinment, WhatsAppAutomationTriggers.BookingRescheduled);
+                        await PublishAppointmentAutomation(db, appoinment, WhatsAppAutomationTriggers.BookingReminder);
+                    }
+                    catch (Exception autoEx)
+                    {
+                        Console.WriteLine($"Error enqueueing reschedule automation: {autoEx.Message}");
+                    }
+                }
             }
             return result;
         }
@@ -773,6 +802,19 @@ namespace appointza.Services
                 Console.WriteLine($"Error evaluating loyalty for appointment {req.appoinmentid}: {loyaltyEx.Message}");
             }
 
+            try
+            {
+                var code = (req.statuscode ?? "").Trim().ToUpperInvariant();
+                if (code is "CONFIRMED" or "CONFIRM" or "BOOKED" or "APPROVED")
+                    await PublishAppointmentAutomation(db, appoinment, WhatsAppAutomationTriggers.BookingConfirmed);
+                else if (code == "COMPLETED")
+                    await PublishAppointmentAutomation(db, appoinment, WhatsAppAutomationTriggers.BookingCompleted);
+            }
+            catch (Exception autoEx)
+            {
+                Console.WriteLine($"Error enqueueing status automation: {autoEx.Message}");
+            }
+
             return result;
         }
 
@@ -896,9 +938,58 @@ namespace appointza.Services
                 Console.WriteLine($"Error sending cancellation SMS notification: {ex.Message}");
             }
 
+            try
+            {
+                whatsAppAutomationPublisher.InvalidatePending(
+                    appoinment.organizationid,
+                    WhatsAppAutomationEntityTypes.Appointment,
+                    appoinment.id);
+                await PublishAppointmentAutomation(db, appoinment, WhatsAppAutomationTriggers.BookingCancelled);
+            }
+            catch (Exception autoEx)
+            {
+                Console.WriteLine($"Error enqueueing cancel automation: {autoEx.Message}");
+            }
+
             return result;
         }
 
+        private async Task PublishAppointmentAutomation(IDb db, Appoinment appoinment, string trigger)
+        {
+            if (appoinment == null || appoinment.organizationid <= 0 || appoinment.id <= 0) return;
+
+            var customerUser = (await usersService.SelectTransaction(db, new UsersSelectReq { id = appoinment.userid })).FirstOrDefault();
+            var organisation = (await organisationService.SelectTransaction(db, new OrganisationSelectReq { id = appoinment.organizationid })).FirstOrDefault();
+            var phone = customerUser?.mobile ?? "";
+            if (string.IsNullOrWhiteSpace(phone)) return;
+
+            var serviceName = "Appointment";
+            if (appoinment.attributes?.servicelist != null && appoinment.attributes.servicelist.Count > 0)
+                serviceName = appoinment.attributes.servicelist[0].servicename ?? serviceName;
+
+            var when = appoinment.appoinmentdate.Date.Add(appoinment.fromtime);
+            var occurrenceUtc = DateTime.SpecifyKind(when, DateTimeKind.Utc);
+
+            whatsAppAutomationPublisher.Enqueue(new WhatsAppAutomationBusinessEvent
+            {
+                organisation_id = appoinment.organizationid,
+                trigger_type = trigger,
+                business_entity_type = WhatsAppAutomationEntityTypes.Appointment,
+                business_entity_id = appoinment.id,
+                recipient_phone = phone,
+                recipient_display_name = customerUser?.name ?? "",
+                occurrence_at_utc = occurrenceUtc,
+                variables = new Dictionary<string, string>
+                {
+                    ["customer_name"] = customerUser?.name ?? "",
+                    ["organisation_name"] = organisation?.name ?? "",
+                    ["booking_reference"] = appoinment.id.ToString(),
+                    ["service_name"] = serviceName,
+                    ["booking_datetime"] = when.ToString("dd MMM yyyy HH:mm"),
+                    ["phone"] = phone,
+                },
+            });
+        }
 
         // TODO: Future implementation - Payment integration
         // UpdatePayment and UpdatePaymentTransaction methods will be implemented here

@@ -175,6 +175,29 @@ const AuthenticatedImage = ({ imageId, alt, className, onError }: {
   );
 };
 
+/** Single-line address for cards — skips city/state/pin when already in addressline1. */
+function formatLocationCardAddress(loc: {
+  addressline1?: string;
+  addressline2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+}): string {
+  const line1 = (loc.addressline1 || "").trim();
+  const line2 = (loc.addressline2 || "").trim();
+  const city = (loc.city || "").trim();
+  const state = (loc.state || "").trim();
+  const pin = (loc.pincode || "").trim();
+  const primary = [line1, line2].filter(Boolean).join(", ");
+  const locality = [city, [state, pin].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  if (!locality) return primary;
+  if (!primary) return locality;
+  const primaryLower = primary.toLowerCase();
+  if (city && primaryLower.includes(city.toLowerCase())) return primary;
+  if (state && primaryLower.includes(state.toLowerCase())) return primary;
+  return `${primary}, ${locality}`;
+}
+
 const LocationsScreen = ({
   embedded = false,
   section,
@@ -1202,111 +1225,125 @@ const LocationsScreen = ({
               </Card>
             ) : (
               <>
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h3 className="text-xl font-semibold">Business Locations</h3>
-                    <p className="text-muted-foreground">
-                      Manage your business locations and addresses.
-                    </p>
-                  </div>
-                  <Button onClick={openAddDialog} className="bg-blue-600 shadow-none hover:bg-blue-700">
-                    <Plus className="mr-2 h-4 w-4" />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  {!embedded ? (
+                    <div>
+                      <h3 className="text-xl font-semibold text-appointza-navy">Business Locations</h3>
+                      <p className="text-sm text-stone-500">
+                        Manage your business locations and addresses.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="relative min-w-0 flex-1 max-w-md">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
+                      <Input
+                        placeholder="Search locations…"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={cn(org.input, "h-9 pl-9")}
+                      />
+                    </div>
+                  )}
+                  <Button
+                    onClick={openAddDialog}
+                    className={cn(org.btnPrimary, "h-9 shrink-0 self-start sm:self-auto")}
+                  >
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
                     Add Location
                   </Button>
                 </div>
 
-                {/* Search */}
-                <div className="flex w-full max-w-sm items-center space-x-2">
-                  <Input
-                    placeholder="Search locations..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value.trim())}
-                    className="w-full"
-                  />
-                  <Button variant="outline" size="icon">
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
+                {!embedded ? (
+                  <div className="relative max-w-md">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
+                    <Input
+                      placeholder="Search locations…"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className={cn(org.input, "h-9 pl-9")}
+                    />
+                  </div>
+                ) : null}
 
-                {/* Locations List */}
                 {filteredLocations.length === 0 ? (
-          <Card className="rounded-2xl border-stone-200 bg-white shadow-none">
-            <CardContent className="py-8 text-center">
-              <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No locations found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm ? "No locations match your search." : "Add your first location to get started!"}
-              </p>
-              {!searchTerm && (
-                <Button onClick={openAddDialog} className="bg-blue-600 shadow-none hover:bg-blue-700">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Location
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-
-            <div className="grid gap-4">
-          {filteredLocations.map((locationItem) => (
-            <Card key={locationItem.id} className="rounded-xl border-stone-200 bg-white shadow-none transition-colors hover:border-blue-200">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    {/* Location Icon */}
-                    <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Home className="h-6 w-6 text-blue-600" />
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">{locationItem.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {locationItem.addressline1}
-                        {locationItem.addressline2 && `, ${locationItem.addressline2}`}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {locationItem.city}, {locationItem.state} {locationItem.pincode}
-                      </p>
-                      {locationItem.customurl && (
-                        <p className="text-sm text-blue-600 mt-1">
-                          <a
-                            href={buildOrganisationPublicSiteOriginFromHost(
-                              buildOrganisationCustomUrlHost({ customUrl: locationItem.customurl }),
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {buildOrganisationCustomUrlHost({ customUrl: locationItem.customurl })}
-                          </a>
-                        </p>
-                      )}
-                    </div>
+                  <div className="rounded-lg border border-[#e6eaf0] bg-white px-4 py-12 text-center">
+                    <MapPin className="mx-auto mb-3 h-9 w-9 text-[#d0d5dd]" />
+                    <h3 className="text-[14px] font-semibold text-[#1a1a1a]">No locations found</h3>
+                    <p className="mt-1 mb-4 text-[13px] text-[#667085]">
+                      {searchTerm
+                        ? "No locations match your search."
+                        : "Add your first location to get started."}
+                    </p>
+                    {!searchTerm ? (
+                      <Button onClick={openAddDialog} className={cn(org.btnPrimary, "h-9")}>
+                        <Plus className="mr-1.5 h-3.5 w-3.5" />
+                        Add Location
+                      </Button>
+                    ) : null}
                   </div>
-                  
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(locationItem)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openDeleteDialog(locationItem)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredLocations.map((locationItem) => {
+                      const address = formatLocationCardAddress(locationItem);
+                      const siteHost = locationItem.customurl
+                        ? buildOrganisationCustomUrlHost({ customUrl: locationItem.customurl })
+                        : "";
+                      return (
+                        <div
+                          key={locationItem.id}
+                          className="flex items-center gap-3 rounded-lg border border-[#e6eaf0] bg-white px-3 py-3 transition-colors hover:border-[#cfd8f0] hover:bg-[#fafbff] sm:px-4"
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#eef2f7] text-[#2a5af5]">
+                            <Home className="h-4 w-4" aria-hidden />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="truncate text-[14px] font-semibold text-[#1a1a1a]">
+                              {locationItem.name || "Untitled location"}
+                            </h3>
+                            {address ? (
+                              <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-[#667085]">
+                                {address}
+                              </p>
+                            ) : null}
+                            {siteHost ? (
+                              <a
+                                href={buildOrganisationPublicSiteOriginFromHost(siteHost)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-1 inline-block truncate text-[12px] font-medium text-[#2a5af5] hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {siteHost}
+                              </a>
+                            ) : null}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-0.5">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-[#667085] hover:bg-[#f4f6f9] hover:text-[#1a1a1a]"
+                              aria-label={`Edit ${locationItem.name || "location"}`}
+                              onClick={() => openEditDialog(locationItem)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-[#667085] hover:bg-red-50 hover:text-red-600"
+                              aria-label={`Delete ${locationItem.name || "location"}`}
+                              onClick={() => openDeleteDialog(locationItem)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-            </div>
-          </>
-        )}
+                )}
               </>
             )}
 

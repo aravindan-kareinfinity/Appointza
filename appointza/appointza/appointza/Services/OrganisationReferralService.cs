@@ -293,6 +293,39 @@ namespace appointza.Services
             return sb.ToString();
         }
 
+        public async Task<OrganisationReferralVerifyRes> VerifyReferralCode(string? referralCode)
+        {
+            var normalized = NormalizeReferralCode(referralCode);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return new OrganisationReferralVerifyRes
+                {
+                    valid = false,
+                    message = "Please enter a referral code.",
+                };
+            }
+
+            using IDb db = await dbprovider.GetDb();
+            await db.Connect();
+            long referrerId = await SelectOrganisationIdByReferralCodeTransaction(db, normalized);
+            if (referrerId <= 0)
+            {
+                return new OrganisationReferralVerifyRes
+                {
+                    valid = false,
+                    message = "Invalid referral code.",
+                    normalized_code = normalized,
+                };
+            }
+
+            return new OrganisationReferralVerifyRes
+            {
+                valid = true,
+                message = "Referral code is valid.",
+                normalized_code = normalized,
+            };
+        }
+
         static string NormalizeReferralCode(string? code) =>
             string.IsNullOrWhiteSpace(code) ? "" : code.Trim().ToUpperInvariant();
 

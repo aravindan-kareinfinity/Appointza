@@ -10,6 +10,10 @@ import {
     OrganisationReferralApplyReq,
     OrganisationReferralApplyRes,
 } from '../models/organisation.model';
+import {
+    OrganisationReferralVerifyReq,
+    OrganisationReferralVerifyRes,
+} from '../models/organisationOnboarding.model';
 import { AxiosHelperUtils } from '../utils/axioshelper.utils';
 import { environment } from '../utils/environment';
 
@@ -99,6 +103,20 @@ export class OrganisationService {
             this.baseurl + '/GetReferral',
             postdata,
         );
+        return resp.item;
+    }
+
+    /** Public (no auth) check used on registration before the account exists. */
+    async verifyReferral(referralCode: string) {
+        const postdata = new ActionReq<OrganisationReferralVerifyReq>();
+        postdata.item = new OrganisationReferralVerifyReq();
+        postdata.item.referral_code = referralCode.trim();
+        const resp = await this.http.post<ActionRes<OrganisationReferralVerifyRes>>(
+            this.baseurl + '/VerifyReferral',
+            postdata,
+            true,
+        );
+        if (resp.error) throw new Error(resp.error);
         return resp.item;
     }
 

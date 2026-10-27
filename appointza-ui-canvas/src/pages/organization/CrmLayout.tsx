@@ -10,6 +10,7 @@ import {
   Mail,
   MessageCircle,
   Target,
+  Workflow,
 } from "lucide-react";
 import {
   Select,
@@ -36,17 +37,23 @@ const crmLinks = [
   },
   { to: "/organization/crm/contacts", label: "Leads & Contacts", icon: Target, end: false },
   { to: "/organization/crm/pipeline", label: "Sales Pipeline", icon: Kanban, end: false },
-  { to: "/organization/crm/inbox", label: "Unified Inbox", icon: Inbox, end: false },
+  { to: "/organization/crm/whatsapp/inbox", label: "WhatsApp Inbox", icon: Inbox, end: false },
   { to: "/organization/crm/email-campaigns", label: "Email Campaigns", icon: Mail, end: false },
   {
     to: "/organization/crm/whatsapp-campaigns",
     label: "WhatsApp Campaigns",
     icon: MessageCircle,
     end: false,
+  }, // Phase 5 campaign builder
+  { to: "/organization/crm/templates", label: "WhatsApp Templates", icon: FileText, end: false },
+  {
+    to: "/organization/crm/whatsapp/automations",
+    label: "WhatsApp Automations",
+    icon: Workflow,
+    end: false,
   },
-  { to: "/organization/crm/templates", label: "Templates", icon: FileText, end: false },
   { to: "/organization/crm/tasks", label: "Tasks & Follow-ups", icon: CheckSquare, end: false },
-  { to: "/organization/crm/reports", label: "Reports", icon: BarChart3, end: false },
+  { to: "/organization/crm/reports", label: "Campaign Reports", icon: BarChart3, end: false },
 ] as const;
 
 function isCrmLinkActive(pathname: string, to: string, end: boolean): boolean {

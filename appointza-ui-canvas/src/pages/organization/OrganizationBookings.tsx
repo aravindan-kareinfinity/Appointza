@@ -521,7 +521,7 @@ const OrganizationBookings = () => {
           type="button"
           onClick={() => handleCalendarKindChange("services")}
           className={cn(
-            "inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 px-2.5 text-sm font-medium transition-colors sm:flex-none",
+            "inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 px-2.5 text-[13px] font-medium transition-colors sm:flex-none",
             calendarKind === "services" ? org.segmentActive : org.segmentInactive,
           )}
         >
@@ -534,7 +534,7 @@ const OrganizationBookings = () => {
             type="button"
             onClick={() => handleCalendarKindChange("rooms")}
             className={cn(
-              "inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 px-2.5 text-sm font-medium transition-colors sm:flex-none",
+              "inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 px-2.5 text-[13px] font-medium transition-colors sm:flex-none",
               calendarKind === "rooms" ? org.segmentActive : org.segmentInactive,
             )}
           >
@@ -547,7 +547,7 @@ const OrganizationBookings = () => {
           type="button"
           onClick={() => handleCalendarKindChange("events")}
           className={cn(
-            "inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 px-2.5 text-sm font-medium transition-colors sm:flex-none",
+            "inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 px-2.5 text-[13px] font-medium transition-colors sm:flex-none",
             calendarKind === "events" ? org.segmentActive : org.segmentInactive,
           )}
         >
@@ -581,15 +581,15 @@ const OrganizationBookings = () => {
   const monthCalendarPanel = (
     <div className={cn(org.card, "p-4")}>
       {calendarControls}
-      <div className="mt-4 border-t border-stone-100 pt-4">
+      <div className="mt-4 border-t border-[#eef1f5] pt-4">
         {locationLabel ? (
-          <p className="mb-3 text-sm text-stone-600">
-            <span className="font-medium text-appointza-navy">{locationLabel}</span>
-            <span className="text-stone-400"> · </span>
+          <p className="mb-3 text-[13px] text-[#667085]">
+            <span className="font-medium text-[#1a1a1a]">{locationLabel}</span>
+            <span className="text-[#98a2b3]"> · </span>
             {format(selectedDate, "EEE, d MMM yyyy")}
           </p>
         ) : (
-          <p className="mb-3 text-sm font-medium text-appointza-navy">
+          <p className="mb-3 text-[13px] font-medium text-[#1a1a1a]">
             {format(selectedDate, "EEEE, d MMMM yyyy")}
           </p>
         )}
@@ -603,21 +603,21 @@ const OrganizationBookings = () => {
               onSelect={(d) => d && handleSelectDate(d)}
               month={calendarMonth}
               onMonthChange={setCalendarMonth}
-              className="pointer-events-auto rounded-xl border border-stone-100 p-2"
+              className="pointer-events-auto rounded-lg border border-[#e6eaf0] p-2"
               modifiers={{
                 hasBookings: (date) => (bookingCountByDay.get(toDateKey(date)) ?? 0) > 0,
                 hasRoomActivity: (date) => (roomOccupancyByDay[toDateKey(date)] ?? 0) > 0,
               }}
               modifiersClassNames={{
                 hasBookings:
-                  "relative after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-[#E85D4C]",
+                  "relative after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-[#528ff0]",
                 hasRoomActivity:
-                  "relative after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-orange-500",
+                  "relative after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-[#f79009]",
               }}
             />
-            <p className="mt-3 text-xs text-stone-500">
-              Coral dot = day has service bookings
-              {showRoomsCalendar ? "; orange = room occupancy" : ""}. Select a
+            <p className="mt-3 text-[12px] text-[#98a2b3]">
+              Blue dot = day has service bookings
+              {showRoomsCalendar ? "; amber = room occupancy" : ""}. Select a
               dotted day to see those appointments (dashboard pending can be on
               other dates).
             </p>
@@ -644,11 +644,11 @@ const OrganizationBookings = () => {
   );
 
   const locationEmptyPanel = (
-    <div className={cn(org.card, "p-6 text-sm text-stone-600")}>
-      <p className="font-medium text-appointza-navy">Select a location first</p>
+    <div className={cn(org.card, "p-6 text-[13px] text-[#667085]")}>
+      <p className="font-medium text-[#1a1a1a]">Select a location first</p>
       <p className="mt-1">
         Choose a location on the{" "}
-        <Link to="/organization/dashboard" className="font-medium text-[#E85D4C] hover:underline">
+        <Link to="/organization/dashboard" className="font-medium text-[#2a5af5] hover:underline">
           dashboard
         </Link>{" "}
         to view slots and rooms for that branch.
@@ -676,10 +676,10 @@ const OrganizationBookings = () => {
     );
 
   return (
-    <OrganizationPageShell className="min-w-0">
+    <OrganizationPageShell className="min-w-0 bg-[#f5f7f9] p-3 md:p-4 lg:p-5">
       {calendarKind === "events" ? (
-        <div className={cn(org.pageSection, "pt-2 pb-8")}>
-          <div className="grid gap-6 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
+        <div className={cn(org.pageSection, "pt-0 pb-2")}>
+          <div className="grid gap-4 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
             <div className="min-w-0">{monthCalendarPanel}</div>
             <div className="min-w-0">
               <EventBookingsPanel
@@ -694,13 +694,13 @@ const OrganizationBookings = () => {
       ) : isLoading ? (
         <div className={org.loading}>
           <div className="text-center">
-            <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-appointza-coral" />
-            <p className="text-stone-600">Loading bookings…</p>
+            <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[#528ff0]" />
+            <p className="text-[13px] text-[#667085]">Loading bookings…</p>
           </div>
         </div>
       ) : (
-        <div className={cn(org.pageSection, "pt-2 pb-8")}>
-          <div className={cn("grid gap-6", "lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]")}>
+        <div className={cn(org.pageSection, "pt-0 pb-2")}>
+          <div className="grid gap-4 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
             <div className="min-w-0">{monthCalendarPanel}</div>
             <div className="min-w-0">{centerPanel}</div>
           </div>

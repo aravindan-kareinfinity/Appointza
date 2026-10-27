@@ -413,7 +413,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
         </span>
       );
     return (
-      <span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs text-stone-600">
+      <span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs text-[#667085]">
         Not Checked In
       </span>
     );
@@ -436,7 +436,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
         filtersInSidebar
           ? "border-0 bg-transparent px-0 py-0"
           : cn(
-              "border-b border-stone-200 bg-white",
+              "border-b border-[#e6eaf0] bg-white",
               embedded ? "px-0 py-0 sm:px-0" : "px-4 py-3 sm:px-6 lg:px-8",
             ),
       )}
@@ -447,7 +447,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
           filtersInSidebar ? "flex-col" : "flex-wrap items-center justify-between",
         )}
       >
-        <div className="flex h-10 w-full shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-none sm:h-11">
+        <div className="flex h-9 w-full shrink-0 overflow-hidden rounded-md border border-[#e6eaf0] bg-white shadow-none sm:h-9">
           {(
             [
               { mode: "card" as const, icon: LayoutGrid, label: "Card" },
@@ -461,10 +461,10 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
               onClick={() => setViewMode(mode)}
               className={cn(
                 "inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
-                i > 0 && "border-l border-stone-200",
+                i > 0 && "border-l border-[#e6eaf0]",
                 viewMode === mode
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-stone-700 hover:bg-stone-50",
+                  ? "bg-[#2a5af5] text-white"
+                  : "bg-white text-[#344054] hover:bg-[#f8fafc]",
               )}
             >
               <Icon className="h-4 w-4 shrink-0" aria-hidden />
@@ -482,7 +482,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
               disabled={isRefreshing || isLoading}
               className={cn(
                 org.btnOutline,
-                "h-10 flex-1 rounded-xl border-stone-200 bg-white shadow-none sm:flex-none",
+                "h-9 flex-1 rounded-md border-[#e6eaf0] bg-white shadow-none sm:flex-none",
               )}
             >
               {isRefreshing ? (
@@ -500,7 +500,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
             disabled={filtersAreDefault}
             className={cn(
               org.btnOutline,
-              "h-10 flex-1 rounded-xl border-stone-200 bg-white shadow-none",
+              "h-9 flex-1 rounded-md border-[#e6eaf0] bg-white shadow-none",
               !filtersInSidebar && "sm:flex-none",
             )}
           >
@@ -517,13 +517,13 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
         )}
       >
         <div className="space-y-1.5">
-          <Label htmlFor="event-filter" className="text-xs font-medium text-stone-600">
+          <Label htmlFor="event-filter" className="text-xs font-medium text-[#667085]">
             Event
           </Label>
           <Select value={eventFilter} onValueChange={setEventFilter}>
             <SelectTrigger
               id="event-filter"
-              className="h-11 w-full rounded-xl border-stone-200 bg-white text-sm shadow-none"
+              className="h-9 w-full rounded-md border-[#e6eaf0] bg-white text-sm shadow-none"
             >
               <SelectValue placeholder="All events" />
             </SelectTrigger>
@@ -542,13 +542,13 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="payment-filter" className="text-xs font-medium text-stone-600">
+          <Label htmlFor="payment-filter" className="text-xs font-medium text-[#667085]">
             Payment status
           </Label>
           <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
             <SelectTrigger
               id="payment-filter"
-              className="h-11 w-full rounded-xl border-stone-200 bg-white text-sm shadow-none"
+              className="h-9 w-full rounded-md border-[#e6eaf0] bg-white text-sm shadow-none"
             >
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
@@ -566,13 +566,13 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="checkin-filter" className="text-xs font-medium text-stone-600">
+          <Label htmlFor="checkin-filter" className="text-xs font-medium text-[#667085]">
             Check-in status
           </Label>
           <Select value={checkInStatusFilter} onValueChange={setCheckInStatusFilter}>
             <SelectTrigger
               id="checkin-filter"
-              className="h-11 w-full rounded-xl border-stone-200 bg-white text-sm shadow-none"
+              className="h-9 w-full rounded-md border-[#e6eaf0] bg-white text-sm shadow-none"
             >
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
@@ -589,13 +589,13 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="confirmation-filter" className="text-xs font-medium text-stone-600">
+          <Label htmlFor="confirmation-filter" className="text-xs font-medium text-[#667085]">
             Confirmation status
           </Label>
           <Select value={confirmationStatusFilter} onValueChange={setConfirmationStatusFilter}>
             <SelectTrigger
               id="confirmation-filter"
-              className="h-11 w-full rounded-xl border-stone-200 bg-white text-sm shadow-none"
+              className="h-9 w-full rounded-md border-[#e6eaf0] bg-white text-sm shadow-none"
             >
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
@@ -614,12 +614,12 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
 
       <div className={cn("relative w-full", !filtersInSidebar && "lg:max-w-md")}>
         <Search
-          className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
+          className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#98a2b3]"
           aria-hidden
         />
         <Input
           placeholder="Search by event, name, or phone…"
-          className="h-11 w-full rounded-xl border-stone-200 bg-white pl-11 pr-4 text-base shadow-none focus-visible:border-blue-500 focus-visible:ring-blue-100 sm:text-sm"
+          className="h-9 w-full rounded-md border-[#e6eaf0] bg-white pl-11 pr-4 text-base shadow-none focus-visible:border-[#2a5af5] focus-visible:ring-[#2a5af5]/15 sm:text-sm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -633,8 +633,8 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
         {isLoading ? (
           <div className={org.loading}>
             <div className="text-center">
-              <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-blue-600" />
-              <p className="text-stone-600">Loading event bookings…</p>
+              <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[#2a5af5]" />
+              <p className="text-[#667085]">Loading event bookings…</p>
             </div>
           </div>
         ) : (
@@ -647,20 +647,20 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                 embedded ? "px-0 py-4 sm:py-5" : "px-4 py-4 sm:px-6 sm:py-5",
               )}
             >
-              <p className="mb-4 text-sm text-stone-600">
+              <p className="mb-4 text-sm text-[#667085]">
                 {filteredBookings.length} booking
                 {filteredBookings.length === 1 ? "" : "s"}
                 {filteredBookings.length !== bookings.length ? (
-                  <span className="text-stone-400"> · {bookings.length} total</span>
+                  <span className="text-[#98a2b3]"> · {bookings.length} total</span>
                 ) : null}
               </p>
 
               {/* Bookings list */}
               {filteredBookings.length === 0 ? (
-                <div className="rounded-xl border border-stone-200 bg-white px-6 py-12 text-center shadow-none">
-                  <Calendar className="mx-auto mb-4 h-16 w-16 text-stone-400" aria-hidden />
-                  <h3 className="mb-2 text-lg font-semibold text-appointza-navy">No bookings found</h3>
-                  <p className="text-sm text-stone-600">
+                <div className="rounded-lg border border-[#e6eaf0] bg-white px-6 py-12 text-center shadow-none">
+                  <Calendar className="mx-auto mb-4 h-16 w-16 text-[#98a2b3]" aria-hidden />
+                  <h3 className="mb-2 text-lg font-semibold text-[#1a1a1a]">No bookings found</h3>
+                  <p className="text-sm text-[#667085]">
                     {bookings.length === 0
                       ? "No bookings have been made for your events yet."
                       : "No bookings match your filters."}
@@ -678,34 +678,34 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                     return (
                       <div
                         key={booking.id}
-                        className="rounded-2xl border border-stone-200 bg-white p-6 shadow-none transition-colors hover:border-blue-300"
+                        className="rounded-lg border border-[#e6eaf0] bg-white p-6 shadow-none transition-colors hover:border-[#b2c4ff]"
                       >
-                        <h3 className="font-semibold text-lg leading-tight mb-1 text-appointza-navy">
+                        <h3 className="font-semibold text-lg leading-tight mb-1 text-[#1a1a1a]">
                           {event?.event_name ?? "Event"}
                         </h3>
-                        <p className="mb-4 flex items-center gap-1.5 text-sm text-stone-500">
+                        <p className="mb-4 flex items-center gap-1.5 text-sm text-[#667085]">
                           <Calendar className="h-4 w-4 shrink-0" aria-hidden />
                           {event?.event_date ? formatEventDateLong(event.event_date) : "N/A"}
                         </p>
 
                         <div className="space-y-3 text-sm text-gray-800">
                           <div>
-                            <span className="font-semibold text-appointza-navy">Booked By:</span>{" "}
+                            <span className="font-semibold text-[#1a1a1a]">Booked By:</span>{" "}
                             {booking.user_name || `User #${booking.user_id}`}
                           </div>
                           {booking.user_mobile ?
                             <div className="flex items-center gap-1.5">
-                              <Phone className="h-4 w-4 shrink-0 text-stone-500" aria-hidden />
-                              <span className="font-semibold text-appointza-navy">{booking.user_mobile}</span>
+                              <Phone className="h-4 w-4 shrink-0 text-[#667085]" aria-hidden />
+                              <span className="font-semibold text-[#1a1a1a]">{booking.user_mobile}</span>
                             </div>
                           : null}
-                          <div className="flex items-center gap-1.5 font-semibold text-appointza-navy">
-                            <Users className="h-4 w-4 shrink-0 text-stone-500" aria-hidden />
+                          <div className="flex items-center gap-1.5 font-semibold text-[#1a1a1a]">
+                            <Users className="h-4 w-4 shrink-0 text-[#667085]" aria-hidden />
                             {booking.number_of_people} {booking.number_of_people === 1 ? "Person" : "People"}
                           </div>
                           {booking.total_amount != null && booking.total_amount > 0 ?
                             <div>
-                              <span className="font-semibold text-appointza-navy">Amount:</span>{" "}
+                              <span className="font-semibold text-[#1a1a1a]">Amount:</span>{" "}
                               ₹{booking.total_amount.toLocaleString()}
                             </div>
                           : null}
@@ -717,13 +717,13 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
 
                         {attendeesRaw ?
                           <div className="mt-6 text-sm">
-                            <span className="font-semibold text-appointza-navy">Attendees:</span>
+                            <span className="font-semibold text-[#1a1a1a]">Attendees:</span>
                             <br />
-                            <span className="text-stone-600">{attendeesRaw}</span>
+                            <span className="text-[#667085]">{attendeesRaw}</span>
                           </div>
                         : null}
 
-                        <div className="mt-6 text-xs text-stone-500">
+                        <div className="mt-6 text-xs text-[#667085]">
                           Booked on: {formatDate(booking.created_at)}
                         </div>
 
@@ -731,7 +731,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                           type="button"
                           variant="outline"
                           onClick={() => handleUpdateClick(booking)}
-                          className="mt-6 flex h-auto w-full items-center justify-center gap-2 rounded-xl border-stone-200 bg-white py-3 text-sm font-medium shadow-none hover:border-blue-300 hover:bg-blue-50"
+                          className="mt-6 flex h-auto w-full items-center justify-center gap-2 rounded-lg border-[#e6eaf0] bg-white py-3 text-sm font-medium shadow-none hover:border-[#b2c4ff] hover:bg-[#eef2ff]"
                         >
                           <RefreshCw className="h-4 w-4" aria-hidden />
                           Update Status
@@ -743,31 +743,31 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
               ) : viewMode === "row" ? (
           <>
             {/* Desktop Table View */}
-            <div className="hidden overflow-hidden rounded-xl border border-stone-200 bg-white shadow-none md:block">
+            <div className="hidden overflow-hidden rounded-lg border border-[#e6eaf0] bg-white shadow-none md:block">
               <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="border-b border-stone-200 bg-stone-50">
+                    <thead className="border-b border-[#e6eaf0] bg-[#f8fafc]">
                       <tr>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Event</th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Booked By</th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">People</th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Amount</th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Confirmation</th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Payment</th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Check-In</th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Booked On</th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[#667085] uppercase tracking-wider">Event</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[#667085] uppercase tracking-wider">Booked By</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[#667085] uppercase tracking-wider">People</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[#667085] uppercase tracking-wider">Amount</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[#667085] uppercase tracking-wider">Confirmation</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[#667085] uppercase tracking-wider">Payment</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[#667085] uppercase tracking-wider">Check-In</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[#667085] uppercase tracking-wider">Booked On</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[#667085] uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-stone-100">
+                    <tbody className="bg-white divide-y divide-[#eef1f5]">
                       {visibleBookings.map((booking) => {
                         const event = eventsMap[booking.event_id];
                         return (
-                          <tr key={booking.id} className="hover:bg-stone-50">
+                          <tr key={booking.id} className="hover:bg-[#f8fafc]">
                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                               <div>
-                                <div className="text-sm font-medium text-appointza-navy">{event?.event_name || 'Event'}</div>
-                                <div className="text-sm text-stone-500 flex items-center gap-1">
+                                <div className="text-sm font-medium text-[#1a1a1a]">{event?.event_name || 'Event'}</div>
+                                <div className="text-sm text-[#667085] flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
                                   {event?.event_date ? formatEventDateLong(event.event_date) : 'N/A'}
                                 </div>
@@ -775,19 +775,19 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                             </td>
                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                               <div>
-                                <div className="text-sm font-medium text-appointza-navy">{booking.user_name || `User #${booking.user_id}`}</div>
+                                <div className="text-sm font-medium text-[#1a1a1a]">{booking.user_name || `User #${booking.user_id}`}</div>
                                 {booking.user_mobile && (
-                                  <div className="text-sm text-stone-500 flex items-center gap-1">
+                                  <div className="text-sm text-[#667085] flex items-center gap-1">
                                     <Phone className="h-3 w-3" />
                                     {booking.user_mobile}
                                   </div>
                                 )}
                               </div>
                             </td>
-                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-appointza-navy">
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-[#1a1a1a]">
                               {booking.number_of_people} {booking.number_of_people === 1 ? 'Person' : 'People'}
                             </td>
-                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-appointza-navy">
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-[#1a1a1a]">
                               {booking.total_amount && booking.total_amount > 0 ? `₹${booking.total_amount.toLocaleString()}` : 'N/A'}
                             </td>
                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
@@ -799,7 +799,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                               {getCheckInStatusBadge(booking.check_in_status)}
                             </td>
-                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-stone-500">
+                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-[#667085]">
                               {formatDate(booking.created_at)}
                             </td>
                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
@@ -827,7 +827,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                 return (
                   <Card
                     key={booking.id}
-                    className="rounded-xl border border-stone-200 bg-white shadow-none transition-colors hover:border-blue-300"
+                    className="rounded-lg border border-[#e6eaf0] bg-white shadow-none transition-colors hover:border-[#b2c4ff]"
                   >
                     <CardHeader>
                       <div className="flex items-start justify-between gap-2">
@@ -844,8 +844,8 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="pb-3 border-b">
-                        <p className="text-xs font-medium text-stone-600 mb-1">Booked By</p>
-                        <p className="text-sm font-semibold text-appointza-navy truncate">
+                        <p className="text-xs font-medium text-[#667085] mb-1">Booked By</p>
+                        <p className="text-sm font-semibold text-[#1a1a1a] truncate">
                           {booking.user_name || `User #${booking.user_id}`}
                         </p>
                         {booking.user_mobile && (
@@ -875,15 +875,15 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
 
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-stone-600">Confirmation:</span>
+                          <span className="text-xs font-medium text-[#667085]">Confirmation:</span>
                           {getConfirmationStatusBadge(booking.confirmation_status || 'pending')}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-stone-600">Payment:</span>
+                          <span className="text-xs font-medium text-[#667085]">Payment:</span>
                           {getPaymentStatusBadge(booking.payment_status)}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-stone-600">Check-In:</span>
+                          <span className="text-xs font-medium text-[#667085]">Check-In:</span>
                           {getCheckInStatusBadge(booking.check_in_status)}
                         </div>
                       </div>
@@ -915,15 +915,15 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
               return (
                 <Card
                   key={booking.id}
-                  className="rounded-xl border border-stone-200 bg-white shadow-none transition-colors hover:border-blue-300"
+                  className="rounded-lg border border-[#e6eaf0] bg-white shadow-none transition-colors hover:border-[#b2c4ff]"
                 >
                   <CardContent className="p-6">
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-lg font-semibold text-appointza-navy mb-1">
+                        <h3 className="text-lg font-semibold text-[#1a1a1a] mb-1">
                           {event?.event_name || 'Event'}
                         </h3>
-                        <p className="text-sm text-stone-500 flex items-center gap-1">
+                        <p className="text-sm text-[#667085] flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           {event?.event_date ? formatEventDateLong(event.event_date) : 'N/A'}
                         </p>
@@ -931,50 +931,50 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                       
                       <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                         <div>
-                          <p className="text-xs font-medium text-stone-600 mb-1">Booked By</p>
-                          <p className="text-sm font-semibold text-appointza-navy">{booking.user_name || `User #${booking.user_id}`}</p>
+                          <p className="text-xs font-medium text-[#667085] mb-1">Booked By</p>
+                          <p className="text-sm font-semibold text-[#1a1a1a]">{booking.user_name || `User #${booking.user_id}`}</p>
                           {booking.user_mobile && (
-                            <p className="text-xs text-stone-500 mt-1 flex items-center gap-1">
+                            <p className="text-xs text-[#667085] mt-1 flex items-center gap-1">
                               <Phone className="h-3 w-3" />
                               {booking.user_mobile}
                             </p>
                           )}
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-stone-600 mb-1">People</p>
-                          <p className="text-sm text-appointza-navy">{booking.number_of_people} {booking.number_of_people === 1 ? 'Person' : 'People'}</p>
+                          <p className="text-xs font-medium text-[#667085] mb-1">People</p>
+                          <p className="text-sm text-[#1a1a1a]">{booking.number_of_people} {booking.number_of_people === 1 ? 'Person' : 'People'}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-stone-600 mb-1">Amount</p>
-                          <p className="text-sm text-appointza-navy">
+                          <p className="text-xs font-medium text-[#667085] mb-1">Amount</p>
+                          <p className="text-sm text-[#1a1a1a]">
                             {booking.total_amount && booking.total_amount > 0 ? `₹${booking.total_amount.toLocaleString()}` : 'N/A'}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-stone-600 mb-1">Booked On</p>
-                          <p className="text-sm text-appointza-navy">{formatDate(booking.created_at)}</p>
+                          <p className="text-xs font-medium text-[#667085] mb-1">Booked On</p>
+                          <p className="text-sm text-[#1a1a1a]">{formatDate(booking.created_at)}</p>
                         </div>
                       </div>
                       
                       <div className="pt-4 border-t space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-stone-600">Confirmation:</span>
+                          <span className="text-xs font-medium text-[#667085]">Confirmation:</span>
                           {getConfirmationStatusBadge(booking.confirmation_status || 'pending')}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-stone-600">Payment:</span>
+                          <span className="text-xs font-medium text-[#667085]">Payment:</span>
                           {getPaymentStatusBadge(booking.payment_status)}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-stone-600">Check-In:</span>
+                          <span className="text-xs font-medium text-[#667085]">Check-In:</span>
                           {getCheckInStatusBadge(booking.check_in_status)}
                         </div>
                       </div>
                       
                       {booking.notes && (
                         <div className="pt-4 border-t">
-                          <p className="text-xs font-medium text-stone-600 mb-1">Attendees:</p>
-                          <p className="text-sm text-stone-700">
+                          <p className="text-xs font-medium text-[#667085] mb-1">Attendees:</p>
+                          <p className="text-sm text-[#344054]">
                             {decodeEventBookingNotes(booking.notes).attendeesText || booking.notes}
                           </p>
                         </div>
@@ -1003,7 +1003,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-9 rounded-xl border-stone-200 bg-white text-xs shadow-none"
+                    className="h-9 rounded-lg border-[#e6eaf0] bg-white text-xs shadow-none"
                     disabled={isLoadingMoreBookings}
                     onClick={async () => {
                       setIsLoadingMoreBookings(true);
@@ -1024,7 +1024,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
 
         {showUpdateDialog ? (
         <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
-          <DialogContent className="max-w-[95vw] rounded-2xl border-stone-200 bg-white shadow-none sm:max-w-[500px]">
+          <DialogContent className="max-w-[95vw] rounded-lg border-[#e6eaf0] bg-white shadow-none sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle className="text-lg sm:text-xl">Update Booking Status</DialogTitle>
               <DialogDescription className="text-sm sm:text-base">
@@ -1036,7 +1036,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
               <div className="space-y-2">
                 <Label htmlFor="confirmation-status" className="text-sm sm:text-base">Confirmation Status *</Label>
                 <Select value={confirmationStatus} onValueChange={setConfirmationStatus}>
-                  <SelectTrigger id="confirmation-status" className="h-10 rounded-xl border-stone-200 bg-white shadow-none sm:h-11">
+                  <SelectTrigger id="confirmation-status" className="h-10 rounded-lg border-[#e6eaf0] bg-white shadow-none sm:h-9">
                     <SelectValue placeholder="Select confirmation status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1052,7 +1052,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                 {selectedBooking?.payment_reference && selectedBooking.payment_reference.trim() !== '' ? (
                   <div className="space-y-2">
                     <Select value={paymentStatus} disabled>
-                      <SelectTrigger id="payment-status" className="h-10 cursor-not-allowed rounded-xl border-stone-200 bg-stone-100 shadow-none sm:h-11">
+                      <SelectTrigger id="payment-status" className="h-10 cursor-not-allowed rounded-lg border-[#e6eaf0] bg-[#f2f4f7] shadow-none sm:h-9">
                         <SelectValue placeholder="Select payment status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1071,7 +1071,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                   </div>
                 ) : (
                   <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-                    <SelectTrigger id="payment-status" className="h-10 rounded-xl border-stone-200 bg-white shadow-none sm:h-11">
+                    <SelectTrigger id="payment-status" className="h-10 rounded-lg border-[#e6eaf0] bg-white shadow-none sm:h-9">
                       <SelectValue placeholder="Select payment status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1087,7 +1087,7 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
               <div className="space-y-2">
                 <Label htmlFor="checkin-status" className="text-sm sm:text-base">Check-In Status *</Label>
                 <Select value={checkInStatus} onValueChange={setCheckInStatus}>
-                  <SelectTrigger id="checkin-status" className="h-10 rounded-xl border-stone-200 bg-white shadow-none sm:h-11">
+                  <SelectTrigger id="checkin-status" className="h-10 rounded-lg border-[#e6eaf0] bg-white shadow-none sm:h-9">
                     <SelectValue placeholder="Select check-in status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1104,14 +1104,14 @@ const EventBookingsPanel = forwardRef<EventBookingsPanelHandle, EventBookingsPan
                 variant="outline" 
                 onClick={() => setShowUpdateDialog(false)} 
                 disabled={isUpdating}
-                className="h-10 w-full rounded-xl border-stone-200 bg-white shadow-none sm:h-11 sm:w-auto"
+                className="h-10 w-full rounded-lg border-[#e6eaf0] bg-white shadow-none sm:h-9 sm:w-auto"
               >
                 Cancel
               </Button>
               <Button 
                 onClick={handleUpdate} 
                 disabled={isUpdating}
-                className="h-10 w-full rounded-xl bg-blue-600 text-white shadow-none hover:bg-blue-700 sm:h-11 sm:w-auto"
+                className="h-10 w-full rounded-lg bg-[#2a5af5] text-white shadow-none hover:bg-[#204de0] sm:h-9 sm:w-auto"
               >
                 {isUpdating ? (
                   <>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, MessageCircle, Save, Unplug } from "lucide-react";
+import { Check, Copy, Loader2, MessageCircle, Save, Unplug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,9 +17,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { OrganisationCommunicationIntegrationService } from "@/services/organisationCommunicationIntegration.service";
 import type { OrganisationIntegrationSafe } from "@/models/organisationCommunicationIntegration.model";
+import type { WhatsAppWebhookSetupDto } from "@/models/whatsappCrm.model";
+import { WhatsAppCrmService } from "@/services/whatsappCrm.service";
 import { settingsEmbedded } from "@/lib/settingsEmbedded";
 import { org } from "@/lib/orgTheme";
 import { cn } from "@/lib/utils";
+import { getWhatsAppWebhookCallbackUrl } from "@/utils/environment";
+
+/** Shared Meta callback URL (all orgs). Paste into Meta App → WhatsApp → Configuration. */
+function buildWhatsAppWebhookUrl(): string {
+  return getWhatsAppWebhookCallbackUrl();
+}
 
 type Props = { embedded?: boolean };
 
@@ -42,10 +50,23 @@ const WhatsAppIntegrationSettings = ({ embedded = false }: Props) => {
   const { toast } = useToast();
   const organisationId = user?.organisationid || 0;
   const service = useMemo(() => new OrganisationCommunicationIntegrationService(), []);
+  const crmService = useMemo(() => new WhatsAppCrmService(), []);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [copiedVerifyToken, setCopiedVerifyToken] = useState(false);
+  const [webhookSetup, setWebhookSetup] = useState<WhatsAppWebhookSetupDto | null>(null);
   const [integration, setIntegration] = useState<OrganisationIntegrationSafe | null>(null);
+  const webhookUrl = useMemo(() => buildWhatsAppWebhookUrl(), []);
+  const verifyToken = useMemo(() => {
+    const fromSelect = (integration?.webhook_verify_token || "").trim();
+    if (fromSelect) return fromSelect;
+    return (webhookSetup?.verify_token || "").trim();
+  }, [integration?.webhook_verify_token, webhookSetup?.verify_token]);
+  const appSecretConfigured =
+    integration?.webhook_app_secret_configured === true ||
+    webhookSetup?.app_secret_configured === true;
   const [form, setForm] = useState({
     connection_name: "",
     waba_id: "",
@@ -75,6 +96,11 @@ const WhatsAppIntegrationSettings = ({ embedded = false }: Props) => {
       });
       const item = items.find((i) => i.is_active !== false) ?? items[0] ?? null;
       setIntegration(item);
+      // Optional secondary source; Select already carries webhook_verify_token.
+      void crmService
+        .getWebhookSetup()
+        .then(setWebhookSetup)
+        .catch(() => setWebhookSetup(null));
       const w = item?.whatsapp;
       setForm({
         connection_name: item?.connection_name || "",
@@ -99,11 +125,50 @@ const WhatsAppIntegrationSettings = ({ embedded = false }: Props) => {
     } finally {
       setLoading(false);
     }
-  }, [organisationId, service, toast]);
+  }, [organisationId, service, crmService, toast]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const copyWebhookUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(webhookUrl);
+      setCopiedWebhook(true);
+      toast({ title: "Webhook URL copied" });
+      window.setTimeout(() => setCopiedWebhook(false), 2000);
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Select the URL and copy it manually.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyVerifyToken = async () => {
+    if (!verifyToken) {
+      toast({
+        title: "Verify token not configured",
+        description:
+          "Set ApplicationSettings:whatsapp:verify_token to appointza_wa_verify_2026 in appsettings.json and restart the API.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(verifyToken);
+      setCopiedVerifyToken(true);
+      toast({ title: "Webhook password (verify token) copied" });
+      window.setTimeout(() => setCopiedVerifyToken(false), 2000);
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Select the token and copy it manually.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const save = async () => {
     if (!form.waba_id.trim() || !form.phone_number_id.trim()) {
@@ -196,6 +261,84 @@ const WhatsAppIntegrationSettings = ({ embedded = false }: Props) => {
               {integration?.has_access_token ? (
                 <span className="text-xs text-stone-400">Access token on file (encrypted)</span>
               ) : null}
+            </div>
+
+            <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-4">
+              <Label htmlFor="wa-webhook-url">Meta webhook callback URL</Label>
+              <p className="mt-1 text-xs text-stone-500">
+                Paste into Meta Developer → WhatsApp → Configuration → Callback URL. Verify token must
+                match <code className="rounded bg-white px-1">whatsapp.verify_token</code> in API
+                appsettings. Subscribe to <strong>messages</strong>. The API must be reachable on
+                public HTTPS.
+              </p>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  id="wa-webhook-url"
+                  readOnly
+                  value={webhookUrl}
+                  className={cn(org.input, "font-mono text-[13px]")}
+                  onFocus={(e) => e.target.select()}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 shrink-0"
+                  onClick={() => void copyWebhookUrl()}
+                >
+                  {copiedWebhook ? (
+                    <Check className="mr-2 h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <Copy className="mr-2 h-4 w-4" />
+                  )}
+                  {copiedWebhook ? "Copied" : "Copy"}
+                </Button>
+              </div>
+              {!webhookUrl.startsWith("https://") && (
+                <p className="mt-2 text-xs text-amber-700">
+                  Meta requires a public HTTPS callback. Point this at your deployed API over HTTPS.
+                </p>
+              )}
+
+              <div className="mt-4 border-t border-stone-200 pt-4">
+                <Label htmlFor="wa-verify-token">Webhook password (Verify token)</Label>
+                <p className="mt-1 text-xs text-stone-500">
+                  Paste this into Meta → WhatsApp → Configuration → Verify token. It must match the
+                  server <code className="rounded bg-white px-1">whatsapp.verify_token</code>.
+                </p>
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Input
+                    id="wa-verify-token"
+                    readOnly
+                    value={
+                      verifyToken ||
+                      "(empty — set ApplicationSettings:whatsapp:verify_token in appsettings.json and restart API)"
+                    }
+                    className={cn(org.input, "font-mono text-[13px]")}
+                    onFocus={(e) => e.target.select()}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 shrink-0"
+                    onClick={() => void copyVerifyToken()}
+                    disabled={!verifyToken}
+                  >
+                    {copiedVerifyToken ? (
+                      <Check className="mr-2 h-4 w-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="mr-2 h-4 w-4" />
+                    )}
+                    {copiedVerifyToken ? "Copied" : "Copy password"}
+                  </Button>
+                </div>
+                {!appSecretConfigured && (
+                  <p className="mt-2 text-xs text-amber-700">
+                    App secret is not set on the API yet. Inbound message signature checks need{" "}
+                    <code className="rounded bg-white px-1">whatsapp.app_secret</code> from Meta App
+                    → Settings → Basic.
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

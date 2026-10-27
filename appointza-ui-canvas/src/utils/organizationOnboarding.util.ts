@@ -1,4 +1,9 @@
 import type { OnboardingStepId } from "@/components/onboarding/OrganizationOnboarding";
+import type {
+  OnboardingOfferingKey,
+  OnboardingWizardStep,
+} from "@/models/organisationOnboarding.model";
+import type { CatalogOfferingKind } from "@/utils/organisationCatalogOfferings.util";
 
 /** ReferenceValue type id for organisation website templates. */
 export const ORG_WEBSITE_TEMPLATE_REFERENCE_TYPE_ID = 5;
@@ -7,12 +12,24 @@ export const ORG_WEBSITE_TEMPLATE_MAX_PER_ORG = 2;
 
 /** Legacy system default assigned on registration — not a user-created website. */
 export const SYSTEM_DEFAULT_LOCATION_TEMPLATE_ID = 60;
+/** Onboarding wizard hub (offerings → create items → website → timing). */
+export const ORGANIZATION_ONBOARDING_WIZARD_ROUTE = "/organization/onboarding";
+
 export const ORGANIZATION_ONBOARDING_ROUTES = [
+  ORGANIZATION_ONBOARDING_WIZARD_ROUTE,
+  "/organization/hospitality",
   "/organization/custom-domain",
   "/organization/services",
   "/organization/timing",
   "/organization/templates",
   "/organization/template-builder",
+  "/register/business",
+  "/register/location",
+  "/register/offerings",
+  "/register/create",
+  "/register/website",
+  "/register/domain",
+  "/register/complete",
 ] as const;
 
 export function isOrganizationOnboardingRoute(pathname: string): boolean {
@@ -60,7 +77,7 @@ export function buildTemplateBuilderPath(locationId: number, templateId?: number
 
 const ONBOARDING_STEP_ROUTES: Record<OnboardingStepId, string> = {
   customDomain: "/organization/custom-domain",
-  services: "/organization/services",
+  services: "/organization/services?kind=services",
   website: "/organization/templates",
   timing: "/organization/timing",
 };
@@ -71,6 +88,51 @@ export function onboardingStepRoute(step: OnboardingStepId, locationId?: number)
     return buildTemplateBuilderPath(locationId);
   }
   return ONBOARDING_STEP_ROUTES[step];
+}
+
+/** Real create route for each onboarding offering (null = nothing to create, e.g. "other"). */
+export function onboardingOfferingCreateRoute(offering: OnboardingOfferingKey): string | null {
+  switch (offering) {
+    case "services":
+      return "/organization/services?kind=services";
+    case "events":
+      return "/organization/services?kind=events";
+    case "classes":
+      return "/organization/services?kind=events";
+    case "stay":
+      return "/organization/hospitality?section=room-status";
+    case "facilities":
+      return "/organization/profile?tab=location";
+    default:
+      return null;
+  }
+}
+
+/**
+ * Onboarding offering → catalog nav kind. Navigation only — onboarding keys stay separate.
+ * stay → rooms, classes → events; facilities/other have no catalog kind.
+ */
+export function onboardingOfferingToCatalogKind(
+  offering: OnboardingOfferingKey,
+): CatalogOfferingKind | null {
+  if (offering === "stay") return "rooms";
+  if (offering === "services") return "services";
+  if (offering === "events" || offering === "classes") return "events";
+  return null;
+}
+
+/** Route used when a wizard step needs the user to leave the hub (website / timing). */
+export function onboardingWizardStepRoute(step: OnboardingWizardStep): string {
+  switch (step) {
+    case "website":
+      return "/organization/templates";
+    case "timing":
+      return "/organization/timing";
+    case "complete":
+      return "/organization/dashboard";
+    default:
+      return ORGANIZATION_ONBOARDING_WIZARD_ROUTE;
+  }
 }
 
 const onboardingCompleteCacheKey = (organisationId: number) =>

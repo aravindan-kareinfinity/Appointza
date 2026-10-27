@@ -265,9 +265,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Select Location</DialogTitle>
+          <DialogTitle>Choose location on map</DialogTitle>
           <DialogDescription>
-            Search for a location or use your current location
+            Search for your business address to place a pin. Current location is optional and not required.
           </DialogDescription>
         </DialogHeader>
 
@@ -311,7 +311,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                   <MapPin className="h-5 w-5 text-appointza-teal mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 break-words">
-                      {address || 'Search for a location or use current location'}
+                      {address || 'Search for your address to place a pin'}
                     </p>
                     {(addressDetails.city || addressDetails.state || addressDetails.pincode) && (
                       <p className="text-xs text-gray-600 mt-1">

@@ -39,6 +39,10 @@
     <Compile Remove="_build_out\**" />
     <Content Remove="_build_out\**" />
     <None Remove="_build_out\**" />
+    <Compile Remove="appointza.Tests\**" />
+    <Content Remove="appointza.Tests\**" />
+    <None Remove="appointza.Tests\**" />
+    <EmbeddedResource Remove="appointza.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>

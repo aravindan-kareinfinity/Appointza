@@ -1,6 +1,8 @@
 using appointza.Models;
 using appointza.Utils;
 using System.Data.Common;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace appointza.Services
 {
@@ -10,17 +12,23 @@ namespace appointza.Services
         private readonly IQueryBuilderProvider querybuilderprovider;
         private readonly RequestState requeststate;
         private readonly SecretProtector secretProtector;
+        private readonly ApplicationEnvironment _settings;
+        private readonly IConfiguration _configuration;
 
         public OrganisationCommunicationIntegrationService(
             IDbProvider dbprovider,
             IQueryBuilderProvider querybuilderprovider,
             RequestState requeststate,
-            SecretProtector secretProtector)
+            SecretProtector secretProtector,
+            IOptions<ApplicationEnvironment> settings,
+            IConfiguration configuration)
         {
             this.dbprovider = dbprovider;
             this.querybuilderprovider = querybuilderprovider;
             this.requeststate = requeststate;
             this.secretProtector = secretProtector;
+            _settings = settings.Value;
+            _configuration = configuration;
         }
 
         public async Task<List<OrganisationIntegrationSafe>> Select(OrganisationIntegrationSelectReq req)
@@ -29,7 +37,32 @@ namespace appointza.Services
             using (IDb db = await dbprovider.GetDb())
             {
                 await db.Connect();
-                return await SelectTransaction(db, orgId, req.provider, req.id);
+                var list = await SelectTransaction(db, orgId, req.provider, req.id);
+                AttachWebhookSetup(list);
+                return list;
+            }
+        }
+
+        private void AttachWebhookSetup(List<OrganisationIntegrationSafe> list)
+        {
+            var token = (_settings.whatsapp?.verify_token ?? "").Trim();
+            if (string.IsNullOrEmpty(token))
+            {
+                token = (_configuration["ApplicationSettings:whatsapp:verify_token"] ?? "").Trim();
+            }
+            var secret = (_settings.whatsapp?.app_secret ?? "").Trim();
+            if (string.IsNullOrEmpty(secret))
+            {
+                secret = (_configuration["ApplicationSettings:whatsapp:app_secret"] ?? "").Trim();
+            }
+            foreach (var item in list)
+            {
+                if (!string.Equals(item.provider, IntegrationProviders.WhatsApp, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                item.webhook_verify_token = token;
+                item.webhook_app_secret_configured = !string.IsNullOrEmpty(secret);
             }
         }
 
@@ -54,8 +87,19 @@ namespace appointza.Services
                 {
                     await EnsureOwnsIntegration(db, req.id.Value, orgId, IntegrationProviders.WhatsApp);
                     integrationId = req.id.Value;
+                }
+                else
+                {
+                    // One WhatsApp connection per org: reuse existing row to avoid
+                    // uq_org_integrations_org_provider_name (org + provider + connection_name).
+                    integrationId = await FindExistingIntegrationId(
+                        db, orgId, IntegrationProviders.WhatsApp, connectionName);
+                }
+
+                if (integrationId > 0)
+                {
                     await UpdateIntegrationShell(db, integrationId, connectionName, req.status ?? IntegrationStatuses.Connected);
-                    await UpdateWhatsAppConnection(db, integrationId, req);
+                    await UpsertWhatsAppConnectionRow(db, integrationId, req);
                 }
                 else
                 {
@@ -96,6 +140,15 @@ namespace appointza.Services
                 {
                     await EnsureOwnsIntegration(db, req.id.Value, orgId, IntegrationProviders.Email);
                     integrationId = req.id.Value;
+                }
+                else
+                {
+                    integrationId = await FindExistingIntegrationId(
+                        db, orgId, IntegrationProviders.Email, connectionName);
+                }
+
+                if (integrationId > 0)
+                {
                     await UpdateIntegrationShell(db, integrationId, connectionName, req.status ?? IntegrationStatuses.Connected);
                     await UpdateEmailConnection(db, integrationId, req, provider);
                 }
@@ -136,21 +189,21 @@ namespace appointza.Services
                     SET status = @status, is_active = FALSE, updated_at = @updated_at
                     WHERE id = @id AND organisation_id = @organisation_id;
                 ";
-                using (DbCommand command = db.GetCommand(query))
                 {
+                    DbCommand command = db.GetCommand(query);
                     db.AddParameter(command, "status", DbTypes.Types.String).Value = IntegrationStatuses.Disconnected;
                     db.AddParameter(command, "updated_at", DbTypes.Types.DateTime).Value = DateTime.UtcNow;
                     db.AddParameter(command, "id", DbTypes.Types.Long).Value = req.id;
                     db.AddParameter(command, "organisation_id", DbTypes.Types.Long).Value = orgId;
-                    await db.Execute(command);
+                    await db.ExecuteNonQuery(command);
                 }
 
                 // Remove encrypted secrets on disconnect
                 string deleteSecrets = @"DELETE FROM integration_secrets WHERE integration_id = @integration_id;";
-                using (DbCommand command = db.GetCommand(deleteSecrets))
                 {
+                    DbCommand command = db.GetCommand(deleteSecrets);
                     db.AddParameter(command, "integration_id", DbTypes.Types.Long).Value = req.id;
-                    await db.Execute(command);
+                    await db.ExecuteNonQuery(command);
                 }
 
                 return true;
@@ -169,35 +222,47 @@ namespace appointza.Services
                     DELETE FROM organization_integrations
                     WHERE id = @id AND organisation_id = @organisation_id;
                 ";
-                using (DbCommand command = db.GetCommand(query))
                 {
+                    DbCommand command = db.GetCommand(query);
                     db.AddParameter(command, "id", DbTypes.Types.Long).Value = req.id;
                     db.AddParameter(command, "organisation_id", DbTypes.Types.Long).Value = orgId;
-                    await db.Execute(command);
+                    await db.ExecuteNonQuery(command);
                 }
                 return true;
             }
         }
 
+        /// <summary>
+        /// Tenant comes only from the JWT. Client-supplied organisation_id is never trusted.
+        /// If the client sends a non-zero org that does not match the JWT, reject the call.
+        /// </summary>
         private long ResolveOrganisationId(long? requested)
         {
-            if (requested.HasValue && requested.Value > 0)
-            {
-                return requested.Value;
-            }
+            long jwtOrg = 0;
             try
             {
                 var ctx = requeststate.usercontext;
                 if (ctx != null && ctx.organisationid > 0)
                 {
-                    return ctx.organisationid;
+                    jwtOrg = ctx.organisationid;
                 }
             }
             catch
             {
                 // ignore
             }
-            return 0;
+
+            if (jwtOrg <= 0)
+            {
+                throw new Exception("Organisation is required.");
+            }
+
+            if (requested.HasValue && requested.Value > 0 && requested.Value != jwtOrg)
+            {
+                throw new UnauthorizedAccessException("Cross-organisation access is not allowed.");
+            }
+
+            return jwtOrg;
         }
 
         private async Task<List<OrganisationIntegrationSafe>> SelectTransaction(
@@ -345,25 +410,87 @@ namespace appointza.Services
                 SELECT id, provider FROM organization_integrations
                 WHERE id = @id AND organisation_id = @organisation_id;
             ";
+            string provider = "";
+            bool found = false;
             using (DbCommand command = db.GetCommand(query))
             {
                 db.AddParameter(command, "id", DbTypes.Types.Long).Value = id;
                 db.AddParameter(command, "organisation_id", DbTypes.Types.Long).Value = organisationId;
                 using (DbDataReader reader = await db.Execute(command))
                 {
-                    if (!await reader.ReadAsync())
+                    if (await reader.ReadAsync())
                     {
-                        throw new Exception("Integration not found for this organisation.");
-                    }
-                    if (!string.IsNullOrEmpty(expectedProvider))
-                    {
-                        string provider = reader["provider"] == DBNull.Value ? "" : reader["provider"].ToString() ?? "";
-                        if (!string.Equals(provider, expectedProvider, StringComparison.OrdinalIgnoreCase))
-                        {
-                            throw new Exception("Integration provider mismatch.");
-                        }
+                        found = true;
+                        provider = reader["provider"] == DBNull.Value ? "" : reader["provider"].ToString() ?? "";
                     }
                 }
+            }
+            if (!found)
+            {
+                throw new Exception("Integration not found for this organisation.");
+            }
+            if (!string.IsNullOrEmpty(expectedProvider) &&
+                !string.Equals(provider, expectedProvider, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception("Integration provider mismatch.");
+            }
+        }
+
+        /// <summary>
+        /// Prefer row with the same connection_name; otherwise any integration for org+provider.
+        /// </summary>
+        private async Task<long> FindExistingIntegrationId(
+            IDb db,
+            long organisationId,
+            string provider,
+            string connectionName)
+        {
+            string query = @"
+                SELECT id
+                FROM organization_integrations
+                WHERE organisation_id = @organisation_id
+                  AND provider = @provider
+                ORDER BY
+                    CASE WHEN connection_name = @connection_name THEN 0 ELSE 1 END,
+                    id ASC
+                LIMIT 1;";
+            long foundId = 0;
+            using (DbCommand command = db.GetCommand(query))
+            {
+                db.AddParameter(command, "organisation_id", DbTypes.Types.Long).Value = organisationId;
+                db.AddParameter(command, "provider", DbTypes.Types.String).Value = provider;
+                db.AddParameter(command, "connection_name", DbTypes.Types.String).Value = connectionName ?? "";
+                using (DbDataReader reader = await db.Execute(command))
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        foundId = Convert.ToInt64(reader["id"]);
+                    }
+                }
+            }
+            return foundId;
+        }
+
+        private async Task UpsertWhatsAppConnectionRow(IDb db, long integrationId, WhatsAppIntegrationUpsertReq req)
+        {
+            bool exists = false;
+            string existsSql = @"
+                SELECT 1 FROM whatsapp_connections WHERE integration_id = @integration_id LIMIT 1;";
+            using (DbCommand command = db.GetCommand(existsSql))
+            {
+                db.AddParameter(command, "integration_id", DbTypes.Types.Long).Value = integrationId;
+                using (DbDataReader reader = await db.Execute(command))
+                {
+                    exists = await reader.ReadAsync();
+                }
+            }
+            if (exists)
+            {
+                await UpdateWhatsAppConnection(db, integrationId, req);
+            }
+            else
+            {
+                await InsertWhatsAppConnection(db, integrationId, req);
             }
         }
 
@@ -377,6 +504,7 @@ namespace appointza.Services
                 )
                 RETURNING id;
             ";
+            long newId = 0;
             using (DbCommand command = db.GetCommand(query))
             {
                 var now = DateTime.UtcNow;
@@ -390,10 +518,11 @@ namespace appointza.Services
                 {
                     if (await reader.ReadAsync())
                     {
-                        return Convert.ToInt64(reader["id"]);
+                        newId = Convert.ToInt64(reader["id"]);
                     }
                 }
             }
+            if (newId > 0) return newId;
             throw new Exception("Failed to create integration.");
         }
 
@@ -404,14 +533,12 @@ namespace appointza.Services
                 SET connection_name = @connection_name, status = @status, is_active = TRUE, updated_at = @updated_at
                 WHERE id = @id;
             ";
-            using (DbCommand command = db.GetCommand(query))
-            {
-                db.AddParameter(command, "connection_name", DbTypes.Types.String).Value = connectionName;
-                db.AddParameter(command, "status", DbTypes.Types.String).Value = status;
-                db.AddParameter(command, "updated_at", DbTypes.Types.DateTime).Value = DateTime.UtcNow;
-                db.AddParameter(command, "id", DbTypes.Types.Long).Value = id;
-                await db.Execute(command);
-            }
+            DbCommand command = db.GetCommand(query);
+            db.AddParameter(command, "connection_name", DbTypes.Types.String).Value = connectionName;
+            db.AddParameter(command, "status", DbTypes.Types.String).Value = status;
+            db.AddParameter(command, "updated_at", DbTypes.Types.DateTime).Value = DateTime.UtcNow;
+            db.AddParameter(command, "id", DbTypes.Types.Long).Value = id;
+            await db.ExecuteNonQuery(command);
         }
 
         private async Task InsertWhatsAppConnection(IDb db, long integrationId, WhatsAppIntegrationUpsertReq req)
@@ -429,11 +556,9 @@ namespace appointza.Services
                     @created_at, @updated_at
                 );
             ";
-            using (DbCommand command = db.GetCommand(query))
-            {
-                BindWhatsAppParams(db, command, integrationId, req);
-                await db.Execute(command);
-            }
+            DbCommand command = db.GetCommand(query);
+            BindWhatsAppParams(db, command, integrationId, req);
+            await db.ExecuteNonQuery(command);
         }
 
         private async Task UpdateWhatsAppConnection(IDb db, long integrationId, WhatsAppIntegrationUpsertReq req)
@@ -453,11 +578,9 @@ namespace appointza.Services
                     updated_at = @updated_at
                 WHERE integration_id = @integration_id;
             ";
-            using (DbCommand command = db.GetCommand(query))
-            {
-                BindWhatsAppParams(db, command, integrationId, req);
-                await db.Execute(command);
-            }
+            DbCommand command = db.GetCommand(query);
+            BindWhatsAppParams(db, command, integrationId, req);
+            await db.ExecuteNonQuery(command);
         }
 
         private void BindWhatsAppParams(IDb db, DbCommand command, long integrationId, WhatsAppIntegrationUpsertReq req)
@@ -491,11 +614,9 @@ namespace appointza.Services
                     @notify_booking, @notify_event, @created_at, @updated_at
                 );
             ";
-            using (DbCommand command = db.GetCommand(query))
-            {
-                BindEmailParams(db, command, integrationId, req, provider);
-                await db.Execute(command);
-            }
+            DbCommand insertCmd = db.GetCommand(query);
+            BindEmailParams(db, insertCmd, integrationId, req, provider);
+            await db.ExecuteNonQuery(insertCmd);
         }
 
         private async Task UpdateEmailConnection(IDb db, long integrationId, EmailIntegrationUpsertReq req, string provider)
@@ -516,11 +637,9 @@ namespace appointza.Services
                     updated_at = @updated_at
                 WHERE integration_id = @integration_id;
             ";
-            using (DbCommand command = db.GetCommand(query))
-            {
-                BindEmailParams(db, command, integrationId, req, provider);
-                await db.Execute(command);
-            }
+            DbCommand updateCmd = db.GetCommand(query);
+            BindEmailParams(db, updateCmd, integrationId, req, provider);
+            await db.ExecuteNonQuery(updateCmd);
         }
 
         private void BindEmailParams(IDb db, DbCommand command, long integrationId, EmailIntegrationUpsertReq req, string provider)
@@ -558,17 +677,15 @@ namespace appointza.Services
                     updated_at = EXCLUDED.updated_at;
             ";
             var now = DateTime.UtcNow;
-            using (DbCommand command = db.GetCommand(query))
-            {
-                db.AddParameter(command, "integration_id", DbTypes.Types.Long).Value = integrationId;
-                db.AddParameter(command, "secret_type", DbTypes.Types.String).Value = secretType;
-                db.AddParameter(command, "encrypted_value", DbTypes.Types.String).Value = encrypted;
-                db.AddParameter(command, "expires_at", DbTypes.Types.DateTime).Value = expiresAt.HasValue ? expiresAt.Value : (object)DBNull.Value;
-                db.AddParameter(command, "rotated_at", DbTypes.Types.DateTime).Value = now;
-                db.AddParameter(command, "created_at", DbTypes.Types.DateTime).Value = now;
-                db.AddParameter(command, "updated_at", DbTypes.Types.DateTime).Value = now;
-                await db.Execute(command);
-            }
+            DbCommand command = db.GetCommand(query);
+            db.AddParameter(command, "integration_id", DbTypes.Types.Long).Value = integrationId;
+            db.AddParameter(command, "secret_type", DbTypes.Types.String).Value = secretType;
+            db.AddParameter(command, "encrypted_value", DbTypes.Types.String).Value = encrypted;
+            db.AddParameter(command, "expires_at", DbTypes.Types.DateTime).Value = expiresAt.HasValue ? expiresAt.Value : (object)DBNull.Value;
+            db.AddParameter(command, "rotated_at", DbTypes.Types.DateTime).Value = now;
+            db.AddParameter(command, "created_at", DbTypes.Types.DateTime).Value = now;
+            db.AddParameter(command, "updated_at", DbTypes.Types.DateTime).Value = now;
+            await db.ExecuteNonQuery(command);
         }
 
         private static string NormalizeEmailProvider(string? provider)

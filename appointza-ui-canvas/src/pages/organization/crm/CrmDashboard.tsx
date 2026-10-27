@@ -34,9 +34,9 @@ const cards = [
     icon: Kanban,
   },
   {
-    to: "/organization/crm/inbox",
-    title: "Unified Inbox",
-    description: "Email and WhatsApp conversations in one place.",
+    to: "/organization/crm/whatsapp/inbox",
+    title: "WhatsApp Inbox",
+    description: "Organisation WhatsApp conversations and replies.",
     icon: Inbox,
   },
   {
@@ -48,13 +48,13 @@ const cards = [
   {
     to: "/organization/crm/whatsapp-campaigns",
     title: "WhatsApp Campaigns",
-    description: "Bulk and scheduled WhatsApp outreach.",
+    description: "Audience targeting, approved templates, and schedule metadata.",
     icon: MessageCircle,
   },
   {
     to: "/organization/crm/templates",
-    title: "Templates",
-    description: "Email and WhatsApp message templates.",
+    title: "WhatsApp Templates",
+    description: "Sync, create, and track Meta template approval.",
     icon: FileText,
   },
   {

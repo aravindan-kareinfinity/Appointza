@@ -41,6 +41,12 @@ namespace appointza.Models
         public DateTime updated_at { get; set; }
         public WhatsAppConnectionSafe? whatsapp { get; set; }
         public EmailConnectionSafe? email { get; set; }
+
+        /// <summary>
+        /// Meta webhook verify token from server appsettings (shared; safe for org admins to copy into Meta).
+        /// </summary>
+        public string webhook_verify_token { get; set; } = string.Empty;
+        public bool webhook_app_secret_configured { get; set; }
     }
 
     public class WhatsAppConnectionSafe

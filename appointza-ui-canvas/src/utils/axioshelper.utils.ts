@@ -31,11 +31,13 @@ export class AxiosHelperUtils {
     url: string,
     skipAuthorization: boolean = false,
     headers: AxiosRequestHeaders = {},
+    config?: { signal?: AbortSignal },
   ) {
     headers = this.createAuthorizationHeader(headers, skipAuthorization);
     try {
       let response = await axios.get<T>(url, {
         headers: headers,
+        signal: config?.signal,
       });
       return response.data;
     } catch (error) {
@@ -96,6 +98,24 @@ export class AxiosHelperUtils {
     headers = this.createAuthorizationHeader(headers, skipAuthorization);
     try {
       let response = await axios.put<T>(url, data, {
+        headers: headers,
+      });
+      return response.data;
+    } catch (error) {
+      notifySessionExpiredIfNeeded(error);
+      throw error;
+    }
+  }
+
+  async patch<T>(
+    url: string,
+    data: any,
+    skipAuthorization: boolean = false,
+    headers: AxiosRequestHeaders = {},
+  ) {
+    headers = this.createAuthorizationHeader(headers, skipAuthorization);
+    try {
+      let response = await axios.patch<T>(url, data, {
         headers: headers,
       });
       return response.data;

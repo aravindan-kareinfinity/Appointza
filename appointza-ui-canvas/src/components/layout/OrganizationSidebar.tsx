@@ -13,7 +13,6 @@ import {
   Images,
   ContactRound,
   Users,
-  Ticket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
@@ -65,12 +64,12 @@ const SidebarLink = ({
       onClick={onClick}
     >
       {isActive && !collapsed ? (
-        <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-[#2a5af5]" aria-hidden />
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-[#528ff0]" aria-hidden />
       ) : null}
       <Icon
         className={cn(
           "size-[18px] shrink-0",
-          isActive ? "text-[#2a5af5]" : "text-[#7a8494]"
+          isActive ? "text-[#528ff0]" : "text-[#7a8494]"
         )}
         strokeWidth={1.75}
         aria-hidden
@@ -186,11 +185,6 @@ const OrganizationSidebar = ({ collapsed, onCollapsedChange }: OrganizationSideb
           {showBookingsNav && (
             <SidebarLink to="/organization/appointments" icon={CalendarDays} collapsed={isCollapsed}>
               Bookings
-            </SidebarLink>
-          )}
-          {hasEventsAccess && offersEvents && (
-            <SidebarLink to="/organization/event-bookings" icon={Ticket} collapsed={isCollapsed}>
-              Event Participants
             </SidebarLink>
           )}
 

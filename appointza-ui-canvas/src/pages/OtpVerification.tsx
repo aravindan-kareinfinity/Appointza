@@ -7,9 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import OtpInput from "@/components/auth/OtpInput";
-import { UsersLoginReq, UsersContext } from "@/models/users.model";
-import { environment } from "@/utils/environment";
+import { UsersLoginReq } from "@/models/users.model";
 import { completeAuthNavigation, getMainAppAuthUrl, getMainAppLoginUrl, resolveLoginReturnPath } from "@/utils/authNavigation.util";
+import {
+  BUSINESS_ONBOARDING_RETURN_PATH,
+  isDraftOrganisationName,
+  isOrganizationUserContext,
+  markPendingBusinessOnboarding,
+  resolveOrganizationAuthPath,
+  isPendingBusinessOnboarding,
+} from "@/utils/businessOnboarding.util";
 import { ArrowLeft, Check, Loader2, ShieldCheck } from "lucide-react";
 import { org } from "@/lib/orgTheme";
 import { cn } from "@/lib/utils";
@@ -48,37 +55,6 @@ const OtpVerification = () => {
     }
   }, [location.state]);
 
-  const createRazorpayContact = async (userContext: UsersContext) => {
-    try {
-      const response = await fetch(`${environment.baseurl}/api/Razorpay/CreateContact`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userContext.accesstoken || localStorage.getItem("auth_token")}`,
-        },
-        body: JSON.stringify({
-          item: {
-            name: userContext.username || name,
-            email: userContext.useremail || "",
-            contact: userContext.usermobile || mobile,
-            type: "vendor",
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Razorpay contact creation failed:", errorText);
-        throw new Error("Failed to create Razorpay contact");
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error creating Razorpay contact:", error);
-      throw error;
-    }
-  };
-
   const verifyOtp = async (otpValue?: string) => {
     const currentOtp = otpValue || otp;
 
@@ -103,23 +79,50 @@ const OtpVerification = () => {
         throw new Error("Invalid login response from server");
       }
 
+      // Organisation users are keyed by organisationid (draft orgs may have no location yet).
+      const isOrgUser = isOrganizationUserContext(loginresp);
+      const pendingBusiness = isPendingBusinessOnboarding();
+      const isDraftOrg =
+        isOrgUser &&
+        (isDraftOrganisationName(loginresp.organisationname) || pendingBusiness);
+      const userTypeValue: "user" | "organization" =
+        isOrgUser || pendingBusiness || isDraftOrg ? "organization" : "user";
+
+      // Registration must not open the app — verify OTP then require an explicit login.
+      if (isRegistration) {
+        if (isDraftOrg || pendingBusiness || (isOrgUser && pendingBusiness)) {
+          markPendingBusinessOnboarding();
+        }
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user_context");
+        localStorage.removeItem("user_type");
+        refreshAuth();
+        toast({
+          title: "Account verified",
+          description: "Please sign in to continue.",
+        });
+        navigate("/login", {
+          replace: true,
+          state: {
+            justRegistered: true,
+            mobile,
+            isBusiness: isOrgUser || pendingBusiness,
+          },
+        });
+        return;
+      }
+
       localStorage.setItem("auth_token", loginresp.accesstoken || "");
       localStorage.setItem("refresh_token", loginresp.refreshtoken || "");
       localStorage.setItem("user_context", JSON.stringify(loginresp));
 
-      const iscustomer = loginresp.organisationlocationid == 0 || loginresp.organisationlocationid == null;
-      const userTypeValue = iscustomer ? "user" : "organization";
+      if (isDraftOrg || pendingBusiness) {
+        markPendingBusinessOnboarding();
+      }
 
       localStorage.setItem("user_type", userTypeValue);
       setUserType(userTypeValue);
-
-      if (isRegistration && userTypeValue === "organization" && loginresp?.organisationid) {
-        try {
-          await createRazorpayContact(loginresp);
-        } catch (error) {
-          console.error("Failed to create Razorpay contact:", error);
-        }
-      }
 
       try {
         const { pushNotificationService } = await import("@/services/pushnotification.service");
@@ -134,18 +137,20 @@ const OtpVerification = () => {
       refreshAuth();
 
       toast({
-        title: isRegistration ? "Registration Complete" : "Login Successful",
-        description: isRegistration
-          ? "Account created successfully! Welcome to Appointza!"
-          : "Login successful! Welcome back!",
+        title: "Login Successful",
+        description: "Login successful! Welcome back!",
       });
 
       setTimeout(() => {
-        completeAuthNavigation(
-          navigate,
-          userTypeValue === "organization" ? "organization" : "user",
-          from,
-        );
+        const stillPending = isDraftOrg || isPendingBusinessOnboarding();
+        const returnTo =
+          isOrgUser || stillPending
+            ? resolveOrganizationAuthPath(
+                loginresp,
+                stillPending ? BUSINESS_ONBOARDING_RETURN_PATH : from,
+              )
+            : from;
+        completeAuthNavigation(navigate, userTypeValue, returnTo);
       }, 100);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };

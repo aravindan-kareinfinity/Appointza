@@ -47,6 +47,7 @@ export class AuthService {
       profileimage: req.profileimage || 0,
       plan_code: req.plan_code || '',
       referral_code: (req.referral_code || '').trim(),
+      is_business_registration: !!req.is_business_registration,
     };
 
     let postdata: ActionReq<any> = new ActionReq<any>();
@@ -86,14 +87,19 @@ export class AuthService {
    * Get OTP for mobile number
    */
   async getOtp(req: UsersGetOtpReq) {
+    // Persist/lookup uses 10-digit Indian mobile (strip +91 / non-digits).
+    let digits = String(req.mobile || "").replace(/\D/g, "");
+    if (digits.length > 10 && digits.startsWith("91")) digits = digits.slice(-10);
+    else if (digits.length > 10) digits = digits.slice(-10);
+
     const getOtpRequest = {
-      mobile: req.mobile,
-      organisationtype: 0, // Default to 0, can be updated if needed
+      mobile: digits,
+      organisationtype: 0,
     };
 
     let postdata: ActionReq<any> = new ActionReq<any>();
     postdata.item = getOtpRequest;
-    
+
     let resp = await this.http.post<ActionRes<UsersGetOtpRes>>(
       this.baseurl + '/GetOtp',
       postdata,
@@ -131,14 +137,53 @@ export class AuthService {
   }
 
   /**
-   * Login with Google OAuth
+   * Screen 2 — create organisation for an authenticated user with no org yet.
    */
-  async googleLogin(idToken: string, email: string, name: string, picture?: string) {
+  async completeBusinessOnboarding(req: {
+    organisationname: string;
+    organisationgstnumber?: string;
+    primarytype: number;
+    primarytypecode?: string;
+    secondarytype?: number;
+    secondarytypecode?: string;
+    organisationlogo?: number;
+    referral_code?: string;
+    plan_code?: string;
+    userdesignation?: string;
+  }) {
+    const postdata = new ActionReq<typeof req>();
+    postdata.item = req;
+    const resp = await this.http.post<ActionRes<UsersContext>>(
+      this.baseurl + '/CompleteBusinessOnboarding',
+      postdata,
+    );
+    if ((resp as any)?.error) {
+      throw new Error((resp as any).error);
+    }
+    if (!resp.item) {
+      throw new Error('Business profile could not be created.');
+    }
+    return resp.item;
+  }
+
+  /**
+   * Login with Google OAuth.
+   * Pass is_business_registration from business signup so users without an org
+   * get a draft Organisation (same as mobile business register).
+   */
+  async googleLogin(
+    idToken: string,
+    email: string,
+    name: string,
+    picture?: string,
+    options?: { is_business_registration?: boolean },
+  ) {
     const googleLoginRequest = {
       idToken: idToken,
       email: email,
       name: name,
       picture: picture || '',
+      is_business_registration: !!options?.is_business_registration,
     };
 
     let postdata: ActionReq<any> = new ActionReq<any>();
@@ -149,8 +194,15 @@ export class AuthService {
       postdata,
       true,
     );
-    const userContext = resp.item!;
-    return userContext;
+    if ((resp as any)?.error) {
+      const err: any = new Error((resp as any).error || (resp as any).message || 'Google login failed');
+      err.response = { data: resp };
+      throw err;
+    }
+    if (!resp.item) {
+      throw new Error('Google login failed');
+    }
+    return resp.item;
   }
 }
 

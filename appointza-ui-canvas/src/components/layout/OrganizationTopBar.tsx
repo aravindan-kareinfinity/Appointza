@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { Bell, Search } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import OrganizationScreenSearch from "@/components/layout/OrganizationScreenSearch";
 
 function initialsFromUser(user: {
   firstname?: string;
@@ -28,6 +30,18 @@ export default function OrganizationTopBar({ className }: { className?: string }
   const { user } = useAuth();
   const location = useLocation();
   const initials = initialsFromUser(user);
+  const [searchFocusToken, setSearchFocusToken] = useState(0);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchFocusToken((n) => n + 1);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   return (
     <header
@@ -76,13 +90,18 @@ export default function OrganizationTopBar({ className }: { className?: string }
       </nav>
 
       <div className="mx-auto hidden min-w-0 max-w-xl flex-1 md:block">
-        <div className="flex h-8 items-center gap-2 rounded-md border border-zinc-700 bg-zinc-900/80 px-3 text-[13px] text-zinc-500">
-          <Search className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          <span className="truncate">Search bookings, customers, settings…</span>
-        </div>
+        <OrganizationScreenSearch focusToken={searchFocusToken} />
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <button
+          type="button"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-white/5 hover:text-white md:hidden"
+          aria-label="Search screens"
+          onClick={() => setSearchFocusToken((n) => n + 1)}
+        >
+          <Search className="h-4 w-4" />
+        </button>
         <button
           type="button"
           className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-white/5 hover:text-white"

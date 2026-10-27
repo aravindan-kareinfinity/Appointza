@@ -33,7 +33,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
-import { OnboardingPageGuide } from "@/components/onboarding/OrganizationOnboarding";
 import { OrganisationLocation } from "@/models/organisationlocation.model";
 import { 
   OrganisationServiceTiming, 
@@ -55,6 +54,12 @@ import { org } from "@/lib/orgTheme";
 import { cn } from "@/lib/utils";
 import { invalidatePublicSiteCacheForLocation } from "@/utils/publicSiteCache.util";
 import { onboardingStepRoute } from "@/utils/organizationOnboarding.util";
+import {
+  BUSINESS_COMPLETE_PATH,
+  BUSINESS_DOMAIN_PATH,
+  isPendingBusinessOnboarding,
+  setBusinessOnboardingStep,
+} from "@/utils/businessOnboarding.util";
 
 function formatTimingTimeForApi(value: Date | string): string {
   if (value instanceof Date) {
@@ -102,9 +107,17 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const organizationId = user?.organisationid || 1;
-  const { hasCustomDomain, hasServices, hasWebsite, hasTiming, isComplete, isLoading: isLoadingOnboarding } =
-    useOnboardingStatus({ enabled: !embedded });
-  const inOnboarding = !embedded && !isComplete && hasCustomDomain && hasServices;
+  const {
+    hasCustomDomain,
+    hasServices,
+    hasWebsite,
+    isComplete,
+    isLoading: isLoadingOnboarding,
+    refetch: refetchOnboarding,
+  } = useOnboardingStatus({ enabled: !embedded });
+  const registerSetup = !embedded && isPendingBusinessOnboarding();
+  const inOnboarding =
+    !embedded && !isComplete && (registerSetup || (hasCustomDomain && hasServices));
 
   // State management
   const [isLeaveBusy, setIsLeaveBusy] = useState(false);
@@ -388,6 +401,20 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
         openBefore,
       );
 
+      await refetchOnboarding();
+
+      if (registerSetup) {
+        setBusinessOnboardingStep("complete");
+        toast({
+          title: "Opening hours saved",
+          description: "Next: finish setup.",
+        });
+        setShowTimingForm(false);
+        setSelectedLocation(null);
+        setTimeout(() => navigate(BUSINESS_COMPLETE_PATH, { replace: true }), 400);
+        return;
+      }
+
       if (!isComplete && hasCustomDomain && hasServices && hasWebsite && !embedded) {
         toast({
           title: "Setup complete!",
@@ -398,7 +425,7 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
         setTimeout(() => navigate("/organization/dashboard"), 600);
         return;
       }
-      
+
       toast({
         title: "Success",
         description: "Business hours saved successfully",
@@ -783,7 +810,7 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
     );
   }
 
-  // Show message if no services exist
+  // Register setup: domain → opening hours. Older wizard still gates on domain/services/website.
   if (!embedded && !hasCustomDomain) {
     return (
       <div className="org-page">
@@ -795,7 +822,7 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
                   <AlertCircle className="h-5 w-5" />
                 </span>
                 <div>
-                  <h2 className={org.title}>Custom domain required first</h2>
+                  <h2 className={org.title}>Domain name required first</h2>
                   <p className={org.description}>Choose your public booking page address before setting hours.</p>
                 </div>
               </div>
@@ -808,10 +835,12 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
               </p>
               <Button
                 type="button"
-                onClick={() => navigate("/organization/custom-domain")}
+                onClick={() =>
+                  navigate(registerSetup ? BUSINESS_DOMAIN_PATH : "/organization/custom-domain")
+                }
                 className={cn(org.btnPrimary, "min-h-11 w-full sm:w-auto")}
               >
-                Set custom domain
+                Set domain name
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -821,7 +850,7 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
     );
   }
 
-  if (!embedded && !hasServices) {
+  if (!embedded && !registerSetup && !hasServices) {
     return (
       <div className="org-page">
         <div className="org-panel-section">
@@ -844,7 +873,7 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
               </p>
               <Button
                 type="button"
-                onClick={() => navigate("/organization/services")}
+                onClick={() => navigate("/organization/services?kind=services")}
                 className={cn(org.btnPrimary, "min-h-11 w-full touch-manipulation sm:w-auto")}
               >
                 <Package className="mr-2 h-4 w-4" />
@@ -858,7 +887,7 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
     );
   }
 
-  if (!embedded && !isComplete && !hasWebsite) {
+  if (!embedded && !registerSetup && !isComplete && !hasWebsite) {
     const locationId = locations[0]?.id ?? 0;
     return (
       <div className="org-page">
@@ -1590,18 +1619,6 @@ const TimingScreen = ({ embedded = false }: { embedded?: boolean }) => {
 
   return (
     <div className="org-page">
-      {inOnboarding && (
-        <div className="org-page-section pb-0 pt-4 sm:pt-6">
-          <OnboardingPageGuide
-            compact
-            stepId="timing"
-            hasCustomDomain={hasCustomDomain}
-            hasServices={hasServices}
-            hasWebsite={hasWebsite}
-            hasTiming={hasTiming}
-          />
-        </div>
-      )}
       <div className="org-panel-section space-y-5 pt-4">{timingContent}</div>
     </div>
   );

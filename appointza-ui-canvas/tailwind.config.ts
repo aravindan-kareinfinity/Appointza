@@ -143,11 +143,12 @@ export default {
 				],
 			},
 			backgroundImage: {
-				'gradient-appointza': 'linear-gradient(135deg, #2F80ED 0%, #4F6FF7 52%, #7B4DFF 100%)',
-				'gradient-coral': 'linear-gradient(135deg, #2F80ED 0%, #4F6FF7 55%, #7B4DFF 100%)',
-				'gradient-soft': 'linear-gradient(135deg, #EFF6FF 0%, #F3E8FF 100%)',
-				'gradient-elegant': 'linear-gradient(145deg, #EAF3FF 0%, #F7F3FF 100%)',
-				'gradient-pastel': 'linear-gradient(135deg, #DBEAFE 0%, #EDE9FE 100%)',
+				/** Solid Razorpay blue — kept as a single-stop “gradient” for bg-gradient-* utilities. */
+				'gradient-appointza': 'linear-gradient(135deg, #528ff0 0%, #528ff0 100%)',
+				'gradient-coral': 'linear-gradient(135deg, #528ff0 0%, #3d7ae8 100%)',
+				'gradient-soft': 'linear-gradient(135deg, #eef4ff 0%, #f5f9ff 100%)',
+				'gradient-elegant': 'linear-gradient(145deg, #eaf3ff 0%, #f5f9ff 100%)',
+				'gradient-pastel': 'linear-gradient(135deg, #dbeafe 0%, #eef4ff 100%)',
 			}
 		}
 	},

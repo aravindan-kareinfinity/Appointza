@@ -792,6 +792,7 @@ namespace appointza.Services
             DbCommand insert = db.GetCommand(@"
                 INSERT INTO organisation_loyalty_settings (organisation_id, created_at, updated_at)
                 VALUES (@organisation_id, @created_at, @updated_at)
+                ON CONFLICT (organisation_id) DO NOTHING
                 RETURNING organisation_id, points_per_service, points_per_rupee_spent, bonus_points, referral_points,
                           birthday_bonus_points, anniversary_bonus_points, redemption_points_per_rupee,
                           redemption_rupee_value, min_redemption_points, points_expiry_days, max_points_per_transaction,
@@ -799,9 +800,25 @@ namespace appointza.Services
             db.AddParameter(insert, "organisation_id", DbTypes.Types.Long).Value = organisationId;
             db.AddParameter(insert, "created_at", DbTypes.Types.DateTime).Value = now;
             db.AddParameter(insert, "updated_at", DbTypes.Types.DateTime).Value = now;
-            using DbDataReader insReader = await db.Execute(insert);
-            if (await insReader.ReadAsync())
-                return MapSettings(insReader);
+            using (DbDataReader insReader = await db.Execute(insert))
+            {
+                if (await insReader.ReadAsync())
+                    return MapSettings(insReader);
+            }
+
+            // Concurrent create won the race — reload existing settings.
+            DbCommand reload = db.GetCommand(@"
+                SELECT organisation_id, points_per_service, points_per_rupee_spent, bonus_points, referral_points,
+                       birthday_bonus_points, anniversary_bonus_points, redemption_points_per_rupee,
+                       redemption_rupee_value, min_redemption_points, points_expiry_days, max_points_per_transaction,
+                       combine_with_discounts, allow_transfer, allow_partial_redemption, isactive, created_at, updated_at
+                FROM organisation_loyalty_settings WHERE organisation_id = @organisation_id LIMIT 1");
+            db.AddParameter(reload, "organisation_id", DbTypes.Types.Long).Value = organisationId;
+            using (DbDataReader reader = await db.Execute(reload))
+            {
+                if (await reader.ReadAsync())
+                    return MapSettings(reader);
+            }
 
             return new OrganisationLoyaltySettings { organisation_id = organisationId };
         }

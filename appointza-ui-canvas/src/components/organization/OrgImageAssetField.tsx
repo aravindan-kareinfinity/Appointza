@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Images, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { Images, Loader2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -7,7 +7,6 @@ import { useOrgTemplateAssets } from "@/contexts/OrgTemplateAssetsContext";
 import { AssetPickerDialog } from "@/components/templateBuilder/AssetPickerDialog";
 import { cn } from "@/lib/utils";
 import { org } from "@/lib/orgTheme";
-import { Link } from "react-router-dom";
 
 export type OrgImageAssetFieldProps = {
   label?: string;
@@ -31,9 +30,11 @@ export function OrgImageAssetField({
   className,
   disabled = false,
 }: OrgImageAssetFieldProps) {
-  const { getImageUrl } = useOrgTemplateAssets();
+  const { getImageUrl, uploadFiles, isSaving } = useOrgTemplateAssets();
   const { toast } = useToast();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   const limit = multiple ? maxImages : 1;
   const atLimit = limit != null && imageIds.length >= limit;
@@ -53,6 +54,45 @@ export function OrgImageAssetField({
       if (!merged.includes(id)) merged.push(id);
     }
     onChange(limit != null ? merged.slice(0, limit) : merged);
+  };
+
+  const handleDirectUpload = async (fileList: FileList | null) => {
+    if (!fileList?.length || !canAdd) return;
+    const files = Array.from(fileList).filter((file) => file.type.startsWith("image/"));
+    if (files.length === 0) {
+      toast({
+        title: "Invalid file",
+        description: "Choose image files only (JPG, PNG, WebP, etc.).",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (files.some((file) => file.size > 5 * 1024 * 1024)) {
+      toast({
+        title: "File too large",
+        description: "Each image must be under 5 MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ids = await uploadFiles(files);
+      addIds(ids ?? []);
+      toast({
+        title: "Uploaded",
+        description: `${files.length} image${files.length === 1 ? "" : "s"} added.`,
+      });
+    } catch {
+      toast({
+        title: "Upload failed",
+        description: "Could not upload images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeId = (id: number) => {
@@ -103,10 +143,34 @@ export function OrgImageAssetField({
 
       {canAdd ? (
         <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={uploadInputRef}
+            type="file"
+            accept="image/*"
+            multiple={multiple}
+            className="hidden"
+            onChange={(event) => {
+              void handleDirectUpload(event.target.files);
+              event.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            className="min-h-10 rounded-md border border-[#528ff0] bg-[#528ff0] text-white hover:bg-[#3d7ae8]"
+            disabled={disabled || uploading || isSaving}
+            onClick={() => uploadInputRef.current?.click()}
+          >
+            {uploading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
+            Upload new images
+          </Button>
           <Button
             type="button"
             variant="outline"
-            disabled={disabled}
+            disabled={disabled || uploading}
             className={cn(org.btnOutline, "min-h-10")}
             onClick={() => setPickerOpen(true)}
           >
@@ -118,9 +182,6 @@ export function OrgImageAssetField({
               {imageIds.length}/{limit}
             </span>
           ) : null}
-          <Link to="/organization/assets" className="text-xs font-medium text-blue-600 hover:underline">
-            Upload new images in Assets
-          </Link>
         </div>
       ) : null}
 

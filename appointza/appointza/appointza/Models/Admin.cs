@@ -35,18 +35,26 @@ namespace appointza.Models
 
     public class AdminLoginReq
     {
-        public string email { get; set; }
-        public string password { get; set; }
+        public string email { get; set; } = "";
+        public string password { get; set; } = "";
     }
 
     public class AdminContext
     {
         public long adminid { get; set; }
-        public string adminname { get; set; }
-        public string adminemail { get; set; }
-        public string adminmobile { get; set; }
-        public string accesstoken { get; set; }
-        public string refreshtoken { get; set; }
+        public string adminname { get; set; } = "";
+        public string adminemail { get; set; } = "";
+        public string adminmobile { get; set; } = "";
+        public string accesstoken { get; set; } = "";
+        public string refreshtoken { get; set; } = "";
+        /// <summary>Always platform_admin for this token kind.</summary>
+        public string role { get; set; } = "platform_admin";
+    }
+
+    public class AdminChangePasswordReq
+    {
+        public string current_password { get; set; } = "";
+        public string new_password { get; set; } = "";
     }
 
     // 1. Organization verification stats

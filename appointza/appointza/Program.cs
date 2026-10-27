@@ -67,7 +67,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks()
     .AddNpgSql(appSettings.postgresqlconnection, name: "postgresql")
     .AddNpgSql(appSettings.campusza_postgresqlconnection, name: "campusza-postgresql")
-    .AddRedis(appSettings.redis?.connection_string ?? "localhost:6379", name: "redis");
+    .AddRedis(appSettings.redis?.connection_string ?? "localhost:6379", name: "redis")
+    .AddCheck<appointza.Services.WhatsAppCrmHealthCheck>("whatsapp-crm");
 
 builder.Services.AddMemoryCache();
 builder.Services.AddStackExchangeRedisCache(options =>
@@ -182,6 +183,9 @@ app.UseMiddleware<ErrorHandlerMiddleware>();
 
 // MAP CONTROLLERS
 app.MapControllers();
+
+// WhatsApp CRM realtime (org-scoped groups; JWT via middleware or access_token query)
+app.MapHub<appointza.Hubs.WhatsAppCrmHub>(appointza.Hubs.WhatsAppCrmHub.HubPath);
 
 // HEALTH
 app.MapHealthChecks("/health");

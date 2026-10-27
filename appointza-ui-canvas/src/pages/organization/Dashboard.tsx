@@ -22,6 +22,7 @@ import UserAppointmentDetails from "@/components/organization/UserAppointmentDet
 import FileViewer from "@/components/common/FileViewer";
 // import DashboardRightRail from "@/components/organization/DashboardRightRail";
 import { org } from "@/lib/orgTheme";
+import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
 import { useOrganisationLocations } from "@/hooks/useOrganisationLocations";
 import {
   buildOrganisationCustomUrlHost,
@@ -502,6 +503,7 @@ const OrganizationDashboard = () => {
   return (
     <div className={cn(org.page, "bg-white")}>
       <div className={cn(org.pageSection, "space-y-4 pb-6 pt-0")}>
+        <OnboardingChecklist />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-xl">
             <h1 className={org.title}>

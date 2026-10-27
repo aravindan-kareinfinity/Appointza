@@ -53,11 +53,11 @@ export const PlanCards: React.FC<PlanCardsProps> = ({
             <article
               key={plan.plan_code ?? plan.display_name}
               className={cn(
-                "relative flex flex-col rounded-3xl border bg-white/90 px-6 pb-6 pt-6 shadow-sm",
+                "relative flex flex-col rounded-xl border bg-white/90 px-6 pb-6 pt-6 shadow-sm",
                 "transition-transform duration-200",
                 isPopular
-                  ? "border-transparent bg-gradient-to-br from-orange-500 via-rose-500 to-pink-600 text-white shadow-lg"
-                  : "border-zinc-200",
+                  ? "border-transparent bg-gradient-to-br from-[#528ff0] to-[#3d7ae8] text-white shadow-lg"
+                  : "border-[#e6eaf0]",
               )}
             >
               {isPopular ? (
@@ -75,20 +75,20 @@ export const PlanCards: React.FC<PlanCardsProps> = ({
               <p
                 className={cn(
                   "text-[11px] font-extrabold uppercase tracking-[0.22em]",
-                  isPopular ? "text-white/85" : "text-zinc-400",
+                  isPopular ? "text-white/85" : "text-[#98a2b3]",
                 )}
               >
                 {plan.display_name}
               </p>
 
               <div className="mt-2 flex items-end gap-1">
-                <span className={cn("text-4xl font-black tracking-tight", isPopular ? "text-white" : "text-zinc-950")}>
+                <span className={cn("text-4xl font-black tracking-tight", isPopular ? "text-white" : "text-[#1a1a1a]")}>
                   {pres.monthlyPriceLabel}
                 </span>
               </div>
 
               <div className="mt-4 space-y-1">
-                <p className={cn("text-sm font-extrabold", isPopular ? "text-white" : "text-zinc-950")}>
+                <p className={cn("text-sm font-extrabold", isPopular ? "text-white" : "text-[#1a1a1a]")}>
                   {bookingsLabel}
                 </p>
                 {Number(plan.monthly_price_inr) > 0 && bookings > 0 ? (
@@ -97,7 +97,7 @@ export const PlanCards: React.FC<PlanCardsProps> = ({
                   </p>
                 ) : null}
                 {after ? (
-                  <p className={cn("text-xs leading-relaxed", isPopular ? "text-white/80" : "text-zinc-500")}>{after}</p>
+                  <p className={cn("text-xs leading-relaxed", isPopular ? "text-white/80" : "text-[#667085]")}>{after}</p>
                 ) : null}
               </div>
 
@@ -112,7 +112,7 @@ export const PlanCards: React.FC<PlanCardsProps> = ({
       </div>
 
       {showFootnote ? (
-        <p className="text-center text-xs text-zinc-500">
+        <p className="text-center text-xs text-[#667085]">
           Booking fee applies after your free booking quota — whichever is higher.
         </p>
       ) : null}

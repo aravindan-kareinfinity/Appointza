@@ -47,6 +47,21 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+/** Primary CTA — soft blue, rounded, light shadow (matches home “Get started free” style). */
+const ctaBtn =
+  "inline-flex items-center justify-center gap-2 h-11 min-h-11 px-6 rounded-2xl text-[14px] font-semibold text-white bg-[#528ff0] hover:bg-[#3d7ae8] shadow-[0_4px_14px_rgba(82,143,240,0.32)] hover:shadow-[0_6px_18px_rgba(82,143,240,0.4)] transition-all";
+
+const ctaBtnBlock = cn(ctaBtn, "w-full");
+
+const ctaBtnOutline =
+  "inline-flex items-center justify-center gap-2 h-11 min-h-11 px-6 rounded-2xl text-[14px] font-semibold border border-[#d0d7e2] bg-white text-[#344054] hover:border-[#528ff0]/50 hover:bg-[#f5f9ff] shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition-all";
+
+const ctaBtnOnDark =
+  "inline-flex items-center justify-center gap-2 h-11 min-h-11 px-6 rounded-2xl text-[14px] font-semibold border border-white/25 bg-transparent text-white hover:bg-white/10 transition-all";
+
+const ctaBtnOnBrand =
+  "inline-flex items-center justify-center gap-2 h-11 min-h-11 px-6 rounded-2xl text-[14px] font-semibold bg-white text-[#1a1a1a] hover:bg-[#eef1f5] shadow-[0_4px_14px_rgba(15,23,42,0.12)] transition-all";
+
 /* ─── Testimonials ────────────────────────────────────────────────────────── */
 const testimonials = [
   {
@@ -55,7 +70,7 @@ const testimonials = [
     name: "Priya Suresh",
     role: "Owner, Glow Salon, Chennai",
     initials: "PS",
-    color: "from-pink-500 to-rose-500",
+    color: "from-[#528ff0] to-[#3d7ae8]",
   },
   {
     quote:
@@ -71,19 +86,19 @@ const testimonials = [
     name: "Karthik Vijay",
     role: "Organizer, TechFest Tamil Nadu",
     initials: "KV",
-    color: "from-orange-500 to-amber-500",
+    color: "from-[#528ff0] to-[#3d7ae8]",
   },
 ];
 
 /* ─── Industry segments (SEO-friendly labels) ─────────────────────────────── */
 const segments = [
-  { icon: Scissors, label: "Salon Booking Software", color: "text-pink-500 bg-pink-50" },
+  { icon: Scissors, label: "Salon Booking Software", color: "text-[#528ff0] bg-[#eef2ff]" },
   { icon: HeartPulse, label: "Clinic Appointment Software", color: "text-red-500 bg-red-50" },
-  { icon: Dumbbell, label: "Gym & Fitness Booking", color: "text-orange-500 bg-orange-50" },
+  { icon: Dumbbell, label: "Gym & Fitness Booking", color: "text-[#528ff0] bg-[#eef2ff]" },
   { icon: Calendar, label: "Event Ticket Booking", color: "text-violet-500 bg-violet-50" },
   { icon: GraduationCap, label: "Tutor & Coaching Booking", color: "text-sky-500 bg-sky-50" },
   { icon: Briefcase, label: "Consultants", color: "text-emerald-500 bg-emerald-50" },
-  { icon: Wrench, label: "Service Center Booking", color: "text-zinc-600 bg-zinc-100" },
+  { icon: Wrench, label: "Service Center Booking", color: "text-[#667085] bg-[#eef1f5]" },
   { icon: Palmtree, label: "Resort & Hotel Booking", color: "text-teal-600 bg-teal-50" },
   { icon: PartyPopper, label: "Party Hall Booking", color: "text-fuchsia-600 bg-fuchsia-50" },
   { icon: Globe, label: "Sports Turf Booking", color: "text-indigo-500 bg-indigo-50" },
@@ -142,13 +157,13 @@ const features = [
     icon: BarChart3,
     title: "Business Analytics Dashboard",
     desc: "Booking management system insights — revenue trends, no-show rates, peak hours, and staff performance.",
-    color: "text-rose-600 bg-rose-50 border-rose-100",
+    color: "text-[#528ff0] bg-[#eef2ff] border-[#dbe4ff]",
   },
   {
     icon: Building2,
     title: "Multi-Branch Booking Software",
     desc: "Online booking platform for franchises — centralized reporting, branch controls, and branded booking websites.",
-    color: "text-orange-600 bg-orange-50 border-orange-100",
+    color: "text-[#528ff0] bg-[#eef2ff] border-[#dbe4ff]",
   },
 ];
 
@@ -175,9 +190,9 @@ const MarketingHomePage = () => {
   void handleBookSlot;
   void handleBookTicket;
 
-  const navLink = "text-sm font-medium text-zinc-600 hover:text-orange-600 transition-colors";
+  const navLink = "text-sm font-medium text-[#667085] hover:text-[#528ff0] transition-colors";
   const mobileNavLink =
-    "block rounded-xl px-4 py-3.5 text-base font-semibold text-zinc-800 hover:bg-zinc-100 active:bg-zinc-200 transition-colors";
+    "block rounded-xl px-4 py-3.5 text-base font-semibold text-[#344054] hover:bg-[#eef1f5] active:bg-[#eef1f5] transition-colors";
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -202,11 +217,11 @@ const MarketingHomePage = () => {
           onClick={closeMobileMenu}
         />
         <div className="absolute inset-y-0 right-0 flex w-[min(100vw,20rem)] flex-col bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 safe-area-top">
-            <span className="text-base font-bold text-zinc-900">Menu</span>
+          <div className="flex items-center justify-between border-b border-[#e6eaf0] px-4 py-3 safe-area-top">
+            <span className="text-base font-bold text-[#1a1a1a]">Menu</span>
             <button
               type="button"
-              className="rounded-lg p-2 text-zinc-700 hover:bg-zinc-100"
+              className="rounded-lg p-2 text-[#344054] hover:bg-[#eef1f5]"
               aria-label="Close menu"
               onClick={closeMobileMenu}
             >
@@ -226,20 +241,20 @@ const MarketingHomePage = () => {
             <a href="#faq" className={mobileNavLink} onClick={closeMobileMenu}>
               FAQ
             </a>
-            <hr className="my-2 border-zinc-200" />
+            <hr className="my-2 border-[#e6eaf0]" />
             <Link
               to="/login"
-              className="block rounded-xl border border-zinc-200 px-4 py-3.5 text-center text-base font-semibold text-zinc-800 hover:bg-zinc-50"
+              className={cn(ctaBtnOutline, "w-full")}
               onClick={closeMobileMenu}
             >
               Login
             </Link>
             <Link
               to="/register"
-              className="mt-1 block rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 px-4 py-3.5 text-center text-base font-semibold text-white shadow-md shadow-orange-500/20"
+              className={cn(ctaBtnBlock, "mt-1")}
               onClick={closeMobileMenu}
             >
-              Start Free
+              Start Free <ArrowRight className="size-4" aria-hidden />
             </Link>
           </nav>
         </div>
@@ -248,10 +263,10 @@ const MarketingHomePage = () => {
     );
 
   return (
-    <div className="bg-white text-zinc-900 antialiased">
+    <div className="bg-white text-[#1a1a1a] antialiased">
 
       {/* ── Navbar ───────────────────────────────────────────────────────────── */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-zinc-200 sticky top-0 z-50 shadow-sm">
+      <nav className="bg-white/95 backdrop-blur-md border-b border-[#e6eaf0] sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center gap-4">
           <Link to="/" className="flex items-center gap-2 shrink-0 hover:opacity-90 transition-opacity">
             <img
@@ -261,7 +276,7 @@ const MarketingHomePage = () => {
               height={32}
               className="w-8 h-8 object-contain"
             />
-            <span className="text-lg font-bold text-zinc-900">Appointza</span>
+            <span className="text-lg font-bold text-[#1a1a1a]">Appointza</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
@@ -272,17 +287,17 @@ const MarketingHomePage = () => {
           </div>
 
           <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <Link to="/login" className="px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 rounded-xl border border-transparent hover:border-zinc-200 transition-colors">
+            <Link to="/login" className={cn(ctaBtnOutline, "h-10 px-5")}>
               Login
             </Link>
-            <Link to="/register" className="px-5 py-2 text-sm font-semibold bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-xl hover:opacity-95 shadow-md shadow-orange-500/20 transition-opacity">
-              Start Free
+            <Link to="/register" className={cn(ctaBtn, "h-10 px-5")}>
+              Start Free <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>
 
           <button
             type="button"
-            className="md:hidden p-2 rounded-lg text-zinc-700 hover:bg-zinc-100 border border-zinc-200"
+            className="md:hidden p-2 rounded-lg text-[#344054] hover:bg-[#eef1f5] border border-[#e6eaf0]"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((open) => !open)}
@@ -300,24 +315,24 @@ const MarketingHomePage = () => {
       <section className="relative overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-800 text-white pt-20 pb-16 md:pb-24">
         {/* background glow */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="pointer-events-none absolute -top-40 -left-40 hidden h-[600px] w-[600px] rounded-full bg-orange-500/10 blur-[120px] md:block" />
-          <div className="pointer-events-none absolute -bottom-20 -right-20 hidden h-[500px] w-[500px] rounded-full bg-pink-500/10 blur-[120px] md:block" />
+          <div className="pointer-events-none absolute -top-40 -left-40 hidden h-[600px] w-[600px] rounded-full bg-[#528ff0]/10 blur-[120px] md:block" />
+          <div className="pointer-events-none absolute -bottom-20 -right-20 hidden h-[500px] w-[500px] rounded-full bg-[#528ff0]/10 blur-[120px] md:block" />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-6">
           {/* headline block */}
           <div className="text-center max-w-4xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-xs font-semibold mb-6 tracking-wide">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#528ff0]/30 bg-[#528ff0]/10 text-[#528ff0] text-xs font-semibold mb-6 tracking-wide">
               <Sparkles className="size-3.5" aria-hidden />
               50 free bookings to get started — no credit card required
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
               Free Business Website &amp; Online Booking Software{" "}
-              <span className="bg-gradient-to-r from-orange-400 via-pink-400 to-violet-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#528ff0] via-[#2f80ed] to-[#3d7ae8] bg-clip-text text-transparent">
                 for Every Service Business
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-zinc-400 mb-10 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-[#98a2b3] mb-10 max-w-3xl mx-auto">
               <strong className="font-semibold text-zinc-300">Appointza is an all-in-one appointment booking software and online booking platform</strong>{" "}
               that helps service businesses create a <strong className="font-semibold text-zinc-300">free business website</strong>, accept{" "}
               <strong className="font-semibold text-zinc-300">online appointments</strong>, manage{" "}
@@ -325,22 +340,16 @@ const MarketingHomePage = () => {
               <strong className="font-semibold text-zinc-300">WhatsApp reminders</strong>, and track business performance from a single dashboard.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-base bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-xl shadow-orange-500/30 hover:opacity-95 transition-opacity"
-              >
+              <Link to="/register" className={ctaBtn}>
                 Start Free <ArrowRight className="size-4" aria-hidden />
               </Link>
-              <Link
-                to="/explore"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-medium text-base border border-white/20 text-white hover:bg-white/10 transition-colors"
-              >
-                Explore Businesses
+              <Link to="/explore" className={ctaBtnOnDark}>
+                Explore Businesses <ArrowRight className="size-4" aria-hidden />
               </Link>
             </div>
 
             {/* trust bar */}
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-zinc-500">
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-[#667085]">
               <span className="flex items-center gap-1.5"><Check className="size-4 text-emerald-500" /> 500+ businesses</span>
               <span className="flex items-center gap-1.5"><Check className="size-4 text-emerald-500" /> 2M+ appointments booked</span>
               <span className="flex items-center gap-1.5"><Check className="size-4 text-emerald-500" /> ₹50Cr+ revenue processed</span>
@@ -354,13 +363,13 @@ const MarketingHomePage = () => {
             aria-label="Appointment booking software dashboard with online booking calendar, business analytics, and WhatsApp booking reminders"
           >
             {/* main dashboard card */}
-            <div className="rounded-3xl border border-white/10 bg-zinc-900 shadow-2xl overflow-hidden">
+            <div className="rounded-xl border border-white/10 bg-zinc-900 shadow-2xl overflow-hidden">
               {/* window chrome */}
               <div className="flex items-center gap-2 px-5 py-3 border-b border-white/10 bg-zinc-950/60">
                 <span className="size-3 rounded-full bg-red-500/80" />
                 <span className="size-3 rounded-full bg-amber-500/80" />
                 <span className="size-3 rounded-full bg-emerald-500/80" />
-                <span className="ml-3 text-xs text-zinc-500 font-mono">appointza.com/organization/dashboard</span>
+                <span className="ml-3 text-xs text-[#667085] font-mono">appointza.com/organization/dashboard</span>
               </div>
 
               <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -373,7 +382,7 @@ const MarketingHomePage = () => {
                     { label: "Active Staff", value: "6 / 8", delta: "Online now", color: "text-violet-400" },
                   ].map((s) => (
                     <div key={s.label} className="rounded-2xl border border-white/8 bg-white/5 p-4">
-                      <p className="text-xs text-zinc-500 mb-1">{s.label}</p>
+                      <p className="text-xs text-[#667085] mb-1">{s.label}</p>
                       <p className="text-xl font-bold text-white">{s.value}</p>
                       <p className={`text-xs mt-1 ${s.color}`}>{s.delta}</p>
                     </div>
@@ -383,7 +392,7 @@ const MarketingHomePage = () => {
                 {/* upcoming appointments */}
                 <div className="md:col-span-2 rounded-2xl border border-white/8 bg-white/5 p-5">
                   <p className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                    <Calendar className="size-4 text-orange-400" /> Upcoming Appointments
+                    <Calendar className="size-4 text-[#528ff0]" /> Upcoming Appointments
                   </p>
                   <div className="space-y-3">
                     {[
@@ -393,12 +402,12 @@ const MarketingHomePage = () => {
                     ].map((a) => (
                       <div key={a.name} className="flex items-center justify-between py-2.5 border-b border-white/8 last:border-0">
                         <div className="flex items-center gap-3">
-                          <div className="size-8 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                          <div className="size-8 rounded-xl bg-gradient-to-br from-[#528ff0] to-[#3d7ae8] flex items-center justify-center text-white text-xs font-bold shrink-0">
                             {a.name[0]}
                           </div>
                           <div>
                             <p className="text-sm font-medium text-white">{a.name}</p>
-                            <p className="text-xs text-zinc-500">{a.service} · {a.staff}</p>
+                            <p className="text-xs text-[#667085]">{a.service} · {a.staff}</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -422,12 +431,12 @@ const MarketingHomePage = () => {
                       {[30, 55, 40, 70, 60, 85, 75].map((h, i) => (
                         <div
                           key={i}
-                          className="flex-1 rounded-t-md bg-gradient-to-t from-orange-500 to-pink-400 opacity-80"
+                          className="flex-1 rounded-t-md bg-gradient-to-t from-[#528ff0] to-[#3d7ae8] opacity-80"
                           style={{ height: `${h}%` }}
                         />
                       ))}
                     </div>
-                    <div className="flex justify-between mt-2 text-[10px] text-zinc-600">
+                    <div className="flex justify-between mt-2 text-[10px] text-[#667085]">
                       {(
                         [
                           { id: "mon", label: "M" },
@@ -451,15 +460,15 @@ const MarketingHomePage = () => {
                       <p className="text-xs font-semibold text-white">Mobile App</p>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs text-zinc-400">
+                      <div className="flex items-center gap-2 text-xs text-[#98a2b3]">
                         <span className="size-1.5 rounded-full bg-emerald-400 shrink-0" />
                         New booking — Priya S.
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-zinc-400">
+                      <div className="flex items-center gap-2 text-xs text-[#98a2b3]">
                         <span className="size-1.5 rounded-full bg-amber-400 shrink-0" />
                         Payment received ₹1,200
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-zinc-400">
+                      <div className="flex items-center gap-2 text-xs text-[#98a2b3]">
                         <span className="size-1.5 rounded-full bg-sky-400 shrink-0" />
                         QR check-in — Event #12
                       </div>
@@ -475,14 +484,14 @@ const MarketingHomePage = () => {
       {/* ══════════════════════════════════════════════════════════════════════
           1b. KEY HIGHLIGHTS
       ══════════════════════════════════════════════════════════════════════ */}
-      <section className="bg-white border-b border-zinc-200 py-16 md:py-20">
+      <section className="bg-white border-b border-[#e6eaf0] py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12 max-w-3xl mx-auto">
-            <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-3">Key Highlights</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4">
+            <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-3">Key Highlights</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] mb-4">
               Create Your Free Business Website
             </h2>
-            <p className="text-zinc-600">
+            <p className="text-[#667085]">
               Our online booking platform and appointment booking software is built for salon booking software,
               spa booking software, clinic appointment software, gym management software, event booking software,
               resort booking software, party hall booking software, and every appointment-based business in India.
@@ -493,14 +502,14 @@ const MarketingHomePage = () => {
             {keyHighlights.map((item) => (
               <div
                 key={item.title}
-                className="rounded-2xl border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-zinc-300 hover:shadow-sm transition-all p-5 flex flex-col gap-3 h-full"
+                className="rounded-2xl border border-[#e6eaf0] bg-[#f5f7f9] hover:bg-white hover:border-zinc-300 hover:shadow-sm transition-all p-5 flex flex-col gap-3 h-full"
               >
-                <div className="size-10 rounded-xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center shrink-0">
+                <div className="size-10 rounded-xl bg-[#eef2ff] text-[#528ff0] border border-[#dbe4ff] flex items-center justify-center shrink-0">
                   <item.icon className="size-5" strokeWidth={1.5} aria-hidden />
                 </div>
                 <div>
-                  <p className="font-semibold text-zinc-900 text-sm mb-1">{item.title}</p>
-                  <p className="text-zinc-500 text-xs leading-relaxed">{item.desc}</p>
+                  <p className="font-semibold text-[#1a1a1a] text-sm mb-1">{item.title}</p>
+                  <p className="text-[#667085] text-xs leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -511,12 +520,12 @@ const MarketingHomePage = () => {
       {/* ══════════════════════════════════════════════════════════════════════
           2. PROBLEM / SOLUTION
       ══════════════════════════════════════════════════════════════════════ */}
-      <section className="bg-zinc-50 border-b border-zinc-200 py-20 md:py-28">
+      <section className="bg-[#f5f7f9] border-b border-[#e6eaf0] py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 md:gap-16 items-start">
           {/* problem */}
           <div>
-            <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-3">The Problem</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-6 leading-tight">
+            <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-3">The Problem</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] mb-6 leading-tight">
               Still managing bookings manually?
             </h2>
             <div className="space-y-4">
@@ -526,13 +535,13 @@ const MarketingHomePage = () => {
                 { title: "Payment chasing", desc: "Collecting cash after service is awkward. No record, no accountability." },
                 { title: "Scattered tools & zero visibility", desc: "WhatsApp for booking, Excel for records, paper for attendance — chaos at scale." },
               ].map((p) => (
-                <div key={p.title} className="flex gap-3 p-4 rounded-2xl bg-white border border-zinc-200 shadow-sm">
+                <div key={p.title} className="flex gap-3 p-4 rounded-2xl bg-white border border-[#e6eaf0] shadow-sm">
                   <span className="size-5 shrink-0 mt-0.5 rounded-full border-2 border-red-300 bg-red-50 flex items-center justify-center">
                     <span className="size-1.5 rounded-full bg-red-500" />
                   </span>
                   <div>
-                    <p className="font-semibold text-zinc-900 text-sm">{p.title}</p>
-                    <p className="text-zinc-500 text-sm mt-0.5">{p.desc}</p>
+                    <p className="font-semibold text-[#1a1a1a] text-sm">{p.title}</p>
+                    <p className="text-[#667085] text-sm mt-0.5">{p.desc}</p>
                   </div>
                 </div>
               ))}
@@ -542,34 +551,31 @@ const MarketingHomePage = () => {
           {/* solution */}
           <div>
             <p className="text-xs font-bold tracking-widest text-emerald-600 uppercase mb-3">The Solution</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4 leading-tight">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] mb-4 leading-tight">
               Appointment Scheduling Made Simple
             </h2>
-            <p className="text-zinc-600 text-lg mb-8 leading-relaxed">
+            <p className="text-[#667085] text-lg mb-8 leading-relaxed">
               Our booking management system eliminates manual scheduling, double bookings, and payment follow-ups —
               so you focus on service, not spreadsheets.
             </p>
             <div className="space-y-4">
               {[
-                { icon: Calendar, label: "Live booking page — customers self-book 24/7", color: "text-orange-500 bg-orange-50" },
+                { icon: Calendar, label: "Live booking page — customers self-book 24/7", color: "text-[#528ff0] bg-[#eef2ff]" },
                 { icon: CreditCard, label: "Online payment via UPI, card & wallets", color: "text-sky-500 bg-sky-50" },
                 { icon: Activity, label: "Real-time dashboard with revenue & staff insights", color: "text-violet-500 bg-violet-50" },
-                { icon: Ticket, label: "Event ticketing with QR check-in & capacity control", color: "text-pink-500 bg-pink-50" },
+                { icon: Ticket, label: "Event ticketing with QR check-in & capacity control", color: "text-[#528ff0] bg-[#eef2ff]" },
               ].map((s) => (
-                <div key={s.label} className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-zinc-200 shadow-sm">
+                <div key={s.label} className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-[#e6eaf0] shadow-sm">
                   <div className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${s.color}`}>
                     <s.icon className="size-5" aria-hidden />
                   </div>
-                  <p className="font-medium text-zinc-800">{s.label}</p>
+                  <p className="font-medium text-[#344054]">{s.label}</p>
                   <Check className="size-4 text-emerald-500 shrink-0 ml-auto" aria-hidden />
                 </div>
               ))}
             </div>
-            <Link
-              to="/register"
-              className="mt-8 inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-sm hover:opacity-95 shadow-lg shadow-orange-500/25 transition-opacity"
-            >
-              Get started free <ArrowRight className="size-4" />
+            <Link to="/register" className={cn(ctaBtn, "mt-8")}>
+              Get started free <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>
         </div>
@@ -578,44 +584,38 @@ const MarketingHomePage = () => {
       {/* ══════════════════════════════════════════════════════════════════════
           2b. VALUE PROPOSITION
       ══════════════════════════════════════════════════════════════════════ */}
-      <section className="bg-white border-b border-zinc-200 py-20 md:py-28">
+      <section className="bg-white border-b border-[#e6eaf0] py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-start">
 
             {/* left — copy (sticky on desktop so it stays aligned while scrolling the grid) */}
             <div className="md:sticky md:top-28">
-              <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-4">Why Choose Appointza</p>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-zinc-900 leading-tight mb-5">
+              <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-4">Why Choose Appointza</p>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#1a1a1a] leading-tight mb-5">
                 Trusted Appointment Booking Software{" "}
-                <span className="bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#528ff0] to-[#3d7ae8] bg-clip-text text-transparent">
                   in India
                 </span>
               </h2>
-              <p className="text-zinc-600 text-lg leading-relaxed mb-8">
+              <p className="text-[#667085] text-lg leading-relaxed mb-8">
                 Appointza is service business software that combines a free business website builder, online
                 appointment booking, payments, customer management, and business analytics in one online booking
                 system.
               </p>
               <ul className="space-y-3 mb-8">
                 {whyChoose.map((point) => (
-                  <li key={point} className="flex items-start gap-3 text-sm text-zinc-700">
+                  <li key={point} className="flex items-start gap-3 text-sm text-[#344054]">
                     <Check className="size-4 text-emerald-600 shrink-0 mt-0.5" aria-hidden />
                     <span>{point}</span>
                   </li>
                 ))}
               </ul>
               <div className="flex flex-wrap gap-3">
-                <Link
-                  to="/register"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-sm shadow-lg shadow-orange-500/25 hover:opacity-95 transition-opacity"
-                >
+                <Link to="/register" className={ctaBtn}>
                   Start free today <ArrowRight className="size-4" aria-hidden />
                 </Link>
-                <Link
-                  to="/plans"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl border border-zinc-300 text-zinc-700 font-medium text-sm hover:border-orange-400 hover:bg-orange-50/40 transition-colors"
-                >
-                  See pricing
+                <Link to="/plans" className={ctaBtnOutline}>
+                  See pricing <ArrowRight className="size-4" aria-hidden />
                 </Link>
               </div>
             </div>
@@ -627,7 +627,7 @@ const MarketingHomePage = () => {
                   icon: Globe,
                   title: "24/7 booking page",
                   desc: "Your own booking page customers can use any time — no calls needed.",
-                  color: "bg-orange-50 text-orange-500 border-orange-100",
+                  color: "bg-[#eef2ff] text-[#528ff0] border-[#dbe4ff]",
                 },
                 {
                   icon: CreditCard,
@@ -651,7 +651,7 @@ const MarketingHomePage = () => {
                   icon: Users,
                   title: "Built-in customer CRM",
                   desc: "Every visit, preference, and payment history — remembered automatically.",
-                  color: "bg-pink-50 text-pink-500 border-pink-100",
+                  color: "bg-[#eef2ff] text-[#528ff0] border-[#dbe4ff]",
                 },
                 {
                   icon: BarChart3,
@@ -662,14 +662,14 @@ const MarketingHomePage = () => {
               ].map((b) => (
                 <div
                   key={b.title}
-                  className="group rounded-2xl border border-zinc-200 bg-zinc-50 hover:bg-white hover:border-zinc-300 hover:shadow-md p-5 transition-all flex flex-col gap-3 h-full"
+                  className="group rounded-2xl border border-[#e6eaf0] bg-[#f5f7f9] hover:bg-white hover:border-zinc-300 hover:shadow-md p-5 transition-all flex flex-col gap-3 h-full"
                 >
                   <div className={`size-10 rounded-xl border flex items-center justify-center shrink-0 ${b.color}`}>
                     <b.icon className="size-5" strokeWidth={1.5} aria-hidden />
                   </div>
                   <div>
-                    <p className="font-semibold text-zinc-900 text-sm mb-1">{b.title}</p>
-                    <p className="text-zinc-500 text-xs leading-relaxed">{b.desc}</p>
+                    <p className="font-semibold text-[#1a1a1a] text-sm mb-1">{b.title}</p>
+                    <p className="text-[#667085] text-xs leading-relaxed">{b.desc}</p>
                   </div>
                 </div>
               ))}
@@ -682,12 +682,12 @@ const MarketingHomePage = () => {
       {/* ══════════════════════════════════════════════════════════════════════
           3. PRODUCT MOCKUPS — 3-column
       ══════════════════════════════════════════════════════════════════════ */}
-      <section className="bg-white border-b border-zinc-200 py-20 md:py-28">
+      <section className="bg-white border-b border-[#e6eaf0] py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-14">
-            <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-3">Product</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4">Online Appointment Booking System</h2>
-            <p className="text-zinc-600 max-w-2xl mx-auto">
+            <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-3">Product</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] mb-4">Online Appointment Booking System</h2>
+            <p className="text-[#667085] max-w-2xl mx-auto">
               From your public booking website to your appointment management software dashboard — one connected
               online booking platform for service businesses.
             </p>
@@ -696,22 +696,22 @@ const MarketingHomePage = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {/* Business Dashboard */}
             <div
-              className="rounded-3xl border border-zinc-200 bg-zinc-950 p-6 text-white shadow-xl"
+              className="rounded-xl border border-[#e6eaf0] bg-zinc-950 p-6 text-white shadow-xl"
               role="img"
               aria-label="Business analytics dashboard for appointment booking software"
             >
               <div className="flex items-center gap-2 mb-5">
-                <div className="size-8 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
+                <div className="size-8 rounded-xl bg-[#528ff0]/20 text-[#528ff0] flex items-center justify-center">
                   <BarChart3 className="size-4" />
                 </div>
                 <p className="font-semibold">Business Dashboard</p>
               </div>
               <div className="space-y-3">
                 <div className="rounded-xl bg-white/8 p-3">
-                  <p className="text-xs text-zinc-400 mb-2">Weekly Revenue</p>
+                  <p className="text-xs text-[#98a2b3] mb-2">Weekly Revenue</p>
                   <div className="flex items-end gap-1 h-10">
                     {[40, 65, 50, 80, 70, 90, 75].map((h, i) => (
-                      <div key={i} className="flex-1 rounded-sm bg-gradient-to-t from-orange-500 to-pink-400 opacity-80" style={{ height: `${h}%` }} />
+                      <div key={i} className="flex-1 rounded-sm bg-gradient-to-t from-[#528ff0] to-[#3d7ae8] opacity-80" style={{ height: `${h}%` }} />
                     ))}
                   </div>
                 </div>
@@ -721,17 +721,17 @@ const MarketingHomePage = () => {
                   { label: "Avg booking value", value: "₹680" },
                 ].map((r) => (
                   <div key={r.label} className="flex justify-between items-center rounded-xl bg-white/5 px-3 py-2.5">
-                    <span className="text-xs text-zinc-400">{r.label}</span>
+                    <span className="text-xs text-[#98a2b3]">{r.label}</span>
                     <span className="text-sm font-semibold text-white">{r.value}</span>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-zinc-500 mt-4">Revenue trends · No-show rates · Peak hour heatmaps</p>
+              <p className="text-xs text-[#667085] mt-4">Revenue trends · No-show rates · Peak hour heatmaps</p>
             </div>
 
             {/* Public Booking Page */}
             <div
-              className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-xl"
+              className="rounded-xl border border-[#e6eaf0] bg-white p-6 shadow-xl"
               role="img"
               aria-label="Free business website with online booking and online booking calendar"
             >
@@ -739,38 +739,38 @@ const MarketingHomePage = () => {
                 <div className="size-8 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center">
                   <Globe className="size-4" />
                 </div>
-                <p className="font-semibold text-zinc-900">Public Booking Page</p>
+                <p className="font-semibold text-[#1a1a1a]">Public Booking Page</p>
               </div>
               <div className="space-y-3">
-                <div className="rounded-xl border border-zinc-200 p-3">
-                  <p className="text-xs text-zinc-500 mb-2">Select Service</p>
+                <div className="rounded-xl border border-[#e6eaf0] p-3">
+                  <p className="text-xs text-[#667085] mb-2">Select Service</p>
                   {["Hair Color — ₹800 · 60 min", "Facial — ₹600 · 45 min"].map((s) => (
-                    <div key={s} className="flex justify-between items-center py-1.5 text-xs text-zinc-700 border-b border-zinc-100 last:border-0">
+                    <div key={s} className="flex justify-between items-center py-1.5 text-xs text-[#344054] border-b border-[#eef1f5] last:border-0">
                       <span>{s.split("—")[0]}</span>
-                      <span className="text-zinc-500">{s.split("—")[1]}</span>
+                      <span className="text-[#667085]">{s.split("—")[1]}</span>
                     </div>
                   ))}
                 </div>
-                <div className="rounded-xl border border-zinc-200 p-3">
-                  <p className="text-xs text-zinc-500 mb-2">Pick Date & Time</p>
+                <div className="rounded-xl border border-[#e6eaf0] p-3">
+                  <p className="text-xs text-[#667085] mb-2">Pick Date & Time</p>
                   <div className="grid grid-cols-4 gap-1.5">
                     {["9:00", "10:30", "11:00", "2:00", "3:30", "4:00", "5:00", "6:30"].map((t, i) => (
-                      <div key={t} className={`text-center py-1 rounded-lg text-xs font-medium ${i === 1 ? "bg-orange-500 text-white" : "bg-zinc-100 text-zinc-600"}`}>
+                      <div key={t} className={`text-center py-1 rounded-lg text-xs font-medium ${i === 1 ? "bg-[#528ff0] text-white" : "bg-[#eef1f5] text-[#667085]"}`}>
                         {t}
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 p-3 text-center text-white text-sm font-semibold">
+                <div className="rounded-xl bg-[#528ff0] hover:bg-[#3d7ae8] p-3 text-center text-white text-sm font-semibold">
                   Pay ₹800 & Confirm →
                 </div>
               </div>
-              <p className="text-xs text-zinc-400 mt-4">UPI · Card · Wallet · Cash on arrival</p>
+              <p className="text-xs text-[#98a2b3] mt-4">UPI · Card · Wallet · Cash on arrival</p>
             </div>
 
             {/* Mobile App */}
             <div
-              className="rounded-3xl border border-zinc-200 bg-gradient-to-br from-violet-950 via-violet-900 to-zinc-900 p-6 text-white shadow-xl"
+              className="rounded-xl border border-[#e6eaf0] bg-gradient-to-br from-violet-950 via-violet-900 to-zinc-900 p-6 text-white shadow-xl"
               role="img"
               aria-label="Appointment booking app with WhatsApp booking reminders and QR event check-in"
             >
@@ -794,7 +794,7 @@ const MarketingHomePage = () => {
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-zinc-500 mt-4">Android & iOS · Push notifications · WhatsApp reminders</p>
+              <p className="text-xs text-[#667085] mt-4">Android & iOS · Push notifications · WhatsApp reminders</p>
             </div>
           </div>
         </div>
@@ -807,23 +807,23 @@ const MarketingHomePage = () => {
         <div className="max-w-7xl mx-auto px-6">
           {/* headline */}
           <div className="text-center mb-16 max-w-3xl mx-auto">
-            <p className="text-xs font-bold tracking-widest text-orange-400 uppercase mb-4">Customer Journey</p>
+            <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-4">Customer Journey</p>
             <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight mb-4">
               From{" "}
               <span className="relative inline-block">
-                <span className="bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">'I want to book'</span>
+                <span className="bg-gradient-to-r from-[#528ff0] to-[#3d7ae8] bg-clip-text text-transparent">'I want to book'</span>
               </span>
               {" "}to{" "}
               <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">'See you tomorrow'</span>
               {" "}— in seconds.
             </h2>
-            <p className="text-zinc-400 text-lg">A booking journey your customers will actually enjoy.</p>
+            <p className="text-[#98a2b3] text-lg">A booking journey your customers will actually enjoy.</p>
           </div>
 
           {/* steps */}
           <div className="relative">
             {/* connector line — visible md+ */}
-            <div className="hidden md:block absolute top-[52px] left-[calc(12.5%+24px)] right-[calc(12.5%+24px)] h-px bg-gradient-to-r from-orange-500/0 via-orange-500/40 to-orange-500/0" aria-hidden />
+            <div className="hidden md:block absolute top-[52px] left-[calc(12.5%+24px)] right-[calc(12.5%+24px)] h-px bg-gradient-to-r from-[#528ff0]/0 via-[#528ff0]/40 to-[#528ff0]/0" aria-hidden />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
               {[
@@ -832,16 +832,16 @@ const MarketingHomePage = () => {
                   title: "Discover",
                   desc: "Customers find your business through your booking link, branded microsite, or the Appointza Explore page.",
                   icon: Globe,
-                  color: "from-orange-500 to-amber-500",
-                  glow: "shadow-orange-500/25",
+                  color: "from-[#528ff0] to-[#3d7ae8]",
+                  glow: "shadow-[#528ff0]/15",
                 },
                 {
                   step: "02",
                   title: "Select",
                   desc: "They pick a service, preferred staff member, branch location, and a time slot that works for them.",
                   icon: Calendar,
-                  color: "from-pink-500 to-rose-500",
-                  glow: "shadow-pink-500/25",
+                  color: "from-[#528ff0] to-[#3d7ae8]",
+                  glow: "shadow-[#528ff0]/20",
                 },
                 {
                   step: "03",
@@ -872,22 +872,19 @@ const MarketingHomePage = () => {
 
                   {/* text */}
                   <h3 className="text-xl font-bold text-white mb-3">{s.title}</h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed max-w-xs">{s.desc}</p>
+                  <p className="text-[#98a2b3] text-sm leading-relaxed max-w-xs">{s.desc}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* bottom CTA strip */}
-          <div className="mt-16 rounded-3xl border border-white/8 bg-white/5 px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <div className="mt-16 rounded-xl border border-white/8 bg-white/5 px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
             <div>
               <p className="text-white font-semibold text-lg">Ready to give your customers this experience?</p>
-              <p className="text-zinc-500 text-sm mt-0.5">Set up your booking page in under 5 minutes.</p>
+              <p className="text-[#667085] text-sm mt-0.5">Set up your booking page in under 5 minutes.</p>
             </div>
-            <Link
-              to="/register"
-              className="shrink-0 inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-sm shadow-lg shadow-orange-500/25 hover:opacity-95 transition-opacity whitespace-nowrap"
-            >
+            <Link to="/register" className={cn(ctaBtn, "shrink-0 whitespace-nowrap")}>
               Start Free <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>
@@ -897,14 +894,14 @@ const MarketingHomePage = () => {
       {/* ══════════════════════════════════════════════════════════════════════
           4. CORE FEATURES GRID
       ══════════════════════════════════════════════════════════════════════ */}
-      <section id="features" className="scroll-mt-20 bg-zinc-50 border-b border-zinc-200 py-20 md:py-28">
+      <section id="features" className="scroll-mt-20 bg-[#f5f7f9] border-b border-[#e6eaf0] py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-14">
-            <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-3">Features</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4">
+            <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-3">Features</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] mb-4">
               Booking Management Software for Service Businesses
             </h2>
-            <p className="text-zinc-600 max-w-2xl mx-auto">
+            <p className="text-[#667085] max-w-2xl mx-auto">
               Six powerful modules in one appointment scheduling software — slot booking, WhatsApp reminders,
               payments, staff, analytics, and multi-branch tools.
             </p>
@@ -914,14 +911,14 @@ const MarketingHomePage = () => {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="group rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm hover:shadow-md hover:border-zinc-300 transition-all flex flex-col"
+                className="group rounded-xl border border-[#e6eaf0] bg-white p-7 shadow-sm hover:shadow-md hover:border-zinc-300 transition-all flex flex-col"
               >
                 <div className={`size-12 rounded-2xl border flex items-center justify-center mb-5 ${f.color}`}>
                   <f.icon className="size-6" aria-hidden strokeWidth={1.5} />
                 </div>
-                <h3 className="text-lg font-bold text-zinc-900 mb-2">{f.title}</h3>
-                <p className="text-zinc-600 text-sm leading-relaxed flex-1">{f.desc}</p>
-                <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                <h3 className="text-lg font-bold text-[#1a1a1a] mb-2">{f.title}</h3>
+                <p className="text-[#667085] text-sm leading-relaxed flex-1">{f.desc}</p>
+                <div className="mt-5 flex items-center gap-1 text-xs font-semibold text-[#528ff0] opacity-0 group-hover:opacity-100 transition-opacity">
                   Learn more <ChevronRight className="size-3.5" />
                 </div>
               </div>
@@ -933,14 +930,14 @@ const MarketingHomePage = () => {
       {/* ══════════════════════════════════════════════════════════════════════
           5. INDUSTRY SEGMENTS
       ══════════════════════════════════════════════════════════════════════ */}
-      <section id="segments" className="scroll-mt-20 bg-white border-b border-zinc-200 py-20 md:py-28">
+      <section id="segments" className="scroll-mt-20 bg-white border-b border-[#e6eaf0] py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-14">
-            <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-3">Industries</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4">
+            <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-3">Industries</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] mb-4">
               Online Booking Platform for Salons, Clinics &amp; More
             </h2>
-            <p className="text-zinc-600 max-w-2xl mx-auto">
+            <p className="text-[#667085] max-w-2xl mx-auto">
               Whether you need salon booking software, clinic management software, gym booking software, or event
               booking software — Appointza scales from one chair to many branches.
             </p>
@@ -950,24 +947,21 @@ const MarketingHomePage = () => {
             {segments.map((s) => (
               <div
                 key={s.label}
-                className="group rounded-3xl border border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-white hover:shadow-md transition-all p-6 flex flex-col items-center text-center gap-3"
+                className="group rounded-xl border border-[#e6eaf0] bg-[#f5f7f9] hover:border-zinc-300 hover:bg-white hover:shadow-md transition-all p-6 flex flex-col items-center text-center gap-3"
               >
                 <div className={`size-14 rounded-2xl flex items-center justify-center ${s.color}`}>
                   <s.icon className="size-7" aria-hidden strokeWidth={1.5} />
                 </div>
-                <p className="font-semibold text-zinc-800 text-sm">{s.label}</p>
+                <p className="font-semibold text-[#344054] text-sm">{s.label}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-12 rounded-3xl bg-gradient-to-br from-orange-500 via-pink-500 to-violet-600 p-8 md:p-12 text-white text-center">
+          <div className="mt-12 rounded-xl bg-gradient-to-br from-[#528ff0] via-[#2f80ed] to-[#3d7ae8] p-8 md:p-12 text-white text-center">
             <h3 className="text-2xl md:text-3xl font-bold mb-3">Don't see your industry?</h3>
             <p className="text-white/80 mb-6">If your business runs on appointments or events, Appointza works for you.</p>
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white text-zinc-900 font-semibold hover:bg-zinc-100 transition-colors shadow-lg"
-            >
-              Try it free <ArrowRight className="size-4" />
+            <Link to="/register" className={ctaBtnOnBrand}>
+              Try it free <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>
         </div>
@@ -976,37 +970,37 @@ const MarketingHomePage = () => {
       {/* ══════════════════════════════════════════════════════════════════════
           6. PRICING
       ══════════════════════════════════════════════════════════════════════ */}
-      <section id="pricing" className="scroll-mt-20 bg-zinc-50 border-b border-zinc-200 py-20 md:py-28">
+      <section id="pricing" className="scroll-mt-20 bg-[#f5f7f9] border-b border-[#e6eaf0] py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-6">
-            <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-3">Pricing</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4">Manage Bookings, Payments &amp; Customers</h2>
-            <p className="text-zinc-600 max-w-2xl mx-auto">
+            <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-3">Pricing</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] mb-4">Manage Bookings, Payments &amp; Customers</h2>
+            <p className="text-[#667085] max-w-2xl mx-auto">
               Simple pricing for our online booking system — plan fees plus fair booking-linked charges.
               Larger plans include more free bookings and lower per-booking fees.
             </p>
           </div>
 
           {/* launch offer banner */}
-          <div className="max-w-2xl mx-auto mb-10 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-center">
-            <p className="font-bold text-orange-900 text-sm">🎁 50 free bookings to get started</p>
-            <p className="mt-1 text-sm text-orange-800">
+          <div className="max-w-2xl mx-auto mb-10 rounded-2xl border border-[#e6eaf0] bg-[#eef2ff] px-5 py-4 text-center">
+            <p className="font-bold text-[#1a1a1a] text-sm">🎁 50 free bookings to get started</p>
+            <p className="mt-1 text-sm text-[#344054]">
               Start on the <strong>Free plan</strong> with a <strong>free website</strong> and{" "}
               <strong>50 free bookings</strong> — no subscription required.
             </p>
-            <p className="mt-1 text-xs text-orange-700">Upgrade anytime for more free bookings and lower per-booking fees.</p>
+            <p className="mt-1 text-xs text-[#667085]">Upgrade anytime for more free bookings and lower per-booking fees.</p>
           </div>
 
           <div className="mx-auto max-w-6xl">
             {plansLoading ? (
-              <div className="flex items-center justify-center gap-2 py-16 text-zinc-500">
+              <div className="flex items-center justify-center gap-2 py-16 text-[#667085]">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 Loading plans…
               </div>
             ) : plansError ? (
               <p className="py-8 text-center text-sm text-red-600">{plansError}</p>
             ) : plans.length === 0 ? (
-              <p className="py-8 text-center text-sm text-zinc-500">No pricing plans available.</p>
+              <p className="py-8 text-center text-sm text-[#667085]">No pricing plans available.</p>
             ) : (
               <PlanCards
                 plans={plans}
@@ -1031,11 +1025,11 @@ const MarketingHomePage = () => {
                     <Link
                       to={ctaLink}
                       className={cn(
-                        "block w-full rounded-full py-3 text-center text-sm font-extrabold",
-                        isPopular ? "bg-white text-zinc-950" : "bg-zinc-950 text-white",
+                        isPopular ? ctaBtnOnBrand : ctaBtn,
+                        "w-full",
                       )}
                     >
-                      {cta}
+                      {cta} <ArrowRight className="size-4" aria-hidden />
                     </Link>
                   );
                 }}
@@ -1043,11 +1037,11 @@ const MarketingHomePage = () => {
             )}
           </div>
 
-          <div className="max-w-4xl mx-auto mt-10 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+          <div className="max-w-4xl mx-auto mt-10 rounded-xl border border-[#e6eaf0] bg-white p-8 shadow-sm">
             <div className="text-center">
-              <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-3">Included in every plan</p>
-              <h3 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-2">Same features. Different limits.</h3>
-              <p className="text-zinc-600 text-sm md:text-base">
+              <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-3">Included in every plan</p>
+              <h3 className="text-2xl md:text-3xl font-bold text-[#1a1a1a] mb-2">Same features. Different limits.</h3>
+              <p className="text-[#667085] text-sm md:text-base">
                 All tiers ship with the full Appointza platform — only pricing, free-booking quota and per-booking fee change.
               </p>
             </div>
@@ -1062,17 +1056,17 @@ const MarketingHomePage = () => {
                 "Business insights & reports",
                 "Standard support",
               ].map((f) => (
-                <div key={f} className="flex items-start gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                <div key={f} className="flex items-start gap-2 rounded-2xl border border-[#e6eaf0] bg-[#f5f7f9] px-4 py-3">
                   <Check className="mt-0.5 size-4 text-emerald-600 shrink-0" />
-                  <span className="text-sm text-zinc-800">{f}</span>
+                  <span className="text-sm text-[#344054]">{f}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <p className="text-center text-sm text-zinc-500 mt-6">
+          <p className="text-center text-sm text-[#667085] mt-6">
             Need a custom plan?{" "}
-            <Link to="/contact" className="text-orange-600 font-medium hover:underline">Talk to us →</Link>
+            <Link to="/contact" className="text-[#528ff0] font-medium hover:underline">Talk to us →</Link>
           </p>
         </div>
       </section>
@@ -1080,47 +1074,47 @@ const MarketingHomePage = () => {
       {/* ══════════════════════════════════════════════════════════════════════
           7. SOCIAL PROOF
       ══════════════════════════════════════════════════════════════════════ */}
-      <section className="bg-white border-b border-zinc-200 py-20 md:py-28">
+      <section className="bg-white border-b border-[#e6eaf0] py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-6">
           {/* stats row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-16 text-center">
             {[
-              { value: "500+", label: "Businesses trust Appointza", icon: Building2, color: "text-orange-500 bg-orange-50" },
+              { value: "500+", label: "Businesses trust Appointza", icon: Building2, color: "text-[#528ff0] bg-[#eef2ff]" },
               { value: "2M+", label: "Appointments booked", icon: Calendar, color: "text-sky-500 bg-sky-50" },
               { value: "₹50Cr+", label: "Revenue processed", icon: TrendingUp, color: "text-emerald-500 bg-emerald-50" },
             ].map((s) => (
-              <div key={s.label} className="rounded-3xl border border-zinc-200 bg-zinc-50 p-8 text-center shadow-sm">
+              <div key={s.label} className="rounded-xl border border-[#e6eaf0] bg-[#f5f7f9] p-8 text-center shadow-sm">
                 <div className={`size-12 rounded-2xl mx-auto mb-4 flex items-center justify-center ${s.color}`}>
                   <s.icon className="size-6" aria-hidden strokeWidth={1.5} />
                 </div>
-                <p className="text-4xl font-bold text-zinc-900 mb-1">{s.value}</p>
-                <p className="text-zinc-600 text-sm">{s.label}</p>
+                <p className="text-4xl font-bold text-[#1a1a1a] mb-1">{s.value}</p>
+                <p className="text-[#667085] text-sm">{s.label}</p>
               </div>
             ))}
           </div>
 
           {/* testimonials */}
           <div className="text-center mb-10">
-            <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-3">Testimonials</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900">Trusted by service businesses across India</h2>
+            <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-3">Testimonials</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a]">Trusted by service businesses across India</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((t) => (
-              <div key={t.name} className="rounded-3xl border border-zinc-200 bg-zinc-50 p-8 shadow-sm flex flex-col h-full">
+              <div key={t.name} className="rounded-xl border border-[#e6eaf0] bg-[#f5f7f9] p-8 shadow-sm flex flex-col h-full">
                 <div className="flex gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="size-4 fill-amber-400 text-amber-400" aria-hidden />
                   ))}
                 </div>
-                <p className="text-zinc-700 text-sm leading-relaxed flex-grow mb-6">"{t.quote}"</p>
+                <p className="text-[#344054] text-sm leading-relaxed flex-grow mb-6">"{t.quote}"</p>
                 <div className="flex items-center gap-3">
                   <div className={`size-10 rounded-xl bg-gradient-to-br ${t.color} text-white font-bold text-sm flex items-center justify-center shrink-0`}>
                     {t.initials}
                   </div>
                   <div>
-                    <p className="font-semibold text-zinc-900 text-sm">{t.name}</p>
-                    <p className="text-zinc-500 text-xs">{t.role}</p>
+                    <p className="font-semibold text-[#1a1a1a] text-sm">{t.name}</p>
+                    <p className="text-[#667085] text-xs">{t.role}</p>
                   </div>
                 </div>
               </div>
@@ -1132,14 +1126,14 @@ const MarketingHomePage = () => {
       {/* ══════════════════════════════════════════════════════════════════════
           7b. FAQ (SEO)
       ══════════════════════════════════════════════════════════════════════ */}
-      <section id="faq" className="scroll-mt-20 bg-zinc-50 border-b border-zinc-200 py-20 md:py-28">
+      <section id="faq" className="scroll-mt-20 bg-[#f5f7f9] border-b border-[#e6eaf0] py-20 md:py-28">
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center mb-12">
-            <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-3">FAQ</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4">
+            <p className="text-xs font-bold tracking-widest text-[#528ff0] uppercase mb-3">FAQ</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a1a] mb-4">
               Appointment Booking Software — Common Questions
             </h2>
-            <p className="text-zinc-600">
+            <p className="text-[#667085]">
               Answers about our online booking system, free business website, and appointment scheduling software.
             </p>
           </div>
@@ -1149,12 +1143,12 @@ const MarketingHomePage = () => {
               <AccordionItem
                 key={item.question}
                 value={`faq-${index}`}
-                className="rounded-2xl border border-zinc-200 bg-white px-5 shadow-sm"
+                className="rounded-2xl border border-[#e6eaf0] bg-white px-5 shadow-sm"
               >
-                <AccordionTrigger className="py-4 text-left text-sm font-semibold text-zinc-900 hover:no-underline md:text-base">
+                <AccordionTrigger className="py-4 text-left text-sm font-semibold text-[#1a1a1a] hover:no-underline md:text-base">
                   {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="pb-4 text-sm leading-relaxed text-zinc-600">
+                <AccordionContent className="pb-4 text-sm leading-relaxed text-[#667085]">
                   {item.answer}
                 </AccordionContent>
               </AccordionItem>
@@ -1168,41 +1162,35 @@ const MarketingHomePage = () => {
       ══════════════════════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-800 py-24 md:py-32 text-white">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="pointer-events-none absolute left-1/2 top-0 hidden h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-orange-500/10 blur-[100px] md:block" />
+          <div className="pointer-events-none absolute left-1/2 top-0 hidden h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[#528ff0]/10 blur-[100px] md:block" />
         </div>
         <div className="relative max-w-4xl mx-auto px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-xs font-semibold mb-6 tracking-wide">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#528ff0]/30 bg-[#528ff0]/10 text-[#528ff0] text-xs font-semibold mb-6 tracking-wide">
             <Zap className="size-3.5" aria-hidden />
             Join 500+ businesses already growing with Appointza
           </div>
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
             Free Business Website with{" "}
-            <span className="bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#528ff0] to-[#3d7ae8] bg-clip-text text-transparent">
               Online Appointment Booking Software
             </span>
           </h2>
-          <p className="text-zinc-400 text-lg md:text-xl mb-10 max-w-3xl mx-auto">
+          <p className="text-[#98a2b3] text-lg md:text-xl mb-10 max-w-3xl mx-auto">
             Start with a free business website, online booking system, and 50 free bookings. Appointza combines
             booking software, payments, WhatsApp reminders, and analytics for salons, clinics, gyms, events, and
             service businesses across India.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl text-lg font-bold bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-2xl shadow-orange-500/30 hover:opacity-95 transition-opacity"
-            >
-              Get Started Free <ArrowRight className="size-5" />
+            <Link to="/register" className={ctaBtn}>
+              Get Started Free <ArrowRight className="size-4" aria-hidden />
             </Link>
-            <Link
-              to="/explore"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-lg font-medium border border-white/20 text-white hover:bg-white/10 transition-colors"
-            >
-              Explore Businesses
+            <Link to="/explore" className={ctaBtnOnDark}>
+              Explore Businesses <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>
-          <p className="mt-6 text-zinc-600 text-sm">
+          <p className="mt-6 text-[#667085] text-sm">
             Already have an account?{" "}
-            <Link to="/login" className="text-orange-400 hover:text-orange-300 font-medium">
+            <Link to="/login" className="text-[#528ff0] hover:text-white font-medium">
               Sign in →
             </Link>
           </p>

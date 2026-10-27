@@ -50,6 +50,15 @@ export function getApiBaseUrl(): string {
   return resolveApiBaseUrl();
 }
 
+/** Full Meta callback URL (API origin + WhatsAppWebhookController path). */
+export function getWhatsAppWebhookCallbackUrl(): string {
+  const api = getApiBaseUrl();
+  const origin =
+    api ||
+    (typeof window !== "undefined" ? stripSlash(window.location.origin) : "");
+  return `${origin}/api/webhooks/whatsapp`;
+}
+
 export function getMarketingDomain(): string {
   return PUBLIC_DOMAIN;
 }

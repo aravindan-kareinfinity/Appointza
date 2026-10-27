@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using appointza.Models;
 using appointza.Authentication.Services;
 using appointza.Authentication.Utils;
+using appointza.Services;
 using appointza.Utils;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
@@ -29,7 +30,7 @@ namespace appointza.Authentication.Middlewares
             
         }
 
-        public async Task Invoke(HttpContext context, AuthService authService)
+        public async Task Invoke(HttpContext context, AuthService authService, AdminService adminService)
         {
             try
             {
@@ -39,7 +40,7 @@ namespace appointza.Authentication.Middlewares
                     token = httpcontextaccessor.HttpContext.Request.Cookies[AppConstants.AccessTokenKey];
                 }
                 if (token != null)
-                    await attachUserToContext(context, token, authService);
+                    await attachUserToContext(context, token, authService, adminService);
                 await next(context);
             }
             catch (Exception)
@@ -47,7 +48,11 @@ namespace appointza.Authentication.Middlewares
                 throw;
             }
         }
-        private async Task attachUserToContext(HttpContext context, string token, AuthService authService)
+        private async Task attachUserToContext(
+            HttpContext context,
+            string token,
+            AuthService authService,
+            AdminService adminService)
         {
             try
             {
@@ -55,6 +60,13 @@ namespace appointza.Authentication.Middlewares
                 if (campuszaUser != null)
                 {
                     httpcontextaccessor.HttpContext!.Items["campusza_usercontext"] = campuszaUser;
+                    return;
+                }
+
+                var admin = adminService.JwtTokenToAdminContext(token);
+                if (admin != null)
+                {
+                    httpcontextaccessor.HttpContext!.Items["admincontext"] = admin;
                     return;
                 }
 

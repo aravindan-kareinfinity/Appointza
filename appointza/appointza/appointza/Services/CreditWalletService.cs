@@ -107,6 +107,7 @@ namespace appointza.Services
 
             var now = DateTime.UtcNow;
             var signupCredits = CreditWalletCatalog.SignupFreeCredits;
+            // ON CONFLICT: concurrent GetWalletStatus calls must not race on PK insert.
             const string insert = @"
                 INSERT INTO organisation_credit_wallet (
                     organisation_id, billing_mode, wallet_credit_balance,
@@ -117,6 +118,7 @@ namespace appointza.Services
                     @organisation_id, @billing_mode, @wallet_credit_balance, 0, '', 1,
                     @created_at, @updated_at
                 )
+                ON CONFLICT (organisation_id) DO NOTHING
                 RETURNING organisation_id, billing_mode, wallet_credit_balance,
                           wallet_free_used_month, wallet_free_month_key, credits_per_booking,
                           created_at, updated_at";
@@ -128,16 +130,42 @@ namespace appointza.Services
             db.AddParameter(insertCmd, "created_at", DbTypes.Types.DateTime).Value = now;
             db.AddParameter(insertCmd, "updated_at", DbTypes.Types.DateTime).Value = now;
 
-            using DbDataReader inserted = await db.Execute(insertCmd);
-            if (await inserted.ReadAsync())
+            bool created = false;
+            // Dispose the reader before any further commands on this connection (Npgsql).
+            using (DbDataReader inserted = await db.Execute(insertCmd))
             {
-                wallet = MapWallet(inserted);
+                if (await inserted.ReadAsync())
+                {
+                    wallet = MapWallet(inserted);
+                    created = true;
+                }
+            }
+
+            if (created && wallet != null)
+            {
                 await InsertTransactionTransaction(
                     db,
                     organisationId,
                     "wallet_signup_grant",
                     signupCredits,
                     $"Signup bonus — {signupCredits} free booking credits");
+                return wallet;
+            }
+
+            // Lost the insert race — load the row another request created.
+            DbCommand reload = db.GetCommand(select);
+            db.AddParameter(reload, "organisation_id", DbTypes.Types.Long).Value = organisationId;
+            using (DbDataReader reader = await db.Execute(reload))
+            {
+                if (await reader.ReadAsync())
+                {
+                    wallet = MapWallet(reader);
+                }
+            }
+
+            if (wallet != null)
+            {
+                await EnsureSignupGrantIfNeededTransaction(db, wallet);
                 return wallet;
             }
 

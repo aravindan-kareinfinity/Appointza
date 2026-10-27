@@ -88,6 +88,19 @@ namespace appointza
             services.AddScoped<PaymentGatewayCredentialsService>();
             services.AddScoped<SecretProtector>();
             services.AddScoped<OrganisationCommunicationIntegrationService>();
+            services.AddHttpClient<WhatsAppCloudApiClient>();
+            services.AddSingleton<WhatsAppCrmRealtimePublisher>();
+            services.AddScoped<WhatsAppOutboundGuard>();
+            services.AddScoped<WhatsAppCrmService>();
+            services.AddScoped<WhatsAppTemplateService>();
+            services.AddScoped<WhatsAppCampaignService>();
+            services.AddScoped<WhatsAppCampaignDispatchService>();
+            services.AddScoped<WhatsAppAutomationService>();
+            services.AddSingleton<WhatsAppAutomationPublisher>();
+            services.AddHostedService<WhatsAppWebhookWorker>();
+            services.AddHostedService<WhatsAppCampaignWorker>();
+            services.AddHostedService<WhatsAppAutomationWorker>();
+            services.AddSignalR();
             services.AddScoped<OrganisationCrmCatalogueService>();
             services.AddScoped<ApplicationSettingsService>();
             services.AddScoped<WebsiteService>();
@@ -98,6 +111,7 @@ namespace appointza
             services.AddScoped<CreditWalletRechargeService>();
             services.AddScoped<OrganisationSubscriptionService>();
             services.AddScoped<OrganisationReferralService>();
+            services.AddScoped<OrganisationOnboardingService>();
             services.AddScoped<OrganisationBillingStatsService>();
             services.AddScoped<OrganisationHospitalityContentService>();
             services.AddScoped<OrganisationRoomService>();

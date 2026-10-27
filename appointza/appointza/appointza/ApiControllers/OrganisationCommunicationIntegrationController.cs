@@ -23,9 +23,16 @@ namespace appointza.ApiControllers
         [HttpPost("Select")]
         public async Task<ActionResult<ActionRes<List<OrganisationIntegrationSafe>>>> Select(ActionReq<OrganisationIntegrationSelectReq> req)
         {
-            var result = new ActionRes<List<OrganisationIntegrationSafe>>();
-            result.item = await _service.Select(req.item ?? new OrganisationIntegrationSelectReq());
-            return Ok(result);
+            try
+            {
+                var result = new ActionRes<List<OrganisationIntegrationSafe>>();
+                result.item = await _service.Select(req.item ?? new OrganisationIntegrationSelectReq());
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { success = false, message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -39,6 +46,10 @@ namespace appointza.ApiControllers
             {
                 result.item = await _service.UpsertWhatsApp(req.item ?? new WhatsAppIntegrationUpsertReq());
                 return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -58,6 +69,10 @@ namespace appointza.ApiControllers
                 result.item = await _service.UpsertEmail(req.item ?? new EmailIntegrationUpsertReq());
                 return Ok(result);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { success = false, message = ex.Message });
+            }
             catch (Exception ex)
             {
                 return BadRequest(new { success = false, message = ex.Message });
@@ -73,6 +88,10 @@ namespace appointza.ApiControllers
                 result.item = await _service.Disconnect(req.item ?? new OrganisationIntegrationDisconnectReq());
                 return Ok(result);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { success = false, message = ex.Message });
+            }
             catch (Exception ex)
             {
                 return BadRequest(new { success = false, message = ex.Message });
@@ -87,6 +106,10 @@ namespace appointza.ApiControllers
             {
                 result.item = await _service.Delete(req.item ?? new OrganisationIntegrationDisconnectReq());
                 return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {

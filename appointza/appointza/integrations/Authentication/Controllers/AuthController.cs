@@ -6,6 +6,7 @@ using appointza.Utils;
 using appointza.Models.Campusza;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using AppException = appointza.Utils.AppException;
 
 namespace appointza.Authentication.Controllers
 {
@@ -47,12 +48,21 @@ namespace appointza.Authentication.Controllers
         }
 
         [HttpPost("GetOtp")]
-        public async Task<ActionResult<ActionRes<GetOtpResponse>>> GetOtp(ActionReq<GetOtpRequest> req)
+        public async Task<ActionResult<ActionRes<GetOtpResponse>>> GetOtp([FromBody] ActionReq<GetOtpRequest> req)
         {
             ActionRes<GetOtpResponse> result = new ActionRes<GetOtpResponse>();
             try
             {
+                if (req?.item == null)
+                {
+                    return BadRequest(new { error = "Mobile number is required.", message = "Failed to get OTP" });
+                }
                 result.item = await authService.GetOtp(req.item);
+            }
+            catch (AppException ex)
+            {
+                logger.LogWarning(ex, "GetOtp rejected: {Code}", ex.code);
+                return BadRequest(new { error = ex.Message, key = ex.key, message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -166,6 +176,36 @@ namespace appointza.Authentication.Controllers
             return Ok(result);
         }
 
+        /// <summary>Screen 2 — create business org for an authenticated user with no organisation yet.</summary>
+        [HttpPost("CompleteBusinessOnboarding")]
+        [Authenticate]
+        public async Task<ActionResult<ActionRes<UsersContext>>> CompleteBusinessOnboarding(
+            ActionReq<CompleteBusinessOnboardingRequest>? req)
+        {
+            ActionRes<UsersContext> result = new ActionRes<UsersContext>();
+            try
+            {
+                if (requestState.usercontext == null || requestState.usercontext.userid <= 0)
+                {
+                    return Unauthorized(new { message = "Unauthorized" });
+                }
+
+                result.item = await authService.CompleteBusinessOnboarding(
+                    req?.item ?? new CompleteBusinessOnboardingRequest());
+                return Ok(result);
+            }
+            catch (AppException ex)
+            {
+                logger.LogWarning(ex, "CompleteBusinessOnboarding rejected");
+                return BadRequest(new { error = ex.Message, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "CompleteBusinessOnboarding failed");
+                return BadRequest(new { error = ex.Message, message = "Could not create business profile" });
+            }
+        }
+
         [HttpPost("GoogleLogin")]
         public async Task<ActionResult<ActionRes<UsersContext>>> GoogleLogin(ActionReq<GoogleLoginRequest> req)
         {
@@ -186,10 +226,15 @@ namespace appointza.Authentication.Controllers
                 
                 result.item = await authService.GoogleLogin(req.item);
             }
+            catch (AppException ex)
+            {
+                logger.LogWarning(ex, "GoogleLogin rejected: {Code}", ex.code);
+                return BadRequest(new { error = ex.Message, key = ex.key, message = ex.Message });
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error during Google login");
-                return BadRequest(new { error = ex.Message, message = "Google login failed", stackTrace = ex.StackTrace });
+                return BadRequest(new { error = ex.Message, message = "Google login failed" });
             }
             return Ok(result);
         }

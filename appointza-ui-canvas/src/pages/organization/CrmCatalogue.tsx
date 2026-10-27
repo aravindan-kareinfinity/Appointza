@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import {
   Building2,
@@ -148,8 +149,14 @@ export default function CrmCatalogue() {
               Business Profile
             </h1>
             <p className="mt-1 text-sm text-stone-500">
-              Read-only view of organisation details, locations, services, events, and rooms.
-              Edit offerings from Catalog / Hospitality — not from here.
+              Read-only overview. Manage services at{" "}
+              <Link
+                to="/organization/services?kind=services"
+                className="font-medium text-blue-600 hover:underline"
+              >
+                Services
+              </Link>
+              .
             </p>
           </div>
           <Button
@@ -239,12 +246,20 @@ export default function CrmCatalogue() {
 
         {/* Services */}
         <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-          <div className="flex items-center gap-2 border-b border-stone-100 px-4 py-3 sm:px-5">
-            <Package className="h-4 w-4 text-blue-600" />
-            <h2 className="text-sm font-semibold text-appointza-navy">Services</h2>
-            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs tabular-nums text-stone-600">
-              {services.length}
-            </span>
+          <div className="flex items-center justify-between gap-2 border-b border-stone-100 px-4 py-3 sm:px-5">
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-blue-600" />
+              <h2 className="text-sm font-semibold text-appointza-navy">Services</h2>
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs tabular-nums text-stone-600">
+                {services.length}
+              </span>
+            </div>
+            <Link
+              to="/organization/services?kind=services"
+              className="text-[12px] font-medium text-blue-600 hover:underline"
+            >
+              Manage
+            </Link>
           </div>
           {services.length === 0 ? (
             <p className="px-4 py-6 text-sm text-stone-500 sm:px-5">No active services.</p>

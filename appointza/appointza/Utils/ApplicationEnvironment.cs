@@ -47,6 +47,45 @@ namespace appointza.Utils
         public string phone_number_id { get; set; }
         public string api_version { get; set; }
         public string base_url { get; set; }
+        /// <summary>Meta app secret for X-Hub-Signature-256 verification (server only).</summary>
+        public string app_secret { get; set; }
+        /// <summary>Webhook verify token for Meta GET challenge (server only).</summary>
+        public string verify_token { get; set; }
+        /// <summary>
+        /// Config kill-switch. When false, no outbound Meta sends (inbox/campaign/automation).
+        /// DB table whatsapp_outbound_control can also pause outbound at runtime.
+        /// </summary>
+        public bool outbound_enabled { get; set; } = true;
+        public WhatsAppWebhookWorkerOptions webhook_worker { get; set; } = new WhatsAppWebhookWorkerOptions();
+        public WhatsAppCampaignWorkerOptions campaign_worker { get; set; } = new WhatsAppCampaignWorkerOptions();
+        public WhatsAppAutomationWorkerOptions automation_worker { get; set; } = new WhatsAppAutomationWorkerOptions();
+    }
+
+    public class WhatsAppAutomationWorkerOptions
+    {
+        public int poll_interval_ms { get; set; } = 5000;
+        public int batch_size { get; set; } = 15;
+        public int max_attempts { get; set; } = 5;
+        public int lease_seconds { get; set; } = 90;
+        public int send_delay_ms { get; set; } = 200;
+    }
+
+    public class WhatsAppWebhookWorkerOptions
+    {
+        public int poll_interval_ms { get; set; } = 3000;
+        public int batch_size { get; set; } = 10;
+        public int max_retries { get; set; } = 5;
+    }
+
+    public class WhatsAppCampaignWorkerOptions
+    {
+        public int poll_interval_ms { get; set; } = 4000;
+        public int campaign_batch_size { get; set; } = 3;
+        public int recipient_batch_size { get; set; } = 10;
+        public int max_attempts { get; set; } = 5;
+        public int lease_seconds { get; set; } = 90;
+        public int send_delay_ms { get; set; } = 250;
+        public int max_sends_per_minute { get; set; } = 60;
     }
 
     public class ApplicationEnvironmentRedisConfigData

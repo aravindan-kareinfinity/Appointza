@@ -58,6 +58,9 @@ export interface OrganisationIntegrationSafe {
   updated_at: string;
   whatsapp?: WhatsAppConnectionSafe | null;
   email?: EmailConnectionSafe | null;
+  /** Meta webhook verify token from server appsettings (copy into Meta Configuration). */
+  webhook_verify_token?: string;
+  webhook_app_secret_configured?: boolean;
 }
 
 export interface OrganisationIntegrationSelectReq {

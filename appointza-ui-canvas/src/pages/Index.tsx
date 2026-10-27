@@ -181,7 +181,7 @@ const Index = () => {
   if (isProcessingCustomDomain) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center bg-gray-50 safe-area-all"
+        className="min-h-screen flex items-center justify-center bg-[#f5f7f9] safe-area-all"
         style={isNativeApp ? {
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
@@ -190,7 +190,7 @@ const Index = () => {
         } : undefined}
       >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2a5af5] mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Loading Your Booking Page
           </h2>
@@ -401,7 +401,7 @@ const Index = () => {
       </Helmet>
       
       <div
-        className="min-h-screen overflow-x-hidden bg-zinc-50"
+        className="min-h-screen overflow-x-hidden bg-[#f5f7f9]"
         style={{
           paddingTop: insets.top,
           paddingBottom: insets.bottom,

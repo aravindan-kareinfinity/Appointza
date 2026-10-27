@@ -1,12 +1,20 @@
+using System.Data.Common;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using appointza.Models;
 using appointza.Utils;
 using Microsoft.Extensions.Options;
-using System.Data.Common;
+using Microsoft.IdentityModel.Tokens;
 
 namespace appointza.Services
 {
     public class AdminService
     {
+        public const string TokenKindPlatformAdmin = "platform_admin";
+        private const string PasswordPepperPrefix = "appointza-platform-admin:";
+
         IDbProvider dbprovider;
         IQueryBuilderProvider querybuilderprovider;
         RequestState requeststate;
@@ -21,6 +29,69 @@ namespace appointza.Services
             this.requeststate = requeststate;
             this.applicationenvironment = applicationenvironment.Value;
             this.logger = logger;
+        }
+
+        public static string HashPassword(string password)
+        {
+            var bytes = Encoding.UTF8.GetBytes(PasswordPepperPrefix + (password ?? ""));
+            return Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        }
+
+        public string GenerateAdminJwtToken(Admin admin)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(applicationenvironment.jwtsecret));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            var claims = new[]
+            {
+                new Claim("token_kind", TokenKindPlatformAdmin),
+                new Claim("adminid", admin.id.ToString()),
+                new Claim("adminemail", admin.email ?? ""),
+                new Claim("adminname", admin.name ?? ""),
+                new Claim("adminmobile", admin.mobile ?? ""),
+            };
+            var token = new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.UtcNow.AddDays(7),
+                signingCredentials: credentials);
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public AdminContext? JwtTokenToAdminContext(string token)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.ASCII.GetBytes(applicationenvironment.jwtsecret);
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero,
+                }, out SecurityToken validatedToken);
+
+                var jwt = (JwtSecurityToken)validatedToken;
+                var kind = jwt.Claims.FirstOrDefault(c => c.Type == "token_kind")?.Value ?? "";
+                if (!string.Equals(kind, TokenKindPlatformAdmin, StringComparison.Ordinal))
+                {
+                    return null;
+                }
+
+                return new AdminContext
+                {
+                    adminid = long.Parse(jwt.Claims.First(c => c.Type == "adminid").Value),
+                    adminemail = jwt.Claims.FirstOrDefault(c => c.Type == "adminemail")?.Value ?? "",
+                    adminname = jwt.Claims.FirstOrDefault(c => c.Type == "adminname")?.Value ?? "",
+                    adminmobile = jwt.Claims.FirstOrDefault(c => c.Type == "adminmobile")?.Value ?? "",
+                    role = TokenKindPlatformAdmin,
+                    accesstoken = token,
+                };
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         // 1. API to get total count organization total isverified and not verified
@@ -447,9 +518,22 @@ namespace appointza.Services
 
         public async Task<List<Admin>> SelectTransaction(IDb db, AdminSelectReq req)
         {
-            List<Admin> result = new List<Admin>();
-            // Implementation for selecting admin records
-            // This would depend on your Admin model structure
+            var result = new List<Admin>();
+            var sql = @"
+                SELECT id, email, name, '' AS mobile, isactive, 0 AS version,
+                       0 AS createdby, created_at AS createdon, 0 AS modifiedby, updated_at AS modifiedon, '' AS notes
+                FROM platform_admins
+                WHERE (@id = 0 OR id = @id)
+                  AND (@email = '' OR LOWER(email) = LOWER(@email))
+                ORDER BY id ASC;";
+            using var command = db.GetCommand(sql);
+            db.AddParameter(command, "id", DbTypes.Types.Long).Value = req?.id ?? 0;
+            db.AddParameter(command, "email", DbTypes.Types.String).Value = req?.email?.Trim() ?? "";
+            using var reader = await db.Execute(command);
+            while (await reader.ReadAsync())
+            {
+                result.Add(MapAdmin(reader));
+            }
             return result;
         }
 
@@ -465,7 +549,31 @@ namespace appointza.Services
 
         public async Task InsertTransaction(IDb db, Admin admin)
         {
-            // Implementation for inserting admin records
+            var email = (admin.email ?? "").Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(email))
+                throw new Exception("Admin email is required.");
+            if (string.IsNullOrWhiteSpace(admin.password))
+                throw new Exception("Admin password is required.");
+
+            var sql = @"
+                INSERT INTO platform_admins (email, name, password_hash, isactive, created_at, updated_at)
+                VALUES (@email, @name, @password_hash, @isactive, @created_at, @updated_at)
+                RETURNING id;";
+            using var command = db.GetCommand(sql);
+            var now = DateTime.UtcNow;
+            db.AddParameter(command, "email", DbTypes.Types.String).Value = email;
+            db.AddParameter(command, "name", DbTypes.Types.String).Value = admin.name?.Trim() ?? "";
+            db.AddParameter(command, "password_hash", DbTypes.Types.String).Value = HashPassword(admin.password);
+            db.AddParameter(command, "isactive", DbTypes.Types.Boolean).Value = true;
+            db.AddParameter(command, "created_at", DbTypes.Types.DateTime).Value = now;
+            db.AddParameter(command, "updated_at", DbTypes.Types.DateTime).Value = now;
+            using var reader = await db.Execute(command);
+            if (await reader.ReadAsync())
+            {
+                admin.id = Convert.ToInt64(reader["id"]);
+            }
+            admin.password = "";
+            admin.isactive = true;
         }
 
         public async Task<Admin> Update(Admin admin)
@@ -480,8 +588,18 @@ namespace appointza.Services
 
         public async Task<bool> UpdateTransaction(IDb db, Admin admin)
         {
-            // Implementation for updating admin records
-            return true;
+            var sql = @"
+                UPDATE platform_admins
+                SET name = @name,
+                    isactive = @isactive,
+                    updated_at = @updated_at
+                WHERE id = @id;";
+            using var command = db.GetCommand(sql);
+            db.AddParameter(command, "id", DbTypes.Types.Long).Value = admin.id;
+            db.AddParameter(command, "name", DbTypes.Types.String).Value = admin.name?.Trim() ?? "";
+            db.AddParameter(command, "isactive", DbTypes.Types.Boolean).Value = admin.isactive;
+            db.AddParameter(command, "updated_at", DbTypes.Types.DateTime).Value = DateTime.UtcNow;
+            return await db.ExecuteNonQuery(command) > 0;
         }
 
         public async Task<bool> Delete(AdminDeleteReq admin)
@@ -497,25 +615,148 @@ namespace appointza.Services
 
         public async Task<bool> DeleteTransaction(IDb db, AdminDeleteReq admin)
         {
-            // Implementation for deleting admin records
-            return true;
+            using var command = db.GetCommand(@"
+                UPDATE platform_admins
+                SET isactive = FALSE, updated_at = @updated_at
+                WHERE id = @id;");
+            db.AddParameter(command, "id", DbTypes.Types.Long).Value = admin.id;
+            db.AddParameter(command, "updated_at", DbTypes.Types.DateTime).Value = DateTime.UtcNow;
+            return await db.ExecuteNonQuery(command) > 0;
         }
 
         public async Task<AdminContext> Login(AdminLoginReq req)
         {
-            AdminContext result = new AdminContext();
             using (IDb db = await dbprovider.GetDb())
             {
                 await db.Connect();
-                result = await LoginTransaction(db, req);
+                return await LoginTransaction(db, req);
             }
-            return result;
         }
 
         public async Task<AdminContext> LoginTransaction(IDb db, AdminLoginReq req)
         {
-            // Implementation for admin login
-            return new AdminContext();
+            var email = (req?.email ?? "").Trim();
+            var password = req?.password ?? "";
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            {
+                throw new Exception("Email and password are required.");
+            }
+
+            using var command = db.GetCommand(@"
+                SELECT id, email, name, password_hash, isactive
+                FROM platform_admins
+                WHERE LOWER(email) = LOWER(@email)
+                LIMIT 1;");
+            db.AddParameter(command, "email", DbTypes.Types.String).Value = email;
+            using var reader = await db.Execute(command);
+            if (!await reader.ReadAsync())
+            {
+                throw new Exception("Invalid admin email or password.");
+            }
+
+            var isActive = reader["isactive"] != DBNull.Value && Convert.ToBoolean(reader["isactive"]);
+            if (!isActive)
+            {
+                throw new Exception("Admin account is inactive.");
+            }
+
+            var storedHash = reader["password_hash"]?.ToString() ?? "";
+            var incomingHash = HashPassword(password);
+            if (!FixedTimeEqualsHex(storedHash, incomingHash))
+            {
+                throw new Exception("Invalid admin email or password.");
+            }
+
+            var admin = new Admin
+            {
+                id = Convert.ToInt64(reader["id"]),
+                email = reader["email"]?.ToString() ?? "",
+                name = reader["name"]?.ToString() ?? "",
+                mobile = "",
+                isactive = true,
+            };
+
+            var token = GenerateAdminJwtToken(admin);
+            return new AdminContext
+            {
+                adminid = admin.id,
+                adminemail = admin.email,
+                adminname = admin.name,
+                adminmobile = "",
+                accesstoken = token,
+                refreshtoken = "",
+                role = TokenKindPlatformAdmin,
+            };
+        }
+
+        public async Task<AdminContext> ChangePassword(long adminId, AdminChangePasswordReq req)
+        {
+            using var db = await dbprovider.GetDb();
+            await db.Connect();
+
+            if (adminId <= 0)
+                throw new Exception("Admin session required.");
+            if (string.IsNullOrWhiteSpace(req?.new_password) || req.new_password.Length < 8)
+                throw new Exception("New password must be at least 8 characters.");
+
+            using var find = db.GetCommand(@"
+                SELECT id, email, name, password_hash, isactive
+                FROM platform_admins WHERE id = @id LIMIT 1;");
+            db.AddParameter(find, "id", DbTypes.Types.Long).Value = adminId;
+            using var reader = await db.Execute(find);
+            if (!await reader.ReadAsync())
+                throw new Exception("Admin not found.");
+
+            var storedHash = reader["password_hash"]?.ToString() ?? "";
+            if (!FixedTimeEqualsHex(storedHash, HashPassword(req.current_password ?? "")))
+                throw new Exception("Current password is incorrect.");
+
+            var email = reader["email"]?.ToString() ?? "";
+            var name = reader["name"]?.ToString() ?? "";
+
+            using var update = db.GetCommand(@"
+                UPDATE platform_admins
+                SET password_hash = @password_hash, updated_at = @updated_at
+                WHERE id = @id;");
+            db.AddParameter(update, "id", DbTypes.Types.Long).Value = adminId;
+            db.AddParameter(update, "password_hash", DbTypes.Types.String).Value = HashPassword(req.new_password);
+            db.AddParameter(update, "updated_at", DbTypes.Types.DateTime).Value = DateTime.UtcNow;
+            await db.ExecuteNonQuery(update);
+
+            var admin = new Admin { id = adminId, email = email, name = name };
+            var token = GenerateAdminJwtToken(admin);
+            return new AdminContext
+            {
+                adminid = admin.id,
+                adminemail = admin.email,
+                adminname = admin.name,
+                accesstoken = token,
+                role = TokenKindPlatformAdmin,
+            };
+        }
+
+        private static Admin MapAdmin(DbDataReader reader) => new()
+        {
+            id = Convert.ToInt64(reader["id"]),
+            email = reader["email"]?.ToString() ?? "",
+            name = reader["name"]?.ToString() ?? "",
+            mobile = reader["mobile"]?.ToString() ?? "",
+            password = "",
+            isactive = reader["isactive"] != DBNull.Value && Convert.ToBoolean(reader["isactive"]),
+            version = reader["version"] == DBNull.Value ? 0 : Convert.ToInt32(reader["version"]),
+            createdby = reader["createdby"] == DBNull.Value ? 0 : Convert.ToInt64(reader["createdby"]),
+            createdon = reader["createdon"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(reader["createdon"]),
+            modifiedby = reader["modifiedby"] == DBNull.Value ? 0 : Convert.ToInt64(reader["modifiedby"]),
+            modifiedon = reader["modifiedon"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(reader["modifiedon"]),
+            notes = reader["notes"]?.ToString() ?? "",
+        };
+
+        private static bool FixedTimeEqualsHex(string a, string b)
+        {
+            var ba = Encoding.UTF8.GetBytes((a ?? "").Trim().ToLowerInvariant());
+            var bb = Encoding.UTF8.GetBytes((b ?? "").Trim().ToLowerInvariant());
+            if (ba.Length != bb.Length) return false;
+            return CryptographicOperations.FixedTimeEquals(ba, bb);
         }
 
         public async Task<AdminDashboardStats> GetDashboardStats(AdminDashboardStatsReq req)
@@ -675,15 +916,10 @@ namespace appointza.Services
             
             // Apply filters based on request parameters
             
-            // Filter by IsActive if provided
+            // Filter by IsActive only when explicitly requested (admin console lists all by default)
             if (req.IsActive.HasValue)
             {
                 queryBuilder.AddParameter("Organisation.isactive", "=", "isactive", req.IsActive.Value, DbTypes.Types.Boolean);
-            }
-            else
-            {
-                // Default: only show active organisations
-                queryBuilder.AddParameter("Organisation.isactive", "=", "isactive", true, DbTypes.Types.Boolean);
             }
             
             // Filter by IsVerified if provided
@@ -791,8 +1027,23 @@ namespace appointza.Services
 
         public async Task<bool> SuspendOrganisationTransaction(IDb db, AdminSuspendOrganisationReq req)
         {
-            // Implementation for suspending organisation
-            return true;
+            using var command = db.GetCommand(@"
+                UPDATE Organisation
+                SET isactive = FALSE,
+                    issuspended = TRUE,
+                    notes = CASE
+                        WHEN COALESCE(@reason, '') = '' THEN notes
+                        ELSE TRIM(BOTH FROM COALESCE(notes, '') || E'\n' || @reason)
+                    END,
+                    modifiedon = @modifiedon,
+                    modifiedby = @modifiedby,
+                    version = COALESCE(version, 0) + 1
+                WHERE id = @id;");
+            db.AddParameter(command, "id", DbTypes.Types.Long).Value = req.OrganisationId;
+            db.AddParameter(command, "reason", DbTypes.Types.String).Value = req.Reason ?? "";
+            db.AddParameter(command, "modifiedby", DbTypes.Types.Long).Value = requeststate.usercontext?.userid ?? 0;
+            db.AddParameter(command, "modifiedon", DbTypes.Types.DateTime).Value = DateTime.UtcNow;
+            return await db.ExecuteNonQuery(command) > 0;
         }
 
         public async Task<bool> ActivateOrganisation(AdminActivateOrganisationReq req)
@@ -808,8 +1059,18 @@ namespace appointza.Services
 
         public async Task<bool> ActivateOrganisationTransaction(IDb db, AdminActivateOrganisationReq req)
         {
-            // Implementation for activating organisation
-            return true;
+            using var command = db.GetCommand(@"
+                UPDATE Organisation
+                SET isactive = TRUE,
+                    issuspended = FALSE,
+                    modifiedon = @modifiedon,
+                    modifiedby = @modifiedby,
+                    version = COALESCE(version, 0) + 1
+                WHERE id = @id;");
+            db.AddParameter(command, "id", DbTypes.Types.Long).Value = req.OrganisationId;
+            db.AddParameter(command, "modifiedby", DbTypes.Types.Long).Value = requeststate.usercontext?.userid ?? 0;
+            db.AddParameter(command, "modifiedon", DbTypes.Types.DateTime).Value = DateTime.UtcNow;
+            return await db.ExecuteNonQuery(command) > 0;
         }
 
         // 5. Toggle location verification

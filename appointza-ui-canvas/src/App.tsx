@@ -26,8 +26,17 @@ const EnsureAuthOnMainHost = lazy(() =>
 
 // Lazy: all other routes (auth, marketing secondary, public browse, user, org, heavy pages).
 const Login = lazy(() => import("./pages/Login"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Register = lazy(() => import("./pages/Register"));
+const RegisterBusinessProfile = lazy(() => import("./pages/RegisterBusinessProfile"));
+const RegisterBusinessLocation = lazy(() => import("./pages/RegisterBusinessLocation"));
+const RegisterBusinessOfferings = lazy(() => import("./pages/RegisterBusinessOfferings"));
+const RegisterBusinessCreateItems = lazy(() => import("./pages/RegisterBusinessCreateItems"));
+const RegisterBusinessWebsite = lazy(() => import("./pages/RegisterBusinessWebsite"));
+const RegisterBusinessDomain = lazy(() => import("./pages/RegisterBusinessDomain"));
+const RegisterBusinessComplete = lazy(() => import("./pages/RegisterBusinessComplete"));
 const OtpVerification = lazy(() => import("./pages/OtpVerification"));
 const PricingPlans = lazy(() => import("./pages/PricingPlans"));
 const DemoRequest = lazy(() => import("./pages/DemoRequest"));
@@ -41,15 +50,12 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const OrganizationDashboard = lazy(() => import("./pages/organization/Dashboard"));
 const TimingScreen = lazy(() => import("./pages/organization/Timing"));
 const OrganizationServices = lazy(() => import("./pages/organization/Services"));
+const OrganizationOnboardingWizard = lazy(() => import("./pages/organization/OrganizationOnboardingWizard"));
 const CustomDomainScreen = lazy(() => import("./pages/organization/CustomDomain"));
 const OrganizationAppointments = lazy(() => import("./pages/organization/Appointments"));
-const OrganizationCalendar = lazy(() => import("./pages/organization/OrganizationCalendar"));
-const LocationsScreen = lazy(() => import("./pages/organization/Locations"));
-const AddStaff = lazy(() => import("./pages/organization/AddStaff"));
 const StaffManagement = lazy(() => import("./pages/organization/StaffManagement"));
 const OrganizationTemplates = lazy(() => import("./pages/organization/Templates"));
 const TemplateBuilder = lazy(() => import("./pages/organization/TemplateBuilder"));
-const OrganizationSettings = lazy(() => import("./pages/organization/Settings"));
 const OrganizationProfile = lazy(() => import("./pages/organization/Profile"));
 const PaymentSettings = lazy(() => import("./pages/organization/PaymentSettings"));
 const ReferenceValuesPage = lazy(() => import("./pages/organization/ReferenceValues"));
@@ -73,12 +79,15 @@ const MyEventBookings = lazy(() => import("./pages/user/MyEventBookings"));
 const AppointmentBooking = lazy(() => import("./pages/user/AppointmentBooking"));
 const RoomBookingPage = lazy(() => import("./pages/RoomBookingPage"));
 const OrganizationAssets = lazy(() => import("./pages/organization/Assets"));
-const EventBookings = lazy(() => import("./pages/organization/EventBookings"));
 const OrganizationLeads = lazy(() => import("./pages/organization/Leads"));
 const CrmLayout = lazy(() => import("./pages/organization/CrmLayout"));
 const CrmDashboard = lazy(() => import("./pages/organization/crm/CrmDashboard"));
 const CrmUnifiedInbox = lazy(() => import("./pages/organization/crm/CrmUnifiedInbox"));
 const CrmComingSoon = lazy(() => import("./pages/organization/crm/CrmComingSoon"));
+const CrmWhatsAppTemplates = lazy(() => import("./pages/organization/crm/CrmWhatsAppTemplates"));
+const CrmWhatsAppCampaigns = lazy(() => import("./pages/organization/crm/CrmWhatsAppCampaigns"));
+const CrmWhatsAppCampaignReports = lazy(() => import("./pages/organization/crm/CrmWhatsAppCampaignReports"));
+const CrmWhatsAppAutomations = lazy(() => import("./pages/organization/crm/CrmWhatsAppAutomations"));
 const CrmCatalogue = lazy(() => import("./pages/organization/CrmCatalogue"));
 const HospitalityContentPage = lazy(() => import("./pages/organization/HospitalityContent"));
 const OrganisationLegacyRedirect = lazy(() => import("./pages/organization/OrganisationLegacyRedirect"));
@@ -146,18 +155,16 @@ const ProtectedRouteWrapper = ({ children, redirectTo }: { children: React.React
 const OrganizationRouteWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <Suspense fallback={<OutletFallback />}>
-      <OnboardingGuard>
-        {children}
-      </OnboardingGuard>
+      <OnboardingGuard>{children}</OnboardingGuard>
     </Suspense>
   );
 };
 
-// Route layouts (React Router "router-outlet" equivalent). Layouts are lazy so
-// public /template does not download org/user dashboard shells. Inner Suspense
-// keeps the shell mounted when only the page chunk changes.
+// Layout shells stay mounted after first load; page chunks swap inside Outlet only.
+// Outer Suspense uses content fallback (not full-screen) so a brief layout load
+// does not flash a blank page over the rest of the app chrome.
 const OrganizationOutletLayout = () => (
-  <Suspense fallback={<RouteChunkFallback />}>
+  <Suspense fallback={<OutletFallback />}>
     <OrganizationLayout>
       <Suspense fallback={<OutletFallback />}>
         <Outlet />
@@ -166,8 +173,20 @@ const OrganizationOutletLayout = () => (
   </Suspense>
 );
 
+/** Web: org chrome + Setup sidebar. Native app: standalone form screens. */
+const RegisterOnboardingOutletLayout = () => {
+  if (Capacitor.isNativePlatform()) {
+    return (
+      <Suspense fallback={<OutletFallback />}>
+        <Outlet />
+      </Suspense>
+    );
+  }
+  return <OrganizationOutletLayout />;
+};
+
 const UserOutletLayout = () => (
-  <Suspense fallback={<RouteChunkFallback />}>
+  <Suspense fallback={<OutletFallback />}>
     <UserLayout>
       <Suspense fallback={<OutletFallback />}>
         <Outlet />
@@ -195,7 +214,35 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<OrganisationRootRoute />} />
         <Route path="/login" element={<Suspense fallback={<RouteChunkFallback />}><EnsureAuthOnMainHost><Login /></EnsureAuthOnMainHost></Suspense>} />
+        <Route path="/admin/login" element={<Suspense fallback={<RouteChunkFallback />}><AdminLogin /></Suspense>} />
+        <Route path="/admin" element={<Suspense fallback={<RouteChunkFallback />}><AdminDashboard /></Suspense>} />
         <Route path="/register" element={<Suspense fallback={<RouteChunkFallback />}><EnsureAuthOnMainHost><Register /></EnsureAuthOnMainHost></Suspense>} />
+        {/* Business onboarding: web → org shell + Setup sidebar; native → standalone forms */}
+        <Route
+          element={
+            <Suspense fallback={<RouteChunkFallback />}>
+              <EnsureAuthOnMainHost>
+                <ProtectedRouteWrapper redirectTo="/login">
+                  {Capacitor.isNativePlatform() ? (
+                    <RegisterOnboardingOutletLayout />
+                  ) : (
+                    <OrganizationRouteWrapper>
+                      <RegisterOnboardingOutletLayout />
+                    </OrganizationRouteWrapper>
+                  )}
+                </ProtectedRouteWrapper>
+              </EnsureAuthOnMainHost>
+            </Suspense>
+          }
+        >
+          <Route path="/register/business" element={<RegisterBusinessProfile />} />
+          <Route path="/register/location" element={<RegisterBusinessLocation />} />
+          <Route path="/register/offerings" element={<RegisterBusinessOfferings />} />
+          <Route path="/register/create" element={<RegisterBusinessCreateItems />} />
+          <Route path="/register/website" element={<RegisterBusinessWebsite />} />
+          <Route path="/register/domain" element={<RegisterBusinessDomain />} />
+          <Route path="/register/complete" element={<RegisterBusinessComplete />} />
+        </Route>
         <Route path="/otp" element={<Suspense fallback={<RouteChunkFallback />}><EnsureAuthOnMainHost><OtpVerification /></EnsureAuthOnMainHost></Suspense>} />
         <Route path="/plans" element={<PricingPlans />} />
         <Route path="/demo" element={<DemoRequest />} />
@@ -257,38 +304,50 @@ const AppRoutes = () => {
             </ProtectedRouteWrapper>
           }
         >
-          <Route path=":id/dashboard" element={<OrganizationDashboard />} />
           <Route path="dashboard" element={<OrganizationDashboard />} />
+          <Route path="onboarding" element={<OrganizationOnboardingWizard />} />
           <Route path="custom-domain" element={<CustomDomainScreen />} />
           <Route path="timing" element={<TimingScreen />} />
           <Route path="services" element={<OrganizationServices />} />
           <Route path="appointments/:id/record" element={<AppointmentRecordPage />} />
           <Route path="appointments" element={<OrganizationAppointments />} />
-          <Route path="calendar" element={<OrganizationCalendar />} />
-          <Route path="event-bookings" element={<EventBookings />} />
+          <Route path="calendar" element={<Navigate to="/organization/appointments" replace />} />
+          <Route
+            path="event-bookings"
+            element={<Navigate to="/organization/appointments?kind=events" replace />}
+          />
           <Route path="crm" element={<CrmLayout />}>
             <Route index element={<CrmDashboard />} />
             <Route path="contacts" element={<OrganizationLeads />} />
             <Route path="leads" element={<Navigate to="/organization/crm/contacts" replace />} />
             <Route path="pipeline" element={<CrmComingSoon title="Sales Pipeline" description="Track lead stages from new enquiry through conversion. This board is next to build." />} />
-            <Route path="inbox" element={<CrmUnifiedInbox />} />
+            <Route path="whatsapp/inbox" element={<CrmUnifiedInbox />} />
+            <Route path="inbox" element={<Navigate to="/organization/crm/whatsapp/inbox" replace />} />
             <Route path="email-campaigns" element={<CrmComingSoon title="Email Campaigns" description="Send bulk or scheduled email. Conversations stay in Unified Inbox — this is for campaigns only." />} />
-            <Route path="whatsapp-campaigns" element={<CrmComingSoon title="WhatsApp Campaigns" description="Send bulk or scheduled WhatsApp messages. Chats stay in Unified Inbox — this is for campaigns only." />} />
-            <Route path="templates" element={<CrmComingSoon title="Message Templates" description="Create and manage Email and WhatsApp message templates for campaigns, booking confirmations, and reminders. Separate from your public website templates under Settings." />} />
+            <Route path="whatsapp-campaigns" element={<CrmWhatsAppCampaigns />} />
+            <Route path="whatsapp/automations" element={<CrmWhatsAppAutomations />} />
+            <Route path="templates" element={<CrmWhatsAppTemplates />} />
+            <Route path="whatsapp/templates" element={<Navigate to="/organization/crm/templates" replace />} />
             <Route path="tasks" element={<CrmComingSoon title="Tasks & Follow-ups" description="Assign reminders and next steps on leads and conversations." />} />
-            <Route path="reports" element={<CrmComingSoon title="CRM Reports" description="Conversion, response time, and campaign performance for your organisation." />} />
+            <Route path="reports" element={<CrmWhatsAppCampaignReports />} />
             <Route path="business-profile" element={<CrmCatalogue />} />
             <Route path="catalogue" element={<Navigate to="/organization/crm/business-profile" replace />} />
             <Route path="clients" element={<Navigate to="/organization/clients" replace />} />
           </Route>
           <Route path="leads" element={<Navigate to="/organization/crm/contacts" replace />} />
           <Route path="loyalty" element={<Navigate to="/organization/profile?tab=loyalty" replace />} />
-          <Route path="locations" element={<LocationsScreen />} />
+          <Route
+            path="locations"
+            element={<Navigate to="/organization/profile?tab=location" replace />}
+          />
           <Route path="staff" element={<StaffManagement />} />
-          <Route path="staff/add" element={<AddStaff />} />
+          <Route
+            path="staff/add"
+            element={<Navigate to="/organization/profile?tab=staff" replace />}
+          />
           <Route path="templates" element={<OrganizationTemplates />} />
           <Route path="template-builder" element={<TemplateBuilder />} />
-          <Route path="settings" element={<OrganizationSettings />} />
+          <Route path="settings" element={<Navigate to="/organization/profile" replace />} />
           <Route path="profile" element={<OrganizationProfile />} />
           <Route path="reference-values" element={<ReferenceValuesPage />} />
           <Route path="payment-settings" element={<PaymentSettings />} />

@@ -26,7 +26,7 @@ const MOBILE_SHEET_CLASS =
   "z-[100] flex h-[92vh] max-h-[92vh] w-full flex-col gap-0 overflow-hidden rounded-t-2xl border-t border-[#e6eaf0] bg-white p-0 [&>button]:hidden";
 
 const saveBtnClass =
-  "inline-flex h-8 items-center justify-center gap-2 rounded-[6px] bg-[#528ff0] px-4 text-[13px] font-semibold text-white hover:bg-[#3d7ae8] disabled:opacity-50";
+  "inline-flex h-8 items-center justify-center gap-2 rounded-[6px] border border-[#528ff0] bg-[#528ff0] px-4 text-[13px] font-semibold text-white shadow-none hover:bg-[#3d7ae8] disabled:opacity-50";
 
 type ResponsiveEditSheetProps = {
   open: boolean;

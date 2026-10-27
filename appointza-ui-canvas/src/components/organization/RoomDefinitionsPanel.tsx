@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { BedDouble, Loader2, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,13 @@ import { ResponsiveEditSheet } from "@/components/organization/ResponsiveEditShe
 import { cloneRoom, defaultRoomCode } from "@/utils/roomAmenities.util";
 import { cn } from "@/lib/utils";
 import { org } from "@/lib/orgTheme";
+import { RegisterCreateSkipButton } from "@/components/onboarding/RegisterCreateSkipButton";
+import {
+  BUSINESS_CREATE_PATH,
+  clearRegisterCreateReturn,
+  isRegisterCreateFlow,
+  readRegisterCreateReturn,
+} from "@/utils/businessOnboarding.util";
 
 type RoomDefinitionsPanelProps = {
   locationId: number;
@@ -27,6 +34,7 @@ export function RoomDefinitionsPanel({
   onOpenRoomStatus,
 }: RoomDefinitionsPanelProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
@@ -177,12 +185,19 @@ export function RoomDefinitionsPanel({
       if (payload.gallery_photos.length > 0) {
         payload.main_photo = payload.main_photo || payload.gallery_photos[0];
       }
+      const wasCreate = !(payload.id > 0);
       await hospitalityService.saveRoom(payload);
       closeEditor();
       await queryClient.invalidateQueries({
         queryKey: organisationRoomsQueryKey(organisationId, locationId),
       });
       toast({ title: "Saved", description: "Room saved successfully." });
+
+      if (wasCreate && isRegisterCreateFlow()) {
+        const returnTo = readRegisterCreateReturn() || BUSINESS_CREATE_PATH;
+        clearRegisterCreateReturn();
+        navigate(returnTo, { replace: true });
+      }
     } catch (error) {
       toast({
         title: "Save failed",
@@ -234,9 +249,10 @@ export function RoomDefinitionsPanel({
     return (
       <div className="rounded-lg border border-[#e6eaf0] bg-white px-4 py-12 text-center">
         <MapPin className="mx-auto mb-3 h-9 w-9 text-[#d0d5dd]" />
-        <p className="text-[13px] text-[#667085]">
+        <p className="mb-4 text-[13px] text-[#667085]">
           Select a business location above to manage rooms for that property.
         </p>
+        <RegisterCreateSkipButton fallbackOffering="stay" />
       </div>
     );
   }
@@ -258,10 +274,13 @@ export function RoomDefinitionsPanel({
             onChange={(e) => setSearch(e.target.value)}
             className={cn(org.input, "h-8 max-w-sm")}
           />
-          <Button onClick={openCreate} className={cn(org.btnPrimary, "shrink-0 self-start sm:self-auto")}>
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Add room
-          </Button>
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            {!editorOpen ? <RegisterCreateSkipButton fallbackOffering="stay" /> : null}
+            <Button onClick={openCreate} className={cn(org.btnPrimary, "shrink-0")}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add room
+            </Button>
+          </div>
         </div>
 
         {loading ?
@@ -272,9 +291,16 @@ export function RoomDefinitionsPanel({
         : filteredRooms.length === 0 ?
           <div className="rounded-lg border border-[#e6eaf0] bg-white px-4 py-12 text-center">
             <BedDouble className="mx-auto mb-3 h-9 w-9 text-[#d0d5dd]" />
-            <p className="text-[13px] text-[#667085]">
+            <p className="mb-4 text-[13px] text-[#667085]">
               No rooms at this location yet. Add your first room to get started.
             </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button onClick={openCreate} className={cn(org.btnPrimary)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add room
+              </Button>
+              <RegisterCreateSkipButton fallbackOffering="stay" />
+            </div>
           </div>
         : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filteredRooms.map((room) => (

@@ -12,8 +12,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { org } from "@/lib/orgTheme";
-import { onboardingStepRoute } from "@/utils/organizationOnboarding.util";
+import {
+  ORGANIZATION_ONBOARDING_WIZARD_ROUTE,
+  onboardingStepRoute,
+} from "@/utils/organizationOnboarding.util";
 
+/**
+ * Legacy per-page step ids (custom domain → service → website → hours) still drive the
+ * OnboardingPageGuide on those pages. The wizard hub (offerings → create_items → website →
+ * timing) lives in OrganizationOnboardingWizard and uses OnboardingWizardStep from the model.
+ */
 export type OnboardingStepId = "customDomain" | "services" | "website" | "timing";
 
 export type OnboardingStep = {
@@ -51,7 +59,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
       "Customers book what you offer. Create at least one service — for example Consultation, Haircut, or Dental Check-up.",
     pageHint:
       "Services are everyday bookable offerings (e.g. haircut, consultation). Events are dated workshops or classes. Add at least one service to continue setup.",
-    route: "/organization/services",
+    route: "/organization/services?kind=services",
     actionLabel: "Add service",
     icon: Package,
   },
@@ -336,9 +344,9 @@ export function OnboardingSetupScreen({
           <Button
             type="button"
             className={cn(org.btnPrimary, "mt-6 min-h-11 w-full")}
-            onClick={() => navigate(onboardingStepRoute(currentStep.id))}
+            onClick={() => navigate(ORGANIZATION_ONBOARDING_WIZARD_ROUTE)}
           >
-            Continue — {currentStep.shortTitle}
+            Continue setup
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         )}

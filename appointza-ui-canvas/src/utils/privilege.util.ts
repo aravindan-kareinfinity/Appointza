@@ -39,14 +39,9 @@ export class PrivilegeUtil {
       '/organization/appointments': 'approveappoinment',
       '/organization/services': 'manageservices',
       '/organization/timing': 'manageservices', // Timing is part of service management
-      '/organization/locations': 'managelocations',
       '/organization/staff': 'createstaff',
-      '/organization/groups': 'creategroup',
-      '/organization/messages': 'createmessage',
-      '/organization/tasks': 'createtask',
-      '/organization/reports': 'viewreports',
-      '/organization/payments': 'viewpayments',
-      '/organization/customers': 'viewcustomers',
+      '/organization/clients': 'viewcustomers',
+      '/organization/crm': 'viewcustomers',
     };
 
     // Check exact match first

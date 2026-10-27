@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -23,6 +24,12 @@ import {
 } from "@/utils/templateBuilder/orgAssetsStorage";
 
 const TEMPLATE_REFERENCE_TYPE_ID = 5;
+
+type CatalogSnapshot = {
+  assets: OrgTemplateAsset[];
+  catalogId: number;
+  catalogVersion: number;
+};
 
 type OrgTemplateAssetsContextValue = {
   assets: OrgTemplateAsset[];
@@ -54,14 +61,65 @@ export function OrgTemplateAssetsProvider({ children }: { children: ReactNode })
   const [catalogLoaded, setCatalogLoaded] = useState(false);
 
   const orgId = user?.organisationid || 0;
+  const snapshotRef = useRef<CatalogSnapshot>({
+    assets: [],
+    catalogId: 0,
+    catalogVersion: 0,
+  });
+
+  const applySnapshot = useCallback((snap: CatalogSnapshot) => {
+    snapshotRef.current = snap;
+    setAssets(snap.assets);
+    setCatalogId(snap.catalogId);
+    setCatalogVersion(snap.catalogVersion);
+  }, []);
+
+  const loadCatalog = useCallback(async (): Promise<CatalogSnapshot> => {
+    if (!orgId) {
+      const empty: CatalogSnapshot = {
+        assets: [],
+        catalogId: 0,
+        catalogVersion: 0,
+      };
+      applySnapshot(empty);
+      setCatalogLoaded(true);
+      return empty;
+    }
+
+    const req = new ReferenceValueSelectReq();
+    req.referencetypeid = TEMPLATE_REFERENCE_TYPE_ID;
+    req.organisationid = orgId;
+    req.identifier = ORG_TEMPLATE_ASSETS_IDENTIFIER;
+    const rows = await refService.select(req);
+    // Never fall back to a website template row — that would wipe template notes.
+    const row = rows?.find((r) => r.identifier === ORG_TEMPLATE_ASSETS_IDENTIFIER);
+    const snap: CatalogSnapshot = row
+      ? {
+          assets: parseOrgAssetCatalog(row.notes).assets,
+          catalogId: row.id,
+          catalogVersion: row.version ?? 0,
+        }
+      : {
+          assets: createEmptyAssetCatalog().assets,
+          catalogId: 0,
+          catalogVersion: 0,
+        };
+    applySnapshot(snap);
+    setCatalogLoaded(true);
+    return snap;
+  }, [applySnapshot, orgId, refService]);
 
   const persistCatalog = useCallback(
-    async (nextAssets: OrgTemplateAsset[]) => {
-      if (!orgId) return;
+    async (nextAssets: OrgTemplateAsset[], meta?: Pick<CatalogSnapshot, "catalogId" | "catalogVersion">) => {
+      if (!orgId) {
+        throw new Error("Organisation is required to save assets.");
+      }
+      const id = meta?.catalogId ?? snapshotRef.current.catalogId;
+      const version = meta?.catalogVersion ?? snapshotRef.current.catalogVersion;
       setIsSaving(true);
       try {
         const payload = new ReferenceValue();
-        payload.id = catalogId;
+        payload.id = id;
         payload.referencetypeid = TEMPLATE_REFERENCE_TYPE_ID;
         payload.identifier = ORG_TEMPLATE_ASSETS_IDENTIFIER;
         payload.displaytext = "Template assets";
@@ -69,112 +127,106 @@ export function OrgTemplateAssetsProvider({ children }: { children: ReactNode })
         payload.notes = serializeOrgAssetCatalog({ version: 1, assets: nextAssets });
         payload.isactive = true;
         payload.organizationid = orgId;
-        payload.version = catalogVersion;
+        payload.version = version;
 
         const saved = await refService.save(payload);
-        if (saved?.id) {
-          setCatalogId(saved.id);
-          setCatalogVersion(saved.version ?? catalogVersion);
-        }
-        setAssets(nextAssets);
-      } catch {
+        const snap: CatalogSnapshot = {
+          assets: nextAssets,
+          catalogId: saved?.id || id,
+          catalogVersion: saved?.version ?? version,
+        };
+        applySnapshot(snap);
+      } catch (error) {
         toast({ title: "Could not save assets", variant: "destructive" });
+        throw error;
       } finally {
         setIsSaving(false);
       }
     },
-    [catalogId, catalogVersion, orgId, refService, toast],
+    [applySnapshot, orgId, refService, toast],
   );
 
   const refresh = useCallback(async () => {
-    if (!orgId) {
-      setAssets([]);
-      return;
-    }
     setIsLoading(true);
     try {
-      const req = new ReferenceValueSelectReq();
-      req.referencetypeid = TEMPLATE_REFERENCE_TYPE_ID;
-      req.organisationid = orgId;
-      req.identifier = ORG_TEMPLATE_ASSETS_IDENTIFIER;
-      const rows = await refService.select(req);
-      const row = rows?.find((r) => r.identifier === ORG_TEMPLATE_ASSETS_IDENTIFIER) ?? rows?.[0];
-      if (row) {
-        setCatalogId(row.id);
-        setCatalogVersion(row.version ?? 0);
-        setAssets(parseOrgAssetCatalog(row.notes).assets);
-      } else {
-        setCatalogId(0);
-        setCatalogVersion(0);
-        setAssets(createEmptyAssetCatalog().assets);
-      }
-      setCatalogLoaded(true);
+      await loadCatalog();
     } catch {
       toast({ title: "Could not load assets", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
-  }, [orgId, refService, toast]);
+  }, [loadCatalog, toast]);
 
   const ensureLoaded = useCallback(async () => {
     if (catalogLoaded || !orgId) return;
-    await refresh();
-  }, [catalogLoaded, orgId, refresh]);
+    setIsLoading(true);
+    try {
+      await loadCatalog();
+    } catch {
+      toast({ title: "Could not load assets", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [catalogLoaded, loadCatalog, orgId, toast]);
 
   const registerFileIds = useCallback(
     async (ids: number[], names?: string[]) => {
-      if (!catalogLoaded) {
-        await refresh();
-      }
-      const now = new Date().toISOString();
       const incoming: OrgTemplateAsset[] = ids
         .map((id, i) => ({
-          id,
+          id: Number(id),
           name: names?.[i]?.trim() || `Image #${id}`,
-          addedAt: now,
+          addedAt: new Date().toISOString(),
         }))
         .filter((a) => a.id > 0);
       if (incoming.length === 0) return;
-      const merged = mergeAssets(assets, incoming);
-      await persistCatalog(merged);
+
+      // Always reload before merge so we never overwrite the catalog with a stale empty list.
+      const latest = await loadCatalog();
+      const alreadyHave = new Set(latest.assets.map((a) => a.id));
+      if (incoming.every((a) => alreadyHave.has(a.id))) {
+        applySnapshot(latest);
+        return;
+      }
+      const merged = mergeAssets(latest.assets, incoming);
+      await persistCatalog(merged, latest);
     },
-    [assets, catalogLoaded, persistCatalog, refresh],
+    [applySnapshot, loadCatalog, persistCatalog],
   );
 
   const uploadFiles = useCallback(
     async (files: File[]) => {
-      if (!catalogLoaded) {
-        await refresh();
-      }
       const ids = await filesService.upload(files);
-      if (!ids?.length) throw new Error("Upload failed");
+      const list = Array.isArray(ids) ? ids.map(Number).filter((id) => id > 0) : [];
+      if (!list.length) throw new Error("Upload failed");
       await registerFileIds(
-        ids,
+        list,
         files.map((f) => f.name),
       );
-      return ids;
+      return list;
     },
-    [catalogLoaded, filesService, refresh, registerFileIds],
+    [filesService, registerFileIds],
   );
 
   const removeAsset = useCallback(
     async (id: number) => {
-      const next = assets.filter((a) => a.id !== id);
-      await persistCatalog(next);
+      const latest = await loadCatalog();
+      const next = latest.assets.filter((a) => a.id !== id);
+      await persistCatalog(next, latest);
     },
-    [assets, persistCatalog],
+    [loadCatalog, persistCatalog],
   );
 
   const renameAsset = useCallback(
     async (id: number, name: string) => {
       const nextName = name.trim();
       if (!nextName) return;
-      const current = assets.find((a) => a.id === id);
+      const latest = await loadCatalog();
+      const current = latest.assets.find((a) => a.id === id);
       if (!current || current.name === nextName) return;
-      const next = assets.map((a) => (a.id === id ? { ...a, name: nextName } : a));
-      await persistCatalog(next);
+      const next = latest.assets.map((a) => (a.id === id ? { ...a, name: nextName } : a));
+      await persistCatalog(next, latest);
     },
-    [assets, persistCatalog],
+    [loadCatalog, persistCatalog],
   );
 
   const value = useMemo(

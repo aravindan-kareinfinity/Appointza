@@ -106,19 +106,22 @@ namespace appointza.Authentication.Services
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(applicationenvironment.jwtsecret));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
+            // Claim values must never be null — Google / draft-org users often lack mobile or location name.
+            static string ClaimVal(string? value) => value ?? "";
+
             var claims = new[]
             {
                 new Claim("userid", req.userid.ToString()),
-                new Claim("usermobile", req.usermobile.ToString()),
-                new Claim("username", req.username.ToString()),
-                new Claim("useremail", req.useremail.ToString()),
+                new Claim("usermobile", ClaimVal(req.usermobile)),
+                new Claim("username", ClaimVal(req.username)),
+                new Claim("useremail", ClaimVal(req.useremail)),
                 new Claim("profileimage", req.profileimage.ToString()),
-                new Claim("permissionhex", req.permissionhex.ToString()),
+                new Claim("permissionhex", ClaimVal(req.permissionhex)),
                 new Claim("organisationid", req.organisationid.ToString()),
-                new Claim("organisationname", req.organisationname.ToString()),
+                new Claim("organisationname", ClaimVal(req.organisationname)),
                 new Claim("organisationtype", req.organisationtype.ToString()),
                 new Claim("organisationlocationid", req.organisationlocationid.ToString()),
-                new Claim("organisationlocationname", req.organisationlocationname.ToString()),
+                new Claim("organisationlocationname", ClaimVal(req.organisationlocationname)),
             };
 
             var token = new JwtSecurityToken(
@@ -222,6 +225,59 @@ namespace appointza.Authentication.Services
             return randomNumber.ToString();
         }
 
+        /// <summary>Digits only, last 10 (strips leading 91 / country code for Indian numbers).</summary>
+        public static string NormalizeIndianMobile(string? mobile)
+        {
+            if (string.IsNullOrWhiteSpace(mobile)) return "";
+            var digits = new string(mobile.Where(char.IsDigit).ToArray());
+            if (digits.Length > 10)
+            {
+                if (digits.StartsWith("91") && digits.Length >= 12)
+                    digits = digits[^10..];
+                else
+                    digits = digits[^10..];
+            }
+            return digits;
+        }
+
+        async Task TrySendOtpSms(string mobile, string otp, string context)
+        {
+            try
+            {
+                var smsService = new Sms.Services.SmsService();
+                await smsService.SendOtp(new SmsSendOtpReq
+                {
+                    mobilenumber = mobile,
+                    otp = otp
+                });
+            }
+            catch (Exception ex)
+            {
+                // OTP is already stored — don't fail login/register if the SMS gateway is down.
+                logger.LogError(ex, "SMS OTP send failed ({Context}) for {Mobile}. OTP for local/dev: {Otp}", context, mobile, otp);
+            }
+        }
+
+        async Task<Users?> FindUserByMobileTransaction(IDb db, string mobile)
+        {
+            if (string.IsNullOrEmpty(mobile)) return null;
+
+            var user = (await usersService.SelectTransaction(db, new UsersSelectReq
+            {
+                mobile = mobile,
+            })).FirstOrDefault();
+
+            if (user != null) return user;
+
+            // Legacy rows sometimes stored with country code prefix.
+            user = (await usersService.SelectTransaction(db, new UsersSelectReq
+            {
+                mobile = "91" + mobile,
+            })).FirstOrDefault();
+
+            return user;
+        }
+
         public async Task<UsersContext> Register(RegisterRequest req)
         {
             UsersContext result;
@@ -243,9 +299,32 @@ namespace appointza.Authentication.Services
             return result;
         }
 
+        /// <summary>Marker stored on Organisation.notes for draft orgs created at business signup.</summary>
+        public const string OnboardingDraftOrgNotes = "onboarding_draft";
+
+        public static bool IsOnboardingDraftOrganisation(Organisation? organisation)
+        {
+            if (organisation == null || organisation.id <= 0) return false;
+            if (string.Equals(organisation.notes, OnboardingDraftOrgNotes, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (organisation.primarytype <= 0
+                && !string.IsNullOrWhiteSpace(organisation.name)
+                && organisation.name.StartsWith("Pending setup", StringComparison.OrdinalIgnoreCase))
+                return true;
+            return organisation.primarytype <= 0
+                && string.IsNullOrWhiteSpace(organisation.name);
+        }
+
         public async Task<UsersContext> RegisterTransaction(IDb db, RegisterRequest req)
         {
             var result = new UsersContext();
+
+            var normalizedMobile = NormalizeIndianMobile(req.usermobile);
+            if (normalizedMobile.Length != 10)
+            {
+                throw new AppException(AppException.ErrorCodes.BadRequest, "Enter a valid 10-digit mobile number.");
+            }
+            req.usermobile = normalizedMobile;
 
             // Check for duplicate mobile number
             string duplicateUserQuery = @"
@@ -254,7 +333,7 @@ namespace appointza.Authentication.Services
                 WHERE mobile = @mobile AND isactive = true
             ";
             DbCommand duplicateUserCommand = db.GetCommand(duplicateUserQuery);
-            db.AddParameter(duplicateUserCommand, "mobile", DbTypes.Types.String).Value = req.usermobile ?? "";
+            db.AddParameter(duplicateUserCommand, "mobile", DbTypes.Types.String).Value = normalizedMobile;
 
             using (DbDataReader duplicateUserReader = await db.Execute(duplicateUserCommand))
             {
@@ -270,7 +349,7 @@ namespace appointza.Authentication.Services
             }
 
             // Check for duplicate organization name
-            Organisation organisation = null;
+            Organisation? organisation = null;
             if (req.primarytype > 0 && !string.IsNullOrEmpty(req.organisationname))
             {
                 string duplicateOrgNameQuery = @"
@@ -320,22 +399,28 @@ namespace appointza.Authentication.Services
                 }
             }
 
-            organisation = new Organisation
+            bool createFullOrg = req.primarytype > 0 && !string.IsNullOrWhiteSpace(req.organisationname);
+            bool createDraftOrg = !createFullOrg && req.is_business_registration;
+
+            if (createFullOrg || createDraftOrg)
             {
-                name = req.organisationname,
-                primarytype = req.primarytype,
-                secondarytype = req.secondarytype,
-                primarytypecode = req.primarytypecode,
-                secondarytypecode = req.secondarytypecode,
-                gstnumber = req.organisationgstnumber,
-                imageid = req.organisationimageid,
-                subscription_plan_code = req.plan_code,
-            };
-            if (req.primarytype > 0)
-            {
+                organisation = new Organisation
+                {
+                    name = createDraftOrg
+                        ? $"Pending setup · {normalizedMobile}"
+                        : req.organisationname,
+                    primarytype = createDraftOrg ? 0 : req.primarytype,
+                    secondarytype = createDraftOrg ? 0 : req.secondarytype,
+                    primarytypecode = createDraftOrg ? "" : req.primarytypecode,
+                    secondarytypecode = createDraftOrg ? "" : req.secondarytypecode,
+                    gstnumber = createDraftOrg ? "" : req.organisationgstnumber,
+                    imageid = req.organisationimageid,
+                    subscription_plan_code = string.IsNullOrWhiteSpace(req.plan_code) ? "free" : req.plan_code,
+                    notes = createDraftOrg ? OnboardingDraftOrgNotes : "",
+                };
                 await organisationservice.InsertTransaction(db, organisation);
 
-                if (organisation.id > 0 && !string.IsNullOrWhiteSpace(req.referral_code))
+                if (!createDraftOrg && organisation.id > 0 && !string.IsNullOrWhiteSpace(req.referral_code))
                 {
                     var referralApplied = await organisationReferralService.TryApplyReferralOnSignupTransaction(
                         db,
@@ -350,12 +435,13 @@ namespace appointza.Authentication.Services
                 }
             }
 
-            // Geocoding
+            // Geocoding + primary location only for full org signup (not draft Screen-1 orgs).
             double latitude = req.latitude;
             double longitude = req.longitude;
             string googlelocation = req.googlelocation ?? "";
+            var organisationlocation = new OrganisationLocation();
 
-            if (req.primarytype > 0)
+            if (createFullOrg && organisation != null && organisation.id > 0)
             {
                 try
                 {
@@ -389,25 +475,22 @@ namespace appointza.Authentication.Services
                     longitude = req.longitude != 0 ? req.longitude : 0;
                     googlelocation = req.googlelocation ?? $"{req.locationcity}, {req.locationstate}, {req.locationcountry}";
                 }
-            }
 
-            var organisationlocation = new OrganisationLocation
-            {
-                organisationid = organisation.id > 0 ? organisation.id : 0,
-                name = req.locationname,
-                addressline1 = req.locationaddressline1,
-                addressline2 = req.locationaddressline2,
-                city = req.locationcity,
-                state = req.locationstate,
-                country = req.locationcountry,
-                pincode = req.locationpincode,
-                longitude = longitude,
-                latitude = latitude,
-                googlelocation = googlelocation,
-                templateid = 0
-            };
-            if (req.primarytype > 0)
-            {
+                organisationlocation = new OrganisationLocation
+                {
+                    organisationid = organisation.id,
+                    name = req.locationname,
+                    addressline1 = req.locationaddressline1,
+                    addressline2 = req.locationaddressline2,
+                    city = req.locationcity,
+                    state = req.locationstate,
+                    country = req.locationcountry,
+                    pincode = req.locationpincode,
+                    longitude = longitude,
+                    latitude = latitude,
+                    googlelocation = googlelocation,
+                    templateid = 0
+                };
                 await organisationlocationservice.InsertTransaction(db, organisationlocation);
             }
 
@@ -415,10 +498,10 @@ namespace appointza.Authentication.Services
             {
                 name = req.username,
                 email = req.useremail,
-                mobile = req.usermobile,
+                mobile = normalizedMobile,
                 mobilecountrycode = req.usermobilecountrycode,
                 designation = req.userdesignation,
-                organisationid = organisation.id,
+                organisationid = organisation?.id ?? 0,
                 locationid = organisationlocation.id,
                 profileimage = req.profileimage,
                 otp = GenerateRandomNumber(),
@@ -446,12 +529,7 @@ namespace appointza.Authentication.Services
 
             await usersService.InsertTransaction(db, user);
 
-            var smsService = new Sms.Services.SmsService();
-            await smsService.SendOtp(new SmsSendOtpReq
-            {
-                mobilenumber = user.mobile,
-                otp = user.otp
-            });
+            await TrySendOtpSms(user.mobile, user.otp, "Register");
 
             UsersContext userContext = new UsersContext();
             userContext.usermobile = req.usermobile;
@@ -469,21 +547,30 @@ namespace appointza.Authentication.Services
 
         public async Task<GetOtpResponse> GetOtpTransaction(IDb db, GetOtpRequest req)
         {
-            var result = new GetOtpResponse();
-            var user = (await usersService.SelectTransaction(db, new UsersSelectReq
+            if (req == null || string.IsNullOrWhiteSpace(req.mobile))
             {
-                mobile = req.mobile,
-            })).FirstOrDefault();
+                throw new AppException(AppException.ErrorCodes.BadRequest, "Mobile number is required.");
+            }
+
+            var result = new GetOtpResponse();
+            var mobile = NormalizeIndianMobile(req.mobile);
+            if (mobile.Length != 10)
+            {
+                throw new AppException(AppException.ErrorCodes.BadRequest, "Enter a valid 10-digit mobile number.");
+            }
+
+            var user = await FindUserByMobileTransaction(db, mobile);
 
             if (user == null)
             {
-                throw new AppException(AppException.ErrorCodes.UserNotFound);
+                throw new AppException(
+                    AppException.ErrorCodes.UserNotFound,
+                    "No account found for this mobile number. Register first, then try again.");
             }
 
-            Organisation? organisation = null;
             if (user.organisationid > 0)
             {
-                organisation = (await organisationservice.SelectTransaction(db, new OrganisationSelectReq
+                var organisation = (await organisationservice.SelectTransaction(db, new OrganisationSelectReq
                 {
                     id = user.organisationid
                 })).FirstOrDefault();
@@ -497,15 +584,10 @@ namespace appointza.Authentication.Services
             user.otp = GenerateRandomNumber();
             user.otpexpirationtime = DateTime.UtcNow.AddMinutes(5);
             await usersService.UpdateTransaction(db, user);
-            result.mobile = user.mobile;
+            result.mobile = NormalizeIndianMobile(user.mobile);
             result.name = user.name;
 
-            var smsService = new Sms.Services.SmsService();
-            await smsService.SendOtp(new SmsSendOtpReq
-            {
-                mobilenumber = user.mobile,
-                otp = user.otp
-            });
+            await TrySendOtpSms(result.mobile, user.otp, "GetOtp");
 
             return result;
         }
@@ -551,17 +633,13 @@ namespace appointza.Authentication.Services
         public async Task<UsersContext> LoginTransaction(IDb db, LoginRequest req)
         {
             var result = new UsersContext();
-            var users = await usersService.SelectTransaction(db, new UsersSelectReq
-            {
-                mobile = req.mobile
-            });
+            var mobile = NormalizeIndianMobile(req.mobile);
+            var user = await FindUserByMobileTransaction(db, mobile);
 
-            if (users == null || users.Count == 0)
+            if (user == null)
             {
                 throw new AppException(AppException.ErrorCodes.UsersNotFound);
             }
-
-            var user = users.First();
             if (user.otpexpirationtime.CompareTo(DateTime.UtcNow) < 0)
             {
                 throw new AppException(AppException.ErrorCodes.OtpExpired);
@@ -769,6 +847,256 @@ namespace appointza.Authentication.Services
             return result;
         }
 
+        /// <summary>
+        /// Screen 2 of guided onboarding: create organisation + primary location for a user
+        /// who registered with account details only (organisationid = 0).
+        /// </summary>
+        public async Task<UsersContext> CompleteBusinessOnboarding(CompleteBusinessOnboardingRequest req)
+        {
+            long userId = requeststate.usercontext?.userid ?? 0;
+            if (userId <= 0)
+            {
+                throw new AppException(AppException.ErrorCodes.SessionInvalid, "Sign in to continue.");
+            }
+
+            if (req == null || string.IsNullOrWhiteSpace(req.organisationname))
+            {
+                throw new AppException(AppException.ErrorCodes.BadRequest, "Organization name is required.");
+            }
+
+            if (req.primarytype <= 0)
+            {
+                throw new AppException(AppException.ErrorCodes.BadRequest, "Business type is required.");
+            }
+
+            using IDb db = await dbprovider.GetDb();
+            await db.Connect();
+            try
+            {
+                await db.BeginTransaction();
+                var result = await CompleteBusinessOnboardingTransaction(db, userId, req);
+                await db.CommitTransaction();
+                return result;
+            }
+            catch
+            {
+                try { await db.RollbackTransaction(); } catch { /* ignore */ }
+                throw;
+            }
+        }
+
+        public async Task<UsersContext> CompleteBusinessOnboardingTransaction(
+            IDb db,
+            long userId,
+            CompleteBusinessOnboardingRequest req)
+        {
+            var users = await usersService.SelectTransaction(db, new UsersSelectReq { id = userId });
+            var user = users?.FirstOrDefault();
+            if (user == null || !user.isactive)
+            {
+                throw new AppException(AppException.ErrorCodes.UserNotFound);
+            }
+
+            string orgName = req.organisationname.Trim();
+
+            Organisation? existingOrg = null;
+            if (user.organisationid > 0)
+            {
+                existingOrg = (await organisationservice.SelectTransaction(db, new OrganisationSelectReq
+                {
+                    id = user.organisationid
+                })).FirstOrDefault();
+
+                // Profile already finished for this org — idempotent return.
+                if (existingOrg != null && !IsOnboardingDraftOrganisation(existingOrg))
+                {
+                    return await BuildContextForUserTransaction(db, user);
+                }
+            }
+
+            // Unique name (exclude the draft org being updated).
+            string duplicateOrgNameQuery = @"
+                SELECT id FROM Organisation
+                WHERE LOWER(TRIM(name)) = LOWER(TRIM(@name)) AND isactive = true
+                  AND id <> @excludeId
+                LIMIT 1";
+            DbCommand dupNameCmd = db.GetCommand(duplicateOrgNameQuery);
+            db.AddParameter(dupNameCmd, "name", DbTypes.Types.String).Value = orgName;
+            db.AddParameter(dupNameCmd, "excludeId", DbTypes.Types.Long).Value = existingOrg?.id ?? 0L;
+            using (DbDataReader reader = await db.Execute(dupNameCmd))
+            {
+                if (await reader.ReadAsync())
+                {
+                    throw new AppException(
+                        AppException.ErrorCodes.OrganisationDuplicate,
+                        $"Organization name '{orgName}' is already registered. Please use a different name.");
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(req.organisationgstnumber))
+            {
+                string gst = req.organisationgstnumber.Trim();
+                string duplicateGstQuery = @"
+                    SELECT id FROM Organisation
+                    WHERE gstnumber = @gstnumber AND isactive = true
+                      AND id <> @excludeId
+                    LIMIT 1";
+                DbCommand dupGstCmd = db.GetCommand(duplicateGstQuery);
+                db.AddParameter(dupGstCmd, "gstnumber", DbTypes.Types.String).Value = gst;
+                db.AddParameter(dupGstCmd, "excludeId", DbTypes.Types.Long).Value = existingOrg?.id ?? 0L;
+                using DbDataReader gstReader = await db.Execute(dupGstCmd);
+                if (await gstReader.ReadAsync())
+                {
+                    throw new AppException(
+                        AppException.ErrorCodes.OrganisationDuplicate,
+                        $"Organization with GST number {gst} is already registered.");
+                }
+            }
+
+            Organisation organisation;
+            if (existingOrg != null && IsOnboardingDraftOrganisation(existingOrg))
+            {
+                organisation = existingOrg;
+                organisation.name = orgName;
+                organisation.primarytype = req.primarytype;
+                organisation.secondarytype = req.secondarytype;
+                organisation.primarytypecode = req.primarytypecode ?? "";
+                organisation.secondarytypecode = req.secondarytypecode ?? "";
+                organisation.gstnumber = req.organisationgstnumber?.Trim() ?? "";
+                organisation.organisationlogo = req.organisationlogo;
+                organisation.notes = "";
+                organisation.subscription_plan_code =
+                    string.IsNullOrWhiteSpace(req.plan_code) ? "free" : req.plan_code.Trim();
+                await organisationservice.UpdateTransaction(db, organisation);
+            }
+            else
+            {
+                organisation = new Organisation
+                {
+                    name = orgName,
+                    primarytype = req.primarytype,
+                    secondarytype = req.secondarytype,
+                    primarytypecode = req.primarytypecode ?? "",
+                    secondarytypecode = req.secondarytypecode ?? "",
+                    gstnumber = req.organisationgstnumber?.Trim() ?? "",
+                    organisationlogo = req.organisationlogo,
+                    subscription_plan_code = string.IsNullOrWhiteSpace(req.plan_code) ? "free" : req.plan_code.Trim(),
+                };
+                await organisationservice.InsertTransaction(db, organisation);
+            }
+
+            if (organisation.id > 0 && !string.IsNullOrWhiteSpace(req.referral_code)
+                && organisation.referred_by_organisation_id <= 0)
+            {
+                var referralApplied = await organisationReferralService.TryApplyReferralOnSignupTransaction(
+                    db, organisation.id, req.referral_code);
+                if (!referralApplied)
+                {
+                    throw new AppException(
+                        AppException.ErrorCodes.BadRequest,
+                        "Invalid referral code. Please check the code and try again.");
+                }
+            }
+
+            // Ensure a primary location exists (draft signup creates org without location).
+            if (user.locationid <= 0)
+            {
+                string locationSlug = new string(orgName.Where(char.IsLetterOrDigit).Take(24).ToArray());
+                if (string.IsNullOrWhiteSpace(locationSlug))
+                {
+                    locationSlug = "Main";
+                }
+
+                var organisationlocation = new OrganisationLocation
+                {
+                    organisationid = organisation.id,
+                    name = locationSlug,
+                    addressline1 = "",
+                    addressline2 = "",
+                    city = "",
+                    state = "",
+                    country = "India",
+                    pincode = "",
+                    latitude = 0,
+                    longitude = 0,
+                    googlelocation = "",
+                    templateid = 0,
+                };
+                await organisationlocationservice.InsertTransaction(db, organisationlocation);
+                user.locationid = organisationlocation.id;
+            }
+
+            user.organisationid = organisation.id;
+            if (!string.IsNullOrWhiteSpace(req.userdesignation))
+            {
+                user.designation = req.userdesignation.Trim();
+            }
+            user.modifiedon = DateTime.UtcNow;
+            await usersService.UpdateTransaction(db, user);
+
+            return await BuildContextForUserTransaction(db, user);
+        }
+
+        async Task<UsersContext> BuildContextForUserTransaction(IDb db, Users user)
+        {
+            Organisation? organisation = null;
+            if (user.organisationid > 0)
+            {
+                organisation = (await organisationservice.SelectTransaction(db, new OrganisationSelectReq
+                {
+                    id = user.organisationid
+                })).FirstOrDefault();
+            }
+
+            OrganisationLocation? organisationlocation = null;
+            if (user.locationid > 0)
+            {
+                organisationlocation = (await organisationlocationservice.SelectTransaction(db, new OrganisationLocationSelectReq
+                {
+                    id = user.locationid
+                })).FirstOrDefault();
+            }
+
+            var usersession = new UserSession
+            {
+                userid = user.id,
+                code = Guid.NewGuid().ToString(),
+                starttime = DateTime.UtcNow,
+                endtime = DateTime.UtcNow.AddYears(1),
+            };
+            await usersessionservice.InsertTransaction(db, usersession);
+
+            var result = new UsersContext
+            {
+                userid = user.id,
+                usermobile = user.mobile ?? "",
+                username = user.name ?? "",
+                useremail = user.email ?? "",
+                profileimage = user.profileimage,
+                userpermission = user.attributes?.permission ?? new UsersPermissionData(),
+                isStaff = false,
+                organisationid = organisation?.id ?? 0,
+                organisationname = organisation?.name ?? "",
+                organisationlocationid = organisationlocation?.id ?? 0,
+                organisationlocationname = organisationlocation?.name ?? "",
+                refreshtoken = usersession.code,
+            };
+            result.accesstoken = GenerateJwtToken(new GenerateJwtTokenRequest
+            {
+                userid = user.id,
+                usermobile = user.mobile ?? "",
+                useremail = user.email ?? "",
+                username = user.name ?? "",
+                profileimage = user.profileimage,
+                permissionhex = PermissionToHex(user.attributes?.permission ?? new UsersPermissionData()),
+                organisationid = organisation?.id ?? 0,
+                organisationname = organisation?.name ?? "",
+                organisationlocationid = organisationlocation?.id ?? 0,
+                organisationlocationname = organisationlocation?.name ?? "",
+            });
+            return result;
+        }
+
         public async Task<UsersContext> GoogleLogin(GoogleLoginRequest req)
         {
             UsersContext result;
@@ -792,108 +1120,57 @@ namespace appointza.Authentication.Services
 
         public async Task<UsersContext> GoogleLoginTransaction(IDb db, GoogleLoginRequest req)
         {
-            var result = new UsersContext();
+            if (req == null || string.IsNullOrWhiteSpace(req.email))
+            {
+                throw new AppException(AppException.ErrorCodes.BadRequest, "Google account email is required.");
+            }
+
+            var email = req.email.Trim();
             var users = await usersService.SelectTransaction(db, new UsersSelectReq
             {
-                email = req.email
+                email = email
             });
 
             if (users == null || users.Count == 0)
             {
-                throw new AppException(AppException.ErrorCodes.UsersNotFound);
+                throw new AppException(
+                    AppException.ErrorCodes.UsersNotFound,
+                    "No account found for this Google email. Please sign up first.");
             }
 
             var user = users.First();
-         
-
-            var organisation = new Organisation();
-            if (user.organisationid > 0)
+            if (!string.IsNullOrWhiteSpace(req.name) && string.IsNullOrWhiteSpace(user.name))
             {
-                organisation = (await organisationservice.SelectTransaction(db, new OrganisationSelectReq
-                {
-                    id = user.organisationid
-                })).FirstOrDefault();
+                user.name = req.name.Trim();
             }
 
-            var organisationlocation = new OrganisationLocation();
-            if (user.locationid > 0)
+            // Business Google continue: attach a draft org when the user has none yet.
+            if (req.is_business_registration && user.organisationid <= 0)
             {
-                organisationlocation = (await organisationlocationservice.SelectTransaction(db, new OrganisationLocationSelectReq
+                var draftKey = !string.IsNullOrWhiteSpace(user.mobile)
+                    ? NormalizeIndianMobile(user.mobile)
+                    : email;
+                var organisation = new Organisation
                 {
-                    id = user.locationid
-                })).FirstOrDefault();
+                    name = $"Pending setup · {draftKey}",
+                    primarytype = 0,
+                    secondarytype = 0,
+                    primarytypecode = "",
+                    secondarytypecode = "",
+                    gstnumber = "",
+                    subscription_plan_code = "free",
+                    notes = OnboardingDraftOrgNotes,
+                };
+                await organisationservice.InsertTransaction(db, organisation);
+                user.organisationid = organisation.id;
             }
 
-            var usersession = new UserSession
-            {
-                userid = user.id,
-                code = Guid.NewGuid().ToString(),
-                starttime = DateTime.UtcNow,
-                endtime = DateTime.UtcNow.AddYears(1),
-            };
             user.isactive = true;
             user.accountactive = true;
+            user.modifiedon = DateTime.UtcNow;
             await usersService.UpdateTransaction(db, user);
-            await usersessionservice.InsertTransaction(db, usersession);
 
-            // Determine user type
-            bool isStaff = false;
-            if (user.locationid > 0 && user.organisationid == 0)
-            {
-                isStaff = true;
-                result.organisationlocationid = user.locationid;
-                result.organisationlocationname = organisationlocation?.name ?? "";
-                result.organisationid = 0;
-                result.organisationname = "";
-            }
-            else if (user.organisationid > 0 && user.locationid > 0)
-            {
-                isStaff = false;
-                result.organisationid = organisation?.id ?? 0;
-                result.organisationname = organisation?.name ?? "";
-                result.organisationlocationid = organisationlocation?.id ?? 0;
-                result.organisationlocationname = organisationlocation?.name ?? "";
-            }
-            else if (user.organisationid > 0 && user.locationid == 0)
-            {
-                isStaff = false;
-                result.organisationid = organisation?.id ?? 0;
-                result.organisationname = organisation?.name ?? "";
-                result.organisationlocationid = 0;
-                result.organisationlocationname = "";
-            }
-            else
-            {
-                isStaff = false;
-                result.organisationid = 0;
-                result.organisationname = "";
-                result.organisationlocationid = 0;
-                result.organisationlocationname = "";
-            }
-
-            result.userid = user.id;
-            result.usermobile = user.mobile;
-            result.username = user.name;
-            result.useremail = user.email;
-            result.profileimage = user.profileimage;
-            result.userpermission = user.attributes.permission;
-            result.isStaff = isStaff;
-            result.refreshtoken = usersession.code;
-            result.accesstoken = GenerateJwtToken(new GenerateJwtTokenRequest
-            {
-                userid = user.id,
-                usermobile = user.mobile,
-                useremail = user.email,
-                username = user.name,
-                profileimage = user.profileimage,
-                permissionhex = PermissionToHex(user.attributes.permission),
-                organisationid = organisation?.id ?? 0,
-                organisationname = organisation?.name ?? "",
-                organisationlocationid = organisationlocation?.id ?? 0,
-                organisationlocationname = organisationlocation?.name ?? ""
-            });
-
-            return result;
+            return await BuildContextForUserTransaction(db, user);
         }
     }
 }

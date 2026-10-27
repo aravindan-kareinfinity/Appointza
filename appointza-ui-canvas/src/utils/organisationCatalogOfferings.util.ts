@@ -131,6 +131,8 @@ export function catalogNavShortLabel(offerings: CatalogOfferingKind[]): string {
 export function catalogServicesNavTo(offerings: CatalogOfferingKind[]): string {
   const catalog = offerings.filter((kind) => kind !== "rooms");
   if (catalog.length === 0) return "/organization/hospitality?section=room-status";
+  // Prefer the canonical services URL when the org offers services.
+  if (catalog.includes("services")) return "/organization/services?kind=services";
   const kind = normalizeCatalogTab(null, catalog);
   return `/organization/services?kind=${kind}`;
 }

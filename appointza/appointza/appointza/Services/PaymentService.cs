@@ -21,6 +21,7 @@ namespace appointza.Services
         OrganisationServicesService organisationServicesService;
         EventService eventService;
         BookingFeeService bookingFeeService;
+        WhatsAppAutomationPublisher whatsAppAutomationPublisher;
 
         public PaymentService(
             IDbProvider dbprovider,
@@ -30,7 +31,8 @@ namespace appointza.Services
             OrganisationService organisationService,
             OrganisationServicesService organisationServicesService,
             EventService eventService,
-            BookingFeeService bookingFeeService)
+            BookingFeeService bookingFeeService,
+            WhatsAppAutomationPublisher whatsAppAutomationPublisher)
         {
             this.dbprovider = dbprovider;
             this.paymentGatewayCredentialsService = paymentGatewayCredentialsService;
@@ -40,6 +42,7 @@ namespace appointza.Services
             this.organisationServicesService = organisationServicesService;
             this.eventService = eventService;
             this.bookingFeeService = bookingFeeService;
+            this.whatsAppAutomationPublisher = whatsAppAutomationPublisher;
         }
 
         public async Task<CreatePaymentOrderRes> CreatePaymentOrder(CreatePaymentOrderReq req)
@@ -550,6 +553,40 @@ namespace appointza.Services
                         }
                     }
 
+                    // Phase 7: enqueue payment confirmation automation only after trusted backend verification.
+                    try
+                    {
+                        if (!isTestPayment && organizationid > 0 && paymentId > 0)
+                        {
+                            var (payPhone, payName) = await ResolvePaymentRecipient(db, req, isEventBooking);
+                            if (!string.IsNullOrWhiteSpace(payPhone))
+                            {
+                                whatsAppAutomationPublisher.Enqueue(new WhatsAppAutomationBusinessEvent
+                                {
+                                    organisation_id = organizationid,
+                                    trigger_type = WhatsAppAutomationTriggers.PaymentConfirmed,
+                                    business_entity_type = WhatsAppAutomationEntityTypes.Payment,
+                                    business_entity_id = paymentId,
+                                    recipient_phone = payPhone,
+                                    recipient_display_name = payName,
+                                    variables = new Dictionary<string, string>
+                                    {
+                                        ["customer_name"] = payName,
+                                        ["booking_reference"] = isEventBooking
+                                            ? req.eventbookingid.ToString()
+                                            : req.appointmentid.ToString(),
+                                        ["payment_amount"] = (paymentAmount / 100.0m).ToString("0.00"),
+                                        ["phone"] = payPhone,
+                                    },
+                                });
+                            }
+                        }
+                    }
+                    catch (Exception autoEx)
+                    {
+                        Console.WriteLine($"Error enqueueing payment automation: {autoEx.Message}");
+                    }
+
                     return new VerifyPaymentRes
                     {
                         isvalid = true,
@@ -775,6 +812,49 @@ namespace appointza.Services
                 "wallet" => "Wallet",
                 _ => "OnlineGateway"
             };
+        }
+
+        private async Task<(string phone, string name)> ResolvePaymentRecipient(
+            IDb db, VerifyPaymentReq req, bool isEventBooking)
+        {
+            try
+            {
+                if (isEventBooking && req.eventbookingid is > 0)
+                {
+                    using var cmd = db.GetCommand(@"
+                        SELECT user_mobile, user_name FROM event_bookings WHERE id = @id LIMIT 1;");
+                    db.AddParameter(cmd, "id", DbTypes.Types.Long).Value = req.eventbookingid.Value;
+                    using var reader = await db.Execute(cmd);
+                    if (await reader.ReadAsync())
+                    {
+                        return (
+                            reader["user_mobile"]?.ToString() ?? "",
+                            reader["user_name"]?.ToString() ?? "");
+                    }
+                }
+                else if (req.appointmentid > 0)
+                {
+                    using var cmd = db.GetCommand(@"
+                        SELECT u.mobile, u.name
+                        FROM Appoinment a
+                        INNER JOIN users u ON u.id = a.userid
+                        WHERE a.id = @id
+                        LIMIT 1;");
+                    db.AddParameter(cmd, "id", DbTypes.Types.Long).Value = req.appointmentid;
+                    using var reader = await db.Execute(cmd);
+                    if (await reader.ReadAsync())
+                    {
+                        return (
+                            reader["mobile"]?.ToString() ?? "",
+                            reader["name"]?.ToString() ?? "");
+                    }
+                }
+            }
+            catch
+            {
+                // ignore lookup failures
+            }
+            return ("", "");
         }
     }
 }

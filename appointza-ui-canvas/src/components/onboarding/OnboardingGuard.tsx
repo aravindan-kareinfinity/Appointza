@@ -2,7 +2,10 @@ import { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { useAuth } from '@/contexts/AuthContext';
-import { ORGANIZATION_ONBOARDING_ROUTES } from '@/utils/organizationOnboarding.util';
+import {
+  ORGANIZATION_ONBOARDING_ROUTES,
+  ORGANIZATION_ONBOARDING_WIZARD_ROUTE,
+} from '@/utils/organizationOnboarding.util';
 
 interface OnboardingGuardProps {
   children: React.ReactNode;
@@ -13,7 +16,7 @@ export const OnboardingGuard = ({ children, allowedRoutes = [] }: OnboardingGuar
   const navigate = useNavigate();
   const location = useLocation();
   const { user, userType, isAuthenticated } = useAuth();
-  const { isComplete, isLoading, nextStep, refetch } = useOnboardingStatus();
+  const { isComplete, isLoading, refetch } = useOnboardingStatus();
   const hasRedirected = useRef(false);
 
   const onboardingRoutes = [...ORGANIZATION_ONBOARDING_ROUTES];
@@ -60,32 +63,13 @@ export const OnboardingGuard = ({ children, allowedRoutes = [] }: OnboardingGuar
       return;
     }
 
-    if (nextStep === 'customDomain') {
-      hasRedirected.current = true;
-      navigate('/organization/custom-domain', {
-        replace: true,
-        state: { from: location.pathname, onboarding: true },
-      });
-    } else if (nextStep === 'services') {
-      hasRedirected.current = true;
-      navigate('/organization/services', {
-        replace: true,
-        state: { from: location.pathname, onboarding: true },
-      });
-    } else if (nextStep === 'website') {
-      hasRedirected.current = true;
-      navigate('/organization/templates', {
-        replace: true,
-        state: { from: location.pathname, onboarding: true },
-      });
-    } else if (nextStep === 'timing') {
-      hasRedirected.current = true;
-      navigate('/organization/timing', {
-        replace: true,
-        state: { from: location.pathname, onboarding: true },
-      });
-    }
-  }, [isAuthenticated, userType, user, isComplete, isLoading, nextStep, navigate, location.pathname, isAllowedRoute]);
+    // Incomplete orgs always land on the onboarding wizard hub first.
+    hasRedirected.current = true;
+    navigate(ORGANIZATION_ONBOARDING_WIZARD_ROUTE, {
+      replace: true,
+      state: { from: location.pathname, onboarding: true },
+    });
+  }, [isAuthenticated, userType, user, isComplete, isLoading, navigate, location.pathname, isAllowedRoute]);
 
   return <>{children}</>;
 };

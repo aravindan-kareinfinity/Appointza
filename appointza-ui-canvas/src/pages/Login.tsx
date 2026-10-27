@@ -5,23 +5,31 @@ import { AuthService } from "@/services/auth.service";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { UsersGetOtpReq } from "@/models/users.model";
 import type { CredentialResponse } from "@react-oauth/google";
 import { completeAuthNavigation, resolveLoginReturnPath } from "@/utils/authNavigation.util";
 import { Capacitor } from "@capacitor/core";
-import { ArrowLeft, Check, Loader2, Phone } from "lucide-react";
-import { org } from "@/lib/orgTheme";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import {
+  BUSINESS_ONBOARDING_RETURN_PATH,
+  isDraftOrganisationName,
+  isOrganizationUserContext,
+  isPendingBusinessOnboarding,
+  isUsersNotFoundAuthError,
+  markPendingBusinessOnboarding,
+  resolveOrganizationAuthPath,
+} from "@/utils/businessOnboarding.util";
 
-const loginFieldInputClass = cn(org.input, "h-11 min-h-11 md:h-10 md:min-h-10");
-const loginSectionIconWrap =
-  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600";
-const loginSectionTitleClass = "text-lg font-semibold leading-snug text-appointza-navy md:text-xl";
-const loginSectionDescClass = "text-sm text-stone-500";
+const BLUE = "#528ff0";
+
+const loginFieldInputClass =
+  "h-12 min-h-12 rounded-md border-[#dbe4f0] bg-white text-[15px] shadow-none placeholder:text-[#98a2b3] focus-visible:border-[#528ff0] focus-visible:ring-[#528ff0]/20";
+
+const loginContinueBtnClass =
+  "h-12 min-h-12 w-full touch-manipulation rounded-md border border-[#528ff0] bg-[#528ff0] text-[15px] font-semibold text-white shadow-none hover:bg-[#3d7ae8] disabled:opacity-50 disabled:hover:bg-[#528ff0]";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -31,8 +39,18 @@ const Login = () => {
   const isNative = Capacitor.isNativePlatform();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [mobile, setMobileState] = useState('');
+  const registerState = (location.state || {}) as {
+    justRegistered?: boolean;
+    mobile?: string;
+    isBusiness?: boolean;
+    googleEmail?: string;
+    name?: string;
+  };
+  const [mobile, setMobileState] = useState(() =>
+    (registerState.mobile || "").replace(/\D/g, "").slice(0, 10),
+  );
   const [mobileError, setMobileError] = useState('');
+  const [showRegisteredBanner] = useState(() => !!registerState.justRegistered);
   
   // Return path after login (cookie / window.name / sessionStorage — not the ugly ?from= URL).
   // Captured once via lazy state — resolveLoginReturnPath consumes stashed values on read.
@@ -51,6 +69,19 @@ const Login = () => {
     );
   }, [location.hash, location.pathname, location.search]);
 
+  // After register: clear navigation state so refresh doesn't re-show the banner forever.
+  useEffect(() => {
+    if (!registerState.justRegistered) return;
+    toast({
+      title: "Account created",
+      description: registerState.isBusiness
+        ? "Sign in to continue setting up your business."
+        : "Sign in with your mobile number to continue.",
+    });
+    navigate(location.pathname, { replace: true, state: {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot after register handoff
+  }, []);
+
   // Check if user is already authenticated on page load
   useEffect(() => {
     const checkExistingAuth = () => {
@@ -63,16 +94,17 @@ const Login = () => {
         try {
           const userContext = JSON.parse(userContextStr);
           
-          // Determine user type
-          let userType: 'user' | 'organization' = 'user';
-          if (userContext.organisationid && userContext.organisationid > 0) {
-            userType = 'organization';
-          }
-          
-          // Use stored type if available
-          const finalUserType = storedUserType || userType;
-          
-          completeAuthNavigation(navigate, finalUserType, from);
+          const isOrg = isOrganizationUserContext(userContext);
+          const userType: "user" | "organization" = isOrg ? "organization" : "user";
+          const finalUserType =
+            storedUserType === "organization" || storedUserType === "user"
+              ? storedUserType
+              : userType;
+          const landing = isOrg
+            ? resolveOrganizationAuthPath(userContext, from)
+            : from;
+
+          completeAuthNavigation(navigate, finalUserType, landing);
         } catch (error) {
           console.error('Login: Error parsing stored user context:', error);
           // Clear invalid data
@@ -86,67 +118,61 @@ const Login = () => {
     checkExistingAuth();
   }, [navigate, from]);
 
+  const normalizeMobile = (value: string): string => {
+    let digits = value.replace(/\D/g, "");
+    if (digits.length > 10 && digits.startsWith("91")) digits = digits.slice(-10);
+    else if (digits.length > 10) digits = digits.slice(-10);
+    return digits;
+  };
+
   // Mobile validation function
   const validateMobile = (mobileNumber: string): boolean => {
-    // Remove any spaces, dashes, or other characters
-    const cleanMobile = mobileNumber.replace(/[\s\-\(\)]/g, '');
-    
-    // Check if mobile number is valid (10-15 digits, allowing country codes)
-    const mobileRegex = /^[0-9]{10,15}$/;
-    if (!mobileRegex.test(cleanMobile)) {
-      setMobileError('Please enter a valid mobile number (10-15 digits)');
+    const cleanMobile = normalizeMobile(mobileNumber);
+    if (cleanMobile.length !== 10) {
+      setMobileError("Enter a valid 10-digit mobile number");
       return false;
     }
-    
-    // Check if it's too short
-    if (cleanMobile.length < 10) {
-      setMobileError('Mobile number must be at least 10 digits');
-      return false;
-    }
-    
-    // Clear any existing error
-    setMobileError('');
+    setMobileError("");
     return true;
   };
 
   // Get OTP function - matches mobile exactly
   const getOtp = async () => {
     // Clear any previous errors
-    setMobileError('');
-    
-    // Clean the mobile number
-    const cleanMobile = mobile.replace(/[\s\-\(\)]/g, '');
-    
+    setMobileError("");
+
+    const cleanMobile = normalizeMobile(mobile);
+
     // Validate mobile number
     if (!validateMobile(cleanMobile)) {
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       const usersService = new UsersService();
       let getotpreq = new UsersGetOtpReq();
-      getotpreq.mobile = cleanMobile; // Use cleaned mobile number
+      getotpreq.mobile = cleanMobile;
       console.log("🚀 Getting OTP for mobile:", cleanMobile);
-      
+
       let getotpresp = await usersService.getotp(getotpreq);
       console.log("✅ OTP response received:", getotpresp);
-      
+
       if (getotpresp) {
         setMobile(cleanMobile);
         console.log("✅ OTP sent successfully, redirecting to OTP page");
-        
+
         toast({
           title: "OTP Sent",
           description: `We've sent a verification code to ${cleanMobile}`,
         });
-        
+
         // Navigate to OTP verification page
-        navigate('/otp', { 
-          state: { 
+        navigate("/otp", {
+          state: {
             mobile: cleanMobile,
-            name: getotpresp.name || 'User',
+            name: getotpresp.name || "User",
             isRegistration: false,
             from: from
           } 
@@ -162,22 +188,24 @@ const Login = () => {
       
     } catch (error: any) {
       console.error("❌ OTP Error:", error);
-      
-      var message = error?.response?.data?.message || error?.message || 'Failed to send OTP';
-      
-      if (message && (message.includes('duplicate') || message.includes('already exists'))) {
-        setMobileError('This mobile number is already registered');
-      } else if (message.includes('500') || message.includes('Internal Server Error')) {
+
+      const data = error?.response?.data;
+      const message =
+        data?.error || data?.message || error?.message || "Failed to send OTP";
+
+      if (message && (message.includes("duplicate") || message.includes("already exists"))) {
+        setMobileError("This mobile number is already registered");
+      } else if (String(message).includes("500") || String(message).includes("Internal Server Error")) {
         toast({
           title: "Server Error",
           description: "Server is temporarily unavailable. Please try again later.",
-          variant: "destructive"
+          variant: "destructive",
         });
       } else {
         toast({
           title: "OTP Error",
           description: message,
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } finally {
@@ -205,11 +233,16 @@ const Login = () => {
     // Store complete user context (all user data)
     localStorage.setItem('user_context', JSON.stringify(userContext));
 
-    // Determine user type: User is a business if they have an organisation; otherwise a customer
-    const iscustomer = userContext.organisationlocationid == 0 || userContext.organisationlocationid == null;
-    const userTypeValue = iscustomer ? 'user' : 'organization';
+    // Organisation users are keyed by organisationid (draft orgs may have no location yet).
+    const isOrgUser = isOrganizationUserContext(userContext);
+    const pendingBusiness = isPendingBusinessOnboarding();
+    if (isOrgUser && (isDraftOrganisationName(userContext.organisationname) || pendingBusiness)) {
+      markPendingBusinessOnboarding();
+    }
+    const userTypeValue: "user" | "organization" =
+      isOrgUser || pendingBusiness ? "organization" : "user";
 
-    console.log('User type determined:', userTypeValue, 'iscustomer:', iscustomer);
+    console.log('User type determined:', userTypeValue, 'organisationid:', userContext.organisationid);
 
     localStorage.setItem('user_type', userTypeValue);
     setUserType(userTypeValue);
@@ -267,19 +300,52 @@ const Login = () => {
 
     // Small delay to ensure auth state is updated
     setTimeout(() => {
-      completeAuthNavigation(navigate, userTypeValue, from);
+      const landing =
+        isOrgUser || pendingBusiness
+          ? resolveOrganizationAuthPath(
+              userContext,
+              pendingBusiness || isDraftOrganisationName(userContext.organisationname)
+                ? BUSINESS_ONBOARDING_RETURN_PATH
+                : from,
+            )
+          : from;
+      completeAuthNavigation(navigate, userTypeValue, landing);
     }, 100);
+  };
+
+  const redirectNewGoogleUserToRegister = (userInfo: any) => {
+    toast({
+      title: "Create your account",
+      description: "No account found for this Google email. Finish signup to continue.",
+    });
+    navigate("/register", {
+      replace: true,
+      state: {
+        fromGoogle: true,
+        googleName: userInfo?.name || userInfo?.given_name || "",
+        googleEmail: userInfo?.email || "",
+        from,
+      },
+    });
   };
 
   const googleLoginWithToken = async (idToken: string, userInfo: any) => {
     const authService = new AuthService();
-    const userContext = await authService.googleLogin(
-      idToken,
-      userInfo.email,
-      userInfo.name || userInfo.given_name || userInfo.email.split('@')[0],
-      userInfo.picture
-    );
-    await processGoogleLogin(userContext, userInfo);
+    try {
+      const userContext = await authService.googleLogin(
+        idToken,
+        userInfo.email,
+        userInfo.name || userInfo.given_name || userInfo.email.split("@")[0],
+        userInfo.picture,
+      );
+      await processGoogleLogin(userContext, userInfo);
+    } catch (error) {
+      if (isUsersNotFoundAuthError(error)) {
+        redirectNewGoogleUserToRegister(userInfo);
+        return;
+      }
+      throw error;
+    }
   };
 
   /** GIS / FedCM in Android WebView is unreliable; use native Google Sign-In on Capacitor. */
@@ -378,183 +444,202 @@ const Login = () => {
   };
 
   const perks = useMemo(
-    () => [
-      "Book appointments in seconds",
-      "Manage all your bookings in one place",
-      "Get reminders via WhatsApp & email",
-      "Trusted by businesses across India",
-    ],
+    () => ["Free booking website", "WhatsApp & email reminders", "Powerful dashboard"],
     [],
   );
 
   return (
     <div className="grid h-dvh overflow-hidden bg-white lg:grid-cols-2">
-      {/* Left: form */}
-      <div className="order-2 flex h-dvh flex-col overflow-y-auto bg-appointza-cream lg:order-1">
-        <div className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-4 py-6 sm:px-8 sm:py-10 lg:px-10">
+      {/* Left: brand / marketing (Razorpay-style) */}
+      <div
+        className="relative order-1 hidden h-dvh flex-col justify-between overflow-hidden p-10 xl:p-14 lg:flex"
+        style={{
+          background:
+            "linear-gradient(135deg, #f0f7ff 0%, #e0efff 35%, #f5f9ff 55%, #f8fbff 75%, #ffffff 100%)",
+        }}
+      >
+        <div
+          className="pointer-events-none absolute inset-0 opacity-70"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(-28deg, transparent, transparent 48px, rgba(82,143,240,0.06) 48px, rgba(82,143,240,0.06) 96px)",
+          }}
+        />
+        <div className="pointer-events-none absolute -left-24 top-1/4 h-72 w-72 rounded-full bg-[#528ff0]/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-16 bottom-1/3 h-64 w-64 rounded-full bg-[#93c5fd]/30 blur-3xl" />
+
+        <Link to="/" className="relative z-10 flex items-center gap-2.5">
+          <img
+            src="/lovable-uploads/6205c671-a6b9-4927-8268-bd1fa436cd0b.png"
+            alt="Appointza"
+            className="h-9 w-9 object-contain"
+          />
+          <span className="text-[17px] font-semibold tracking-tight text-[#1a1a1a]">Appointza</span>
+        </Link>
+
+        <div className="relative z-10 max-w-md space-y-5 pb-4">
+          <h2 className="text-[28px] font-semibold leading-snug tracking-tight text-[#1e3a5f] xl:text-[32px]">
+            Get a free website for your business — book appointments online in minutes
+          </h2>
+          <ul className="space-y-2.5">
+            {perks.map((p) => (
+              <li key={p} className="flex items-center gap-2 text-[15px] font-medium text-[#1e3a5f]">
+                <span className="text-[#528ff0]">+</span>
+                <span>{p}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Right: form */}
+      <div className="relative order-2 flex h-dvh flex-col overflow-y-auto bg-white lg:order-2">
+        <div
+          className="absolute right-0 top-0 z-10 origin-top-right translate-x-[28%] translate-y-[35%] rotate-45 px-10 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-sm"
+          style={{ backgroundColor: BLUE }}
+        >
+          Free Website
+        </div>
+
+        <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center px-5 py-8 sm:px-8">
           <Link
             to="/"
-            className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-blue-600"
+            className="mb-8 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#667085] transition-colors hover:text-[#528ff0] lg:hidden"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
           </Link>
 
-          <div className="mb-6 lg:hidden">
-            <div className="flex items-center gap-2">
-              <img
-                src="/lovable-uploads/6205c671-a6b9-4927-8268-bd1fa436cd0b.png"
-                alt="Appointza"
-                className="h-9 w-9 object-contain"
-              />
-              <span className="text-lg font-bold text-appointza-navy">Appointza</span>
+          <div className="mb-6 flex items-center gap-2.5">
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-md text-[15px] font-bold text-white"
+              style={{ backgroundColor: BLUE }}
+            >
+              A
+            </span>
+            <div className="lg:hidden">
+              <span className="text-[15px] font-semibold text-[#1a1a1a]">Appointza</span>
             </div>
           </div>
 
-          <header className="mb-6">
-            <h1 className={org.title}>Welcome back</h1>
-            <p className={org.description}>Sign in with your mobile number or Google</p>
-          </header>
+          <p className="mb-1 text-[13px] text-[#667085]">Welcome to Appointza</p>
+          <h1 className="mb-6 text-[22px] font-semibold leading-snug tracking-tight text-[#1a1a1a] sm:text-[26px]">
+            {showRegisteredBanner ? "Sign in to continue" : "Get started with your phone number"}
+          </h1>
 
-          <Card className={cn(org.card, "overflow-hidden rounded-3xl border-blue-50")}>
-            <CardHeader className="space-y-1.5 border-b border-blue-50 bg-gradient-to-br from-blue-50/80 via-white to-violet-50/50 p-5 md:p-6">
-              <CardTitle className={cn("flex items-center gap-3", loginSectionTitleClass)}>
-                <span className={loginSectionIconWrap}>
-                  <Phone className="h-5 w-5" />
-                </span>
-                Login to Appointza
-              </CardTitle>
-              <CardDescription className={loginSectionDescClass}>
-                Enter your mobile number to receive a one-time password
-              </CardDescription>
-            </CardHeader>
+          {showRegisteredBanner ? (
+            <div className="mb-6 rounded-md border border-[#c7dbf8] bg-[#f0f7ff] px-3 py-2.5 text-[13px] text-[#1e3a5f]">
+              Your account was created. Sign in with your mobile number to continue
+              {registerState.isBusiness ? " business setup" : ""}.
+            </div>
+          ) : null}
 
-            <CardContent className="space-y-5 p-5 md:p-6">
-              <div className="space-y-2">
-                <Label htmlFor="mobile" className={org.label}>
-                  Mobile Number
-                </Label>
-                <Input
-                  id="mobile"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  value={mobile}
-                  onChange={(e) => {
-                    setMobileState(e.target.value.replace(/\D/g, "").slice(0, 15));
-                    setMobileError("");
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const cleanMobile = mobile.replace(/[\s\-\(\)]/g, "");
-                      if (cleanMobile.length === 10 && /^[0-9]{10}$/.test(cleanMobile)) {
-                        e.preventDefault();
-                        getOtp();
-                      }
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Input
+                id="mobile"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={mobile}
+                onChange={(e) => {
+                  setMobileState(e.target.value.replace(/\D/g, "").slice(0, 15));
+                  setMobileError("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const cleanMobile = mobile.replace(/[\s\-\(\)]/g, "");
+                    if (cleanMobile.length === 10 && /^[0-9]{10}$/.test(cleanMobile)) {
+                      e.preventDefault();
+                      getOtp();
                     }
-                  }}
-                  placeholder="Enter 10-digit mobile number"
-                  className={cn(loginFieldInputClass, mobileError && "border-red-300 focus-visible:ring-red-200")}
-                  required
+                  }
+                }}
+                placeholder="Enter your phone number"
+                className={cn(loginFieldInputClass, mobileError && "border-red-300 focus-visible:ring-red-200")}
+                required
+              />
+              {mobileError && <p className="text-[13px] text-red-600">{mobileError}</p>}
+            </div>
+
+            <Button
+              onClick={getOtp}
+              disabled={loading || googleLoading}
+              className={loginContinueBtnClass}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending OTP…
+                </>
+              ) : (
+                "Continue"
+              )}
+            </Button>
+
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-[#e6eaf0]" />
+              </div>
+              <div className="relative flex justify-center text-[13px]">
+                <span className="bg-white px-3 text-[#98a2b3]">or</span>
+              </div>
+            </div>
+
+            <div className="w-full">
+              {isNative ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={googleLoading}
+                  onClick={handleCapacitorGoogleSignIn}
+                  className="h-12 min-h-12 w-full touch-manipulation rounded-md border-[#e6eaf0] bg-white text-[15px] font-medium text-[#1a1a1a] shadow-none hover:bg-[#fafafa]"
+                >
+                  {googleLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in…
+                    </>
+                  ) : (
+                    "Continue with Google"
+                  )}
+                </Button>
+              ) : (
+                <GoogleSignInButton
+                  onSuccess={handleGoogleSuccess}
+                  disabled={loading || googleLoading}
+                  loading={googleLoading}
+                  label="Continue with Google"
                 />
-                {mobileError && <p className="text-sm text-red-600">{mobileError}</p>}
-              </div>
+              )}
+            </div>
+          </div>
 
-              <Button
-                onClick={getOtp}
-                disabled={loading || googleLoading}
-                className={cn(org.btnPrimary, "min-h-11 w-full touch-manipulation")}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending OTP…
-                  </>
-                ) : (
-                  "Get OTP"
-                )}
-              </Button>
+          <p className="mt-8 text-center text-[12px] leading-relaxed text-[#667085]">
+            By continuing, you agree to our{" "}
+            <Link to="/terms" className="font-medium text-[#528ff0] hover:underline">
+              Terms of Use
+            </Link>{" "}
+            &{" "}
+            <Link to="/privacy" className="font-medium text-[#528ff0] hover:underline">
+              Privacy Policy
+            </Link>
+          </p>
 
-              <div className="relative py-1">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-stone-200" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase tracking-wide">
-                  <span className="bg-white px-3 text-stone-400">Or continue with</span>
-                </div>
-              </div>
-
-              <div className="w-full">
-                {isNative ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={googleLoading}
-                    onClick={handleCapacitorGoogleSignIn}
-                    className={cn(org.btnOutline, "min-h-11 w-full touch-manipulation")}
-                  >
-                    {googleLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing in…
-                      </>
-                    ) : (
-                      "Sign in with Google"
-                    )}
-                  </Button>
-                ) : (
-                  <GoogleSignInButton
-                    onSuccess={handleGoogleSuccess}
-                    disabled={loading || googleLoading}
-                    loading={googleLoading}
-                    label="Sign in with Google"
-                  />
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <p className="mt-8 text-center text-sm text-stone-500">
+          <p className="mt-4 text-center text-[13px] text-[#667085]">
             Don&apos;t have an account?{" "}
-            <Link to="/register" className="font-semibold text-blue-600 hover:underline">
+            <Link to="/register" className="font-semibold text-[#528ff0] hover:underline">
               Sign Up
             </Link>
           </p>
-        </div>
-      </div>
 
-      {/* Right: brand panel */}
-      <div className="relative order-1 hidden h-dvh flex-col justify-between overflow-hidden bg-gradient-coral p-12 text-white lg:order-2 lg:flex">
-        <div className="pointer-events-none absolute -left-32 -top-32 hidden h-96 w-96 rounded-full bg-white/10 blur-3xl md:block" />
-        <div className="pointer-events-none absolute -bottom-32 -right-32 hidden h-96 w-96 rounded-full bg-white/10 blur-3xl md:block" />
-        <Link to="/" className="relative flex items-center gap-3">
-          <img
-            src="/lovable-uploads/6205c671-a6b9-4927-8268-bd1fa436cd0b.png"
-            alt="Appointza"
-            className="h-10 w-10 rounded-lg bg-white/10 p-1 object-contain backdrop-blur"
-          />
-          <span className="text-xl font-bold">Appointza</span>
-        </Link>
-        <div className="relative space-y-6">
-          <h2 className="text-4xl font-bold leading-tight">Pick up right where you left off.</h2>
-          <ul className="space-y-3">
-            {perks.map((p) => (
-              <li key={p} className="flex items-start gap-3 text-white/90">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20">
-                  <Check className="h-3.5 w-3.5" />
-                </span>
-                <span>{p}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur">
-            <p className="text-sm italic">
-              &ldquo;Logging in takes seconds — my team is always one tap away from the day&apos;s schedule.&rdquo;
-            </p>
-            <p className="mt-3 text-xs text-white/80">— Rahul K., Clinic Manager</p>
+          <div className="mt-8 rounded-md border border-[#dbe4f0] bg-[#f5f9ff] px-4 py-3 text-center text-[12px] text-[#5b6572]">
+            Growing your business online?{" "}
+            <Link to="/register" className="font-semibold text-[#528ff0] hover:underline">
+              Get your free website →
+            </Link>
           </div>
         </div>
-        <p className="relative text-xs text-white/70">© {new Date().getFullYear()} Appointza Technologies</p>
       </div>
     </div>
   );

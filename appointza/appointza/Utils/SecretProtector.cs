@@ -1,23 +1,45 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace appointza.Utils
 {
     /// <summary>
     /// AES-GCM encryption for integration secrets. Key is derived from jwtsecret (server config only).
+    /// Production/Staging refuse to start with a missing or default key material.
     /// </summary>
     public class SecretProtector
     {
+        private const string DevFallbackKey = "appointza-dev-integration-secret-key";
         private readonly byte[] _key;
 
-        public SecretProtector(IOptions<ApplicationEnvironment> appSettings)
+        public SecretProtector(
+            IOptions<ApplicationEnvironment> appSettings,
+            IWebHostEnvironment? environment = null)
         {
-            var material = appSettings.Value?.jwtsecret;
+            var material = appSettings.Value?.jwtsecret?.Trim() ?? "";
+            var envName = environment?.EnvironmentName ??
+                          Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ??
+                          "Production";
+            var isDev = string.Equals(envName, Environments.Development, StringComparison.OrdinalIgnoreCase);
+
             if (string.IsNullOrWhiteSpace(material))
             {
-                material = "appointza-dev-integration-secret-key";
+                if (!isDev)
+                {
+                    throw new InvalidOperationException(
+                        "jwtsecret must be configured for SecretProtector outside Development.");
+                }
+                material = DevFallbackKey;
             }
+            else if (!isDev && string.Equals(material, DevFallbackKey, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "jwtsecret must not use the development default outside Development.");
+            }
+
             _key = SHA256.HashData(Encoding.UTF8.GetBytes(material));
         }
 

@@ -12,7 +12,9 @@ async function loadApiUrl() {
   try {
     const res = await fetch("/appointza-urls.json", { cache: "no-store" });
     if (!res.ok) return;
-    const urls = (await res.json()) as { frontendApiBaseUrl?: string };
+    const urls = (await res.json()) as {
+      frontendApiBaseUrl?: string;
+    };
     window.__APPOINTZA_API_URL__ = String(urls.frontendApiBaseUrl ?? "").trim();
   } catch {
     /* same-origin /api */

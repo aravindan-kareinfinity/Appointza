@@ -232,6 +232,25 @@ namespace appointza.Controllers
             }
         }
 
+        [HttpPost("VerifyReferral")]
+        public async Task<ActionResult<ActionRes<OrganisationReferralVerifyRes>>> VerifyReferral(
+            ActionReq<OrganisationReferralVerifyReq>? req)
+        {
+            try
+            {
+                var result = await organisationReferralService.VerifyReferralCode(req?.item?.referral_code);
+                return Ok(new ActionRes<OrganisationReferralVerifyRes> { item = result });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "VerifyReferral failed");
+                return StatusCode(500, new ActionRes<OrganisationReferralVerifyRes>
+                {
+                    error = ex.Message,
+                });
+            }
+        }
+
         [HttpPost("ApplyReferral")]
         public async Task<ActionResult<ActionRes<OrganisationReferralApplyRes>>> ApplyReferral(
             ActionReq<OrganisationReferralApplyReq>? req)

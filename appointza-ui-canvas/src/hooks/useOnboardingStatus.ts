@@ -3,6 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PrivilegeUtil } from '@/utils/privilege.util';
 import { OrganisationServicesService } from '@/services/organisationservices.service';
 import { OrganisationServiceTimingService } from '@/services/organisationservicetiming.service';
+import { OrganisationOnboardingService } from '@/services/organisationOnboarding.service';
+import type { OrganisationOnboardingState } from '@/models/organisationOnboarding.model';
 import { normalizeCustomUrlSlug } from '@/utils/slug.util';
 import {
   ORG_WEBSITE_TEMPLATE_REFERENCE_TYPE_ID,
@@ -27,9 +29,12 @@ export interface OnboardingStatus {
   hasServices: boolean;
   hasWebsite: boolean;
   hasTiming: boolean;
+  /** Backend `is_complete` when GetStatus succeeded; otherwise client-side checks. */
   isComplete: boolean;
   isLoading: boolean;
   nextStep: OnboardingStepId | null;
+  /** Full OrganisationOnboarding state, or null when the backend call failed / not loaded. */
+  backendState: OrganisationOnboardingState | null;
 }
 
 const defaultStatus: OnboardingStatus = {
@@ -40,6 +45,7 @@ const defaultStatus: OnboardingStatus = {
   isComplete: false,
   isLoading: false,
   nextStep: 'customDomain',
+  backendState: null,
 };
 
 const completeStatus: Omit<OnboardingStatus, 'isLoading'> = {
@@ -49,6 +55,7 @@ const completeStatus: Omit<OnboardingStatus, 'isLoading'> = {
   hasTiming: true,
   isComplete: true,
   nextStep: null,
+  backendState: null,
 };
 
 function resolveNextStep(
@@ -101,7 +108,9 @@ export const useOnboardingStatus = (options?: { enabled?: boolean }) => {
 
         const timingService = new OrganisationServiceTimingService();
 
-        const [locations, orgTemplates, hasServices, hasTiming] = await Promise.all([
+        const onboardingService = new OrganisationOnboardingService();
+
+        const [locations, orgTemplates, hasServices, hasTiming, backendState] = await Promise.all([
           queryClient.fetchQuery({
             queryKey: organisationLocationsQueryKey(orgIdValue, 0),
             queryFn: () => fetchOrganisationLocations(orgIdValue, 0),
@@ -115,6 +124,11 @@ export const useOnboardingStatus = (options?: { enabled?: boolean }) => {
           }),
           servicesService.hasAny(servicesHasAnyReq),
           timingService.hasAny({ organisationid: orgIdValue }),
+          // Backend state is authoritative when available; on failure fall back to client checks.
+          onboardingService.getStatus().catch((backendError) => {
+            console.warn('Organisation onboarding GetStatus failed, using client checks:', backendError);
+            return null;
+          }),
         ]);
 
         const hasCustomDomain = (locations ?? []).some(
@@ -127,8 +141,14 @@ export const useOnboardingStatus = (options?: { enabled?: boolean }) => {
         const hasServicesResolved = hasServices;
         const hasTimingResolved = hasTiming;
 
-        const isComplete = hasCustomDomain && hasServicesResolved && hasWebsite && hasTimingResolved;
-        const nextStep = resolveNextStep(hasCustomDomain, hasServicesResolved, hasWebsite, hasTimingResolved);
+        const clientComplete = hasCustomDomain && hasServicesResolved && hasWebsite && hasTimingResolved;
+        // Prefer backend when present; still honour client complete for legacy orgs / migration lag.
+        const isComplete = backendState
+          ? backendState.is_complete === true || clientComplete
+          : clientComplete;
+        const nextStep: OnboardingStepId | null = isComplete
+          ? null
+          : resolveNextStep(hasCustomDomain, hasServicesResolved, hasWebsite, hasTimingResolved);
 
         return {
           hasCustomDomain,
@@ -138,6 +158,7 @@ export const useOnboardingStatus = (options?: { enabled?: boolean }) => {
           isComplete,
           isLoading: false,
           nextStep,
+          backendState,
         };
       })();
 
@@ -206,6 +227,7 @@ export const useOnboardingStatus = (options?: { enabled?: boolean }) => {
   );
 
   if (isStaff) {
+    const staffNext: OnboardingStepId | null = staffHasDashboardAccess ? null : 'customDomain';
     return {
       hasCustomDomain: staffHasDashboardAccess,
       hasServices: staffHasDashboardAccess,
@@ -213,7 +235,8 @@ export const useOnboardingStatus = (options?: { enabled?: boolean }) => {
       hasTiming: staffHasDashboardAccess,
       isComplete: staffHasDashboardAccess,
       isLoading: false,
-      nextStep: staffHasDashboardAccess ? null : 'customDomain',
+      nextStep: staffNext,
+      backendState: null,
       refetch: refetchOnboarding,
     };
   }

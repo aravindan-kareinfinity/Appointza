@@ -50,41 +50,44 @@ export function OrganizationCalendarRoomsView({
   onMarkClean,
 }: OrganizationCalendarRoomsViewProps) {
   return (
-    <div className="min-w-0 space-y-6">
+    <div className="min-w-0 space-y-4">
       <div className={cn(org.card, "p-4 sm:p-5")}>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold text-appointza-navy">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[#eef1f5] pb-4">
+          <h2 className="text-[15px] font-semibold text-[#1a1a1a]">
             {format(selectedDate, "EEEE, d MMMM yyyy")}
           </h2>
-          <div className="flex flex-wrap gap-2 text-xs">
-            <Badge className="border-transparent bg-emerald-50 text-emerald-700">
+          <div className="flex flex-wrap gap-2 text-[12px]">
+            <Badge className="rounded-md border-transparent bg-[#ecfdf3] font-medium text-[#067647]">
               {availableCount} available
             </Badge>
-            <Badge className="border-transparent bg-orange-50 text-orange-800">
+            <Badge className="rounded-md border-transparent bg-[#fff4e5] font-medium text-[#b54708]">
               {occupiedCount} occupied / reserved
             </Badge>
-            <Badge variant="outline" className="text-stone-600">
+            <Badge
+              variant="outline"
+              className="rounded-md border-[#e6eaf0] font-medium text-[#667085]"
+            >
               {rooms.length} room{rooms.length === 1 ? "" : "s"}
             </Badge>
           </div>
         </div>
 
         {locationLabel ? (
-          <p className="mb-4 text-sm text-stone-600">
-            Location: <span className="font-medium text-stone-800">{locationLabel}</span>
+          <p className="mb-4 text-[13px] text-[#667085]">
+            Location: <span className="font-medium text-[#344054]">{locationLabel}</span>
           </p>
         ) : null}
 
         {isLoading ? (
-          <div className="flex items-center gap-2 py-12 text-sm text-stone-500">
-            <Loader2 className="h-4 w-4 animate-spin text-[#E85D4C]" />
+          <div className="flex items-center gap-2 py-12 text-[13px] text-[#667085]">
+            <Loader2 className="h-4 w-4 animate-spin text-[#2a5af5]" />
             Loading rooms…
           </div>
         ) : rooms.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-stone-200 px-4 py-10 text-center">
-            <BedDouble className="mx-auto mb-3 h-10 w-10 text-stone-300" />
-            <p className="text-sm text-stone-600">No rooms defined for this location.</p>
-            <Button asChild variant="outline" className="mt-4">
+          <div className="rounded-lg border border-dashed border-[#e6eaf0] bg-[#f8fafc] px-4 py-10 text-center">
+            <BedDouble className="mx-auto mb-3 h-10 w-10 text-[#d0d5dd]" />
+            <p className="text-[13px] text-[#667085]">No rooms defined for this location.</p>
+            <Button asChild variant="outline" className={cn(org.btnOutline, "mt-4")}>
               <Link to="/organization/hospitality?section=room-status">Add rooms</Link>
             </Button>
           </div>
@@ -105,14 +108,14 @@ export function OrganizationCalendarRoomsView({
               return (
                 <div
                   key={room.id}
-                  className="rounded-2xl border border-stone-100 bg-white p-4 shadow-sm"
+                  className="rounded-lg border border-[#e6eaf0] bg-white p-4 shadow-none"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-semibold text-appointza-navy">
+                      <p className="text-[14px] font-semibold text-[#1a1a1a]">
                         Room {room.room_number}
                       </p>
-                      <p className="text-sm text-stone-500">
+                      <p className="text-[13px] text-[#667085]">
                         {room.room_name || room.room_type} · Floor {room.floor_number}
                       </p>
                     </div>
@@ -122,18 +125,18 @@ export function OrganizationCalendarRoomsView({
                   </div>
 
                   {canManage ? (
-                    <div className="mt-3 space-y-1.5 rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-2.5">
-                      <p className="text-sm font-semibold text-appointza-navy">
+                    <div className="mt-3 space-y-1.5 rounded-lg border border-[#eef1f5] bg-[#f8fafc] px-3 py-2.5">
+                      <p className="text-[13px] font-semibold text-[#1a1a1a]">
                         {guestName || "Guest details"}
                       </p>
                       {guestPhone ? (
-                        <p className="text-sm text-stone-600">{guestPhone}</p>
+                        <p className="text-[13px] text-[#667085]">{guestPhone}</p>
                       ) : null}
                       {guestEmail ? (
-                        <p className="text-xs text-stone-500">{guestEmail}</p>
+                        <p className="text-[12px] text-[#98a2b3]">{guestEmail}</p>
                       ) : null}
                       {checkInLabel || checkOutLabel ? (
-                        <p className="text-xs text-stone-500">
+                        <p className="text-[12px] text-[#667085]">
                           Stay: {checkInLabel || "—"} – {checkOutLabel || "—"}
                           {(nights ?? 0) > 0
                             ? ` · ${nights} night${nights === 1 ? "" : "s"}`
@@ -141,9 +144,7 @@ export function OrganizationCalendarRoomsView({
                         </p>
                       ) : null}
                       {bookingRef ? (
-                        <p className="text-xs text-stone-400">
-                          Ref {bookingRef}
-                        </p>
+                        <p className="text-[12px] text-[#98a2b3]">Ref {bookingRef}</p>
                       ) : null}
                     </div>
                   ) : null}
@@ -156,7 +157,7 @@ export function OrganizationCalendarRoomsView({
                           onValueChange={(status) => onStatusChange(room, status)}
                           disabled={isBusy}
                         >
-                          <SelectTrigger className="h-9 w-full rounded-xl border-stone-200 bg-white">
+                          <SelectTrigger className={org.selectTrigger}>
                             <SelectValue placeholder="Room status" />
                           </SelectTrigger>
                           <SelectContent>
@@ -174,7 +175,7 @@ export function OrganizationCalendarRoomsView({
                           <Button
                             type="button"
                             variant="outline"
-                            className="h-9 w-full rounded-2xl border-stone-200"
+                            className={cn(org.btnOutline, "h-9 w-full")}
                             disabled={isBusy}
                             onClick={() => onViewDetails(room)}
                           >
@@ -190,11 +191,22 @@ export function OrganizationCalendarRoomsView({
                           {onCheckout ? (
                             <Button
                               type="button"
-                              className="h-10 w-full rounded-2xl bg-blue-600 text-white hover:bg-blue-700"
+                              className={cn(org.btnPrimary, "h-9 w-full")}
                               disabled={isBusy}
                               onClick={() => onCheckout(room)}
                             >
                               Checkout — room available
+                            </Button>
+                          ) : null}
+                          {onMarkClean ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className={cn(org.btnOutline, "h-9 w-full")}
+                              disabled={isBusy}
+                              onClick={() => onMarkClean(room)}
+                            >
+                              Mark clean
                             </Button>
                           ) : null}
                         </div>
@@ -207,12 +219,12 @@ export function OrganizationCalendarRoomsView({
           </div>
         )}
 
-        <p className="mt-4 text-xs text-stone-500">
+        <p className="mt-4 text-[12px] text-[#98a2b3]">
           Reserved and occupied rooms show guest details for the selected date. Full board also
           available under{" "}
           <Link
             to="/organization/hospitality?section=room-status"
-            className="font-medium text-[#E85D4C] hover:underline"
+            className="font-medium text-[#2a5af5] hover:underline"
           >
             Hospitality → Room status
           </Link>
